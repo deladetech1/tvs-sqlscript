@@ -1,0 +1,289 @@
+# Manual EF Core deploys, rollbacks, and migration-tooling commands against a
+# Postgres reachable from GitHub-hosted runners (Azure, RDS, Neon, etc.).
+#
+# Uses GitHub repository Environments — one per target Postgres
+# (Settings → Environments → New environment):
+#
+#   ┌──────────────────────────────────────────────────────────────────────┐
+#   │ Environment   │ Secret           │ Suggested protection rules         │
+#   ├──────────────────────────────────────────────────────────────────────┤
+#   │ dev           │ DATABASE_URL     │ none                                │
+#   │ staging       │ DATABASE_URL     │ none / wait-timer                   │
+#   │ production    │ DATABASE_URL     │ Required reviewers + wait-timer     │
+#   └──────────────────────────────────────────────────────────────────────┘
+#
+# DATABASE_URL is the libpq URL, e.g.:
+#   postgresql://user:password@host.example.com:5432/dbname?sslmode=require
+#
+# Concurrency: one in-flight job per repo + environment so two dispatch runs
+# never fight the same DB.
+
+name: Database (EF Core dispatch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: GitHub environment to target (its DATABASE_URL secret + protection rules apply)
+        type: environment
+        required: true
+      command:
+        description: What to do
+        type: choice
+        required: true
+        options:
+          # Runner CLI actions (Program.cs)
+          - validate                  # offline — builds every EF model, no DB touch
+          - verify                    # connects, prints PG version + current_database()
+          - status                    # alias for verify
+          - deploy                    # CREATE SCHEMA + MigrateAsync + triggers + seeds
+          - rollback                  # DROP SCHEMA … CASCADE (destructive)
+          # dotnet ef migrations …  (requires module to be a specific one, not "all")
+          - migrations-list
+          - migrations-add
+          - migrations-remove
+          - migrations-script         # idempotent SQL script, uploaded as artifact
+      module:
+        description: Module to target (use "all" for runner actions, specific module for migrations-*)
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - core_platform
+          - loandrift
+          - mystoreguard
+          - human_resource
+      migration_name:
+        description: 'Migration name (required for migrations-add, e.g. "AddOrderNotes")'
+        type: string
+        required: false
+      target_migration:
+        description: 'Optional target migration for migrations-script (omit = full script)'
+        type: string
+        required: false
+      destructive_ack:
+        description: 'For rollback / migrations-remove: type exactly YESDestructive'
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: tvs-sqlscript-${{ github.repository }}-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    # Bind the job to the chosen GitHub environment. This is what unlocks:
+    #   - env-scoped secrets (e.g. DATABASE_URL),
+    #   - required reviewers / wait-timer protection rules,
+    #   - the env tag in the run UI.
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      # Force SSL for all cloud Postgres connections.
+      TVS_SSL: Require
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build solution
+        run: dotnet build Trovesuite.Database.sln -c Release --nologo
+
+      - name: Install dotnet-ef tool
+        if: startsWith(github.event.inputs.command, 'migrations-')
+        run: dotnet tool install --global dotnet-ef --version 10.0.1
+
+      - name: Parse DATABASE_URL into env vars
+        id: db
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${DATABASE_URL:-}" ]]; then
+            echo "::error::DATABASE_URL is not set on environment '${{ inputs.environment }}'. Open Settings → Environments → ${{ inputs.environment }} → Add secret."
+            exit 1
+          fi
+          # Mask the URL so it never lands in logs.
+          echo "::add-mask::${DATABASE_URL}"
+
+          # libpq URL → individual fields. Format:
+          #   postgresql://user:password@host:port/dbname?sslmode=require
+          proto_stripped="${DATABASE_URL#postgresql://}"
+          proto_stripped="${proto_stripped#postgres://}"
+          creds="${proto_stripped%%@*}"
+          rest="${proto_stripped#*@}"
+          DB_USER="${creds%%:*}"
+          PGPASSWORD="${creds#*:}"
+          hostport="${rest%%/*}"
+          DB_HOST="${hostport%%:*}"
+          DB_PORT="${hostport#*:}"
+          [[ "$DB_PORT" == "$hostport" ]] && DB_PORT=5432
+          dbpart="${rest#*/}"
+          DB_NAME="${dbpart%%\?*}"
+
+          # Mask everything sensitive too.
+          echo "::add-mask::$PGPASSWORD"
+          echo "::add-mask::$DB_USER"
+          echo "::add-mask::$DB_HOST"
+
+          {
+            echo "DB_HOST=$DB_HOST"
+            echo "DB_PORT=$DB_PORT"
+            echo "DB_USER=$DB_USER"
+            echo "PGPASSWORD=$PGPASSWORD"
+            echo "DB_NAME=$DB_NAME"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Destructive-command typo safeguard
+        if: contains(fromJson('["rollback","migrations-remove"]'), inputs.command)
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.destructive_ack }}" != "YESDestructive" ]]; then
+            echo "::error::Command '${{ inputs.command }}' requires destructive_ack=YESDestructive (typo safeguard, separate from environment protection rules)."
+            exit 1
+          fi
+
+      - name: Map module → csproj path
+        id: map
+        run: |
+          set -euo pipefail
+          case "${{ inputs.module }}" in
+            core_platform)  PROJ="src/Trovesuite.Database.CorePlatform";  PICK=1 ;;
+            loandrift)      PROJ="src/Trovesuite.Database.LoanDrift";     PICK=2 ;;
+            mystoreguard)   PROJ="src/Trovesuite.Database.MyStoreGuard";  PICK=3 ;;
+            human_resource) PROJ="src/Trovesuite.Database.HumanResource"; PICK=4 ;;
+            all)            PROJ="";                                       PICK=0 ;;
+          esac
+          echo "proj=$PROJ" >> "$GITHUB_OUTPUT"
+          echo "pick=$PICK" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------------------
+      # Runner actions: validate / verify / status / deploy / rollback
+      # ------------------------------------------------------------------
+      - name: Run (deploy / verify / status / validate)
+        if: contains(fromJson('["deploy","verify","status","validate"]'), inputs.command)
+        env:
+          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
+          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
+          DB_USER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
+        run: |
+          # Pipe the module choice (0 for ALL, 1..4 for specific).
+          printf '%s\n' "${{ steps.map.outputs.pick }}" \
+            | dotnet run --no-build -c Release \
+                --project src/Trovesuite.Database.Runner -- \
+                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "${{ inputs.command }}"
+
+      - name: Run (rollback — destructive)
+        if: inputs.command == 'rollback'
+        env:
+          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
+          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
+          DB_USER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
+        run: |
+          # Rollback asks for module choice AND a y/N confirmation.
+          printf '%s\ny\n' "${{ steps.map.outputs.pick }}" \
+            | dotnet run --no-build -c Release \
+                --project src/Trovesuite.Database.Runner -- \
+                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "rollback"
+
+      # ------------------------------------------------------------------
+      # dotnet ef migrations …
+      # ------------------------------------------------------------------
+      - name: migrations-list
+        if: inputs.command == 'migrations-list'
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.module }}" == "all" ]]; then
+            for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
+              echo "## $name"
+              dotnet ef migrations list \
+                -p "src/Trovesuite.Database.$name" \
+                -s src/Trovesuite.Database.Runner
+            done
+          else
+            dotnet ef migrations list \
+              -p "${{ steps.map.outputs.proj }}" \
+              -s src/Trovesuite.Database.Runner
+          fi
+
+      - name: migrations-add
+        if: inputs.command == 'migrations-add'
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.module }}" == "all" ]]; then
+            echo "::error::migrations-add requires a specific module, not 'all'."
+            exit 1
+          fi
+          if [[ -z "${{ inputs.migration_name }}" ]]; then
+            echo "::error::migration_name is required for migrations-add."
+            exit 1
+          fi
+          dotnet ef migrations add "${{ inputs.migration_name }}" \
+            -p "${{ steps.map.outputs.proj }}" \
+            -s src/Trovesuite.Database.Runner \
+            -o Migrations
+          echo "::notice::Migration file created. Commit it from your local checkout — workflow runs are read-only."
+
+      - name: migrations-remove
+        if: inputs.command == 'migrations-remove'
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.module }}" == "all" ]]; then
+            echo "::error::migrations-remove requires a specific module, not 'all'."
+            exit 1
+          fi
+          dotnet ef migrations remove --force \
+            -p "${{ steps.map.outputs.proj }}" \
+            -s src/Trovesuite.Database.Runner
+
+      - name: migrations-script
+        if: inputs.command == 'migrations-script'
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          TARGET=""
+          if [[ -n "${{ inputs.target_migration }}" ]]; then
+            TARGET="--to ${{ inputs.target_migration }}"
+          fi
+          if [[ "${{ inputs.module }}" == "all" ]]; then
+            for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
+              dotnet ef migrations script $TARGET --idempotent \
+                -p "src/Trovesuite.Database.$name" \
+                -s src/Trovesuite.Database.Runner \
+                -o "artifacts/$name.sql"
+            done
+          else
+            dotnet ef migrations script $TARGET --idempotent \
+              -p "${{ steps.map.outputs.proj }}" \
+              -s src/Trovesuite.Database.Runner \
+              -o "artifacts/${{ inputs.module }}.sql"
+          fi
+
+      - name: Upload script artifacts
+        if: inputs.command == 'migrations-script'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tvs-sqlscript-migrations-${{ inputs.environment }}-${{ inputs.module }}-${{ github.run_id }}
+          path: artifacts/*.sql
+          retention-days: 14

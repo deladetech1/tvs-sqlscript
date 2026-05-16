@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Trovesuite.Database.Common</RootNamespace>
+    <AssemblyName>Trovesuite.Database.Common</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pulls in Microsoft.EntityFrameworkCore + Relational via Directory.Build.props -->
+  </ItemGroup>
+</Project>

@@ -1,0 +1,293 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using Trovesuite.Database.Common.Abstractions;
+using Trovesuite.Database.CorePlatform;
+using Trovesuite.Database.HumanResource;
+using Trovesuite.Database.LoanDrift;
+using Trovesuite.Database.MyStoreGuard;
+
+namespace Trovesuite.Database.Runner;
+
+/// <summary>
+/// Mirrors the behavior of script_db_setup.sh, but in C# / EF Core:
+///   - Discovers modules (in 1..n order to honor cross-module FK dependencies)
+///   - Prompts for the action (deploy/verify/rollback/status)
+///   - For deploy/rollback prompts for which module(s) to target
+///   - Executes EnsureCreated() + seed for each chosen module
+///
+/// Connection settings are pulled from these env vars (same as the legacy .env):
+///   DB_HOST, DB_PORT, DB_USER, PGPASSWORD, DB_NAME
+/// Command-line: tvs-db [DB_HOST DB_PORT DB_USER DB_PASSWORD DB_NAME] [deploy|verify|rollback|status]
+/// </summary>
+internal static class Program
+{
+    private static readonly IModule[] Modules =
+    [
+        new CorePlatformModule(),
+        new LoanDriftModule(),
+        new MyStoreGuardModule(),
+        new HumanResourceModule(),
+    ];
+
+    private static int Main(string[] args)
+    {
+        try
+        {
+            return MainAsync(args).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"❌ {ex.Message}");
+            if (Environment.GetEnvironmentVariable("TVS_DEBUG") == "1")
+                Console.Error.WriteLine(ex);
+            return 1;
+        }
+    }
+
+    private static async Task<int> MainAsync(string[] args)
+    {
+        PrintHeader("🚀 Core Platform Deployment Script (EF Core 10)");
+
+        var cfg = ReadConfig(args);
+        var action = ReadAction(args, cfg);
+
+        Info($"  Host: {cfg.Host}");
+        Info($"  Port: {cfg.Port}");
+        Info($"  User: {cfg.User}");
+        Info($"  Database: {cfg.Database}");
+        Console.WriteLine();
+
+        IModule[] selected = action is "deploy" or "rollback"
+            ? PromptModuleSelection()
+            : Modules;
+
+        switch (action)
+        {
+            case "deploy": await Deploy(cfg, selected); break;
+            case "verify": await Verify(cfg); break;
+            case "rollback": await Rollback(cfg, selected); break;
+            case "status": await Status(cfg); break;
+            case "validate": Validate(cfg); break;
+            default: Error($"Invalid action: {action}"); return 1;
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Builds every module's EF model offline. Surfaces Fluent API errors
+    /// (missing keys, FK type mismatches, bad CHECK constraints) without
+    /// needing a database connection.
+    /// </summary>
+    private static void Validate(DbConfig cfg)
+    {
+        PrintHeader("Validating EF Core Models");
+        foreach (var mod in Modules.OrderBy(m => m.Order))
+        {
+            using var ctx = mod.CreateContext(cfg.ToConnectionString());
+            var entityCount = ctx.Model.GetEntityTypes().Count();
+            Success($"{mod.ModuleKey}: model OK — {entityCount} entity types");
+        }
+    }
+
+    // --------- actions ---------
+
+    private static async Task Deploy(DbConfig cfg, IModule[] selected)
+    {
+        PrintHeader("Deploying SQL Schema");
+        await CheckConnection(cfg);
+
+        foreach (var mod in selected.OrderBy(m => m.Order))
+        {
+            PrintHeader($"Deploying Module: {mod.ModuleKey}");
+            await using var ctx = mod.CreateContext(cfg.ToConnectionString());
+
+            Info($"  Ensuring schema '{mod.SchemaName}' exists…");
+            await ctx.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS {mod.SchemaName};");
+
+            Info("  Applying EF Core migrations…");
+            await ctx.Database.MigrateAsync();
+
+            Info("  Running module seed (triggers + reference data)…");
+            await mod.SeedAsync(ctx);
+            Success($"Module {mod.ModuleKey} deployed successfully");
+        }
+
+        Success("All selected modules deployed successfully");
+    }
+
+    private static async Task Verify(DbConfig cfg)
+    {
+        PrintHeader("Verifying Deployment");
+        await CheckConnection(cfg);
+        await using var conn = new NpgsqlConnection(cfg.ToConnectionString());
+        await conn.OpenAsync();
+
+        await using var cmdV = new NpgsqlCommand("SELECT version()", conn);
+        await using var cmdD = new NpgsqlCommand("SELECT current_database()", conn);
+        Info($"Database version: {await cmdV.ExecuteScalarAsync()}");
+        Info($"Current database: {await cmdD.ExecuteScalarAsync()}");
+    }
+
+    private static async Task Status(DbConfig cfg) => await Verify(cfg);
+
+    private static async Task Rollback(DbConfig cfg, IModule[] selected)
+    {
+        PrintHeader("Rolling Back Deployment");
+
+        Console.WriteLine("This will drop schemas for the following modules:");
+        foreach (var m in selected) Info($"  - {m.ModuleKey} -> schema {m.SchemaName}");
+
+        Console.Write("Continue? (y/N): ");
+        var resp = Console.ReadLine();
+        if (!string.Equals(resp, "y", StringComparison.OrdinalIgnoreCase))
+        {
+            Info("Rollback cancelled");
+            return;
+        }
+
+        await using var conn = new NpgsqlConnection(cfg.ToConnectionString());
+        await conn.OpenAsync();
+        // Drop in reverse-order so app schemas go before core_platform.
+        foreach (var mod in selected.OrderByDescending(m => m.Order))
+        {
+            Info($"Dropping schema '{mod.SchemaName}' (module: {mod.ModuleKey})…");
+            await using var cmd = new NpgsqlCommand($"DROP SCHEMA IF EXISTS {mod.SchemaName} CASCADE;", conn);
+            await cmd.ExecuteNonQueryAsync();
+        }
+        Success("Rollback completed");
+    }
+
+    // --------- prompts / config ---------
+
+    private record DbConfig(string Host, string Port, string User, string Password, string Database)
+    {
+        public string ToConnectionString()
+        {
+            // SSL is OFF by default (works for local Postgres without TLS configured).
+            // Opt in for managed Postgres / production:
+            //   TVS_SSL=true                  → SSL Mode=Require
+            //   TVS_SSL=<Disable|Allow|Prefer|Require|VerifyCA|VerifyFull>
+            //                                  → SSL Mode=<value>
+            var raw = Environment.GetEnvironmentVariable("TVS_SSL");
+            string sslMode = raw switch
+            {
+                null or "" or "false" or "0" or "off" => "Disable",
+                "true" or "1" or "on" => "Require",
+                _ => raw
+            };
+            return $"Host={Host};Port={Port};Username={User};Password={Password};Database={Database};SSL Mode={sslMode};Trust Server Certificate=true";
+        }
+    }
+
+    private static DbConfig ReadConfig(string[] args)
+    {
+        TryLoadDotEnv();
+
+        // Positional args take precedence over env vars (same as script_db_setup.sh).
+        string Get(int i, string env) =>
+            args.Length > i ? args[i] : Environment.GetEnvironmentVariable(env) ?? string.Empty;
+
+        var host = Get(0, "DB_HOST");
+        var port = Get(1, "DB_PORT");
+        var user = Get(2, "DB_USER");
+        var pwd  = Get(3, "PGPASSWORD");
+        var db   = Get(4, "DB_NAME");
+
+        if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(port) ||
+            string.IsNullOrEmpty(user) || string.IsNullOrEmpty(pwd)  ||
+            string.IsNullOrEmpty(db))
+        {
+            Error("Missing required database configuration!");
+            Console.WriteLine();
+            Console.WriteLine("Provide credentials via:");
+            Console.WriteLine("  1. A .env file with DB_HOST, DB_PORT, DB_USER, PGPASSWORD, DB_NAME");
+            Console.WriteLine("  2. CLI: tvs-db <DB_HOST> <DB_PORT> <DB_USER> <DB_PASSWORD> <DB_NAME> [deploy|verify|rollback|status]");
+            Environment.Exit(1);
+        }
+
+        return new DbConfig(host, port, user, pwd, db);
+    }
+
+    private static string ReadAction(string[] args, DbConfig _)
+    {
+        var fromArg = args.Length > 5 ? args[5] : Environment.GetEnvironmentVariable("ACTION");
+        if (!string.IsNullOrWhiteSpace(fromArg)) return fromArg!.Trim().ToLowerInvariant();
+
+        Info("No action specified. Available actions: deploy, verify, rollback, status");
+        Console.Write("Enter action to perform: ");
+        return (Console.ReadLine() ?? "").Trim().ToLowerInvariant();
+    }
+
+    private static IModule[] PromptModuleSelection()
+    {
+        PrintHeader("Module Selection");
+        Console.WriteLine("Available options:");
+        Console.WriteLine("  0) Execute ALL modules");
+        for (var i = 0; i < Modules.Length; i++)
+            Console.WriteLine($"  {i + 1}) {Modules[i].ModuleKey}");
+
+        Console.WriteLine();
+        Console.Write("Enter your choice (0 for all, or specific number): ");
+        var choice = (Console.ReadLine() ?? "").Trim();
+
+        if (choice == "0")
+        {
+            Success("Selected: ALL modules");
+            return Modules;
+        }
+        if (int.TryParse(choice, out var n) && n >= 1 && n <= Modules.Length)
+        {
+            var picked = Modules[n - 1];
+            Success($"Selected: {picked.ModuleKey}");
+            return [picked];
+        }
+        Error($"Invalid selection: {choice}");
+        Environment.Exit(1);
+        return Array.Empty<IModule>();
+    }
+
+    private static async Task CheckConnection(DbConfig cfg)
+    {
+        Info("Checking database connection…");
+        await using var conn = new NpgsqlConnection(cfg.ToConnectionString());
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand("SELECT 1;", conn);
+        await cmd.ExecuteScalarAsync();
+        Success("Database connection successful");
+    }
+
+    private static void TryLoadDotEnv()
+    {
+        // Look for .env in the current working dir, mirroring script_db_setup.sh's behavior.
+        var path = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+        if (!File.Exists(path)) return;
+
+        Info("Loading environment variables from .env file…");
+        foreach (var raw in File.ReadAllLines(path))
+        {
+            var line = raw.Trim();
+            if (line.Length == 0 || line.StartsWith('#')) continue;
+            var eq = line.IndexOf('=');
+            if (eq <= 0) continue;
+            var k = line[..eq].Trim();
+            var v = line[(eq + 1)..].Trim().Trim('"').Trim('\'');
+            if (Environment.GetEnvironmentVariable(k) is null)
+                Environment.SetEnvironmentVariable(k, v);
+        }
+    }
+
+    // --------- output helpers ---------
+
+    private static void PrintHeader(string title)
+    {
+        var bar = new string('=', 78);
+        Console.WriteLine();
+        Console.WriteLine(bar);
+        Console.WriteLine($"🚀 {title}");
+        Console.WriteLine(bar);
+        Console.WriteLine();
+    }
+    private static void Success(string msg) => Console.WriteLine($"✅ {msg}");
+    private static void Info(string msg)    => Console.WriteLine($"ℹ️  {msg}");
+    private static void Error(string msg)   => Console.Error.WriteLine($"❌ {msg}");
+}

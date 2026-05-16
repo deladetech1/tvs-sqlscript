@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Trovesuite.Database.LoanDrift</RootNamespace>
+    <AssemblyName>Trovesuite.Database.LoanDrift</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Trovesuite.Database.Common\Trovesuite.Database.Common.csproj" />
+    <ProjectReference Include="..\Trovesuite.Database.CorePlatform\Trovesuite.Database.CorePlatform.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Sql\**\*.sql" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,41 @@
+using Microsoft.EntityFrameworkCore;
+using Trovesuite.Database.CorePlatform;
+using Trovesuite.Database.LoanDrift.Entities;
+
+namespace Trovesuite.Database.LoanDrift;
+
+public class LoanDriftDbContext : DbContext
+{
+    public const string SchemaName = "loandrift";
+
+    public LoanDriftDbContext(DbContextOptions<LoanDriftDbContext> options) : base(options) { }
+
+    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<LoanDriftActivityLog> ActivityLogs => Set<LoanDriftActivityLog>();
+    public DbSet<ClientBusiness> ClientBusinesses => Set<ClientBusiness>();
+    public DbSet<Sector> Sectors => Set<Sector>();
+    public DbSet<LoanType> LoanTypes => Set<LoanType>();
+    public DbSet<InterestType> InterestTypes => Set<InterestType>();
+    public DbSet<LoanDetail> LoanDetails => Set<LoanDetail>();
+    public DbSet<LoanCalculation> LoanCalculations => Set<LoanCalculation>();
+    public DbSet<LoanCharge> LoanCharges => Set<LoanCharge>();
+    public DbSet<LoanPurpose> LoanPurposes => Set<LoanPurpose>();
+    public DbSet<ClientFinancialInfo> ClientFinancialInfos => Set<ClientFinancialInfo>();
+    public DbSet<LoanApproval> LoanApprovals => Set<LoanApproval>();
+    public DbSet<LoanDisbursement> LoanDisbursements => Set<LoanDisbursement>();
+    public DbSet<LoanMessage> LoanMessages => Set<LoanMessage>();
+    public DbSet<ClientComment> ClientComments => Set<ClientComment>();
+    public DbSet<Guarantor> Guarantors => Set<Guarantor>();
+    public DbSet<LoanDriftResourceDeletionChatHistory> ResourceDeletionChatHistories
+        => Set<LoanDriftResourceDeletionChatHistory>();
+    public DbSet<Repayment> Repayments => Set<Repayment>();
+    public DbSet<ClientDocumentPath> ClientDocumentsPaths => Set<ClientDocumentPath>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasDefaultSchema(SchemaName);
+        ExternalCorePlatformEntities.Register(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(LoanDriftDbContext).Assembly);
+        base.OnModelCreating(modelBuilder);
+    }
+}
