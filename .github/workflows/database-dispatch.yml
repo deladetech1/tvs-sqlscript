@@ -1,60 +1,77 @@
 # Manual EF Core deploys, rollbacks, and migration-tooling commands against a
 # Postgres reachable from GitHub-hosted runners (Azure, RDS, Neon, etc.).
 #
-# Uses GitHub repository Environments — one per target Postgres
-# (Settings → Environments → New environment):
+# Two-axis target picker:
 #
-#   ┌─────────────────────────┬────────────────┬────────────────────────────────┐
-#   │ Environment             │ Secret         │ Suggested protection rules     │
-#   ├─────────────────────────┼────────────────┼────────────────────────────────┤
-#   │ dev                     │ DATABASE_URL   │ none                           │
-#   │ staging                 │ DATABASE_URL   │ none / wait-timer              │
-#   │ production              │ DATABASE_URL   │ Required reviewers + wait-timer│
-#   │ enterprise-<slug>       │ DATABASE_URL   │ Required reviewers from that   │
-#   │  e.g. enterprise-acme   │                │  enterprise (one per customer) │
-#   └─────────────────────────┴────────────────┴────────────────────────────────┘
+#   scope ─────────────► WHO the DB belongs to
+#     • shared              = your team (no enterprise-specific SQL applied)
+#     • enterprise-<slug>   = a specific customer (also runs migrations/enterprise/<slug>/*)
 #
-# DATABASE_URL is the libpq URL, e.g.:
+#   environment ───────► WHICH DB of theirs
+#     • dev / staging / production
+#
+# The GitHub Environment name is computed as `<scope>-<environment>`:
+#
+#   ┌──────────────────────────────────┬────────────────┬────────────────────────┐
+#   │ GitHub Environment               │ Secret         │ Suggested protection   │
+#   ├──────────────────────────────────┼────────────────┼────────────────────────┤
+#   │ shared-dev                       │ DATABASE_URL   │ none                   │
+#   │ shared-staging                   │ DATABASE_URL   │ wait-timer             │
+#   │ shared-production                │ DATABASE_URL   │ Required reviewers     │
+#   │ enterprise-acme-production       │ DATABASE_URL   │ Required reviewers     │
+#   │ enterprise-acme-staging  (opt.)  │ DATABASE_URL   │                        │
+#   │ enterprise-globex-production     │ DATABASE_URL   │ Required reviewers     │
+#   └──────────────────────────────────┴────────────────┴────────────────────────┘
+#
+# Each cell that actually exists is a real GitHub Environment. Enterprises that
+# only have a production DB just don't create the dev/staging entries.
+#
+# DATABASE_URL format (libpq URL):
 #   postgresql://user:password@host.example.com:5432/dbname?sslmode=require
 #
 # ── ONBOARDING A NEW ENTERPRISE ──────────────────────────────────────────────
-#   1. Get the libpq URL from the enterprise (point at their Azure Postgres,
-#      with a dedicated `migrator` user that has DDL rights on their DB).
-#   2. Repo → Settings → Environments → New environment:
-#        name = `enterprise-<slug>`   (slug = lowercase, kebab-case customer id)
+#   1. Get the libpq URL(s) from the enterprise — one per DB they want managed
+#      (typically just `production`, sometimes `staging` + `production`).
+#   2. Repo → Settings → Environments → New environment for each:
+#        name = `enterprise-<slug>-<env>`   e.g. `enterprise-acme-production`
 #        Add environment secret: DATABASE_URL = <the libpq URL>
-#        (Recommended) Add a required reviewer for prod-grade safety.
-#   3. Edit this workflow file: add `- enterprise-<slug>` to the `environment`
-#      input's `options` list below, commit, push.
-#   4. Run the workflow: pick `enterprise-<slug>` + command=`validate` first
-#      (no DB writes), then `deploy`.
+#        (Recommended for production) Add required reviewers.
+#   3. Edit this workflow file: add `- enterprise-<slug>` to `scope.options`.
+#      Commit, push.
+#   4. Run the workflow with scope=`enterprise-<slug>` + environment=`production`
+#      + command=`validate` (no DB writes), then `deploy`.
 #
 #   Migration history is recorded per database via __EFMigrationsHistory, so
 #   each enterprise is upgraded independently and idempotently. An enterprise
 #   sitting two migrations behind catches up automatically on the next deploy.
 #
-# Concurrency: one in-flight job per repo + environment so two dispatch runs
-# never fight the same DB.
+# Concurrency: one in-flight job per repo + (scope-environment) so two dispatch
+# runs never fight the same DB.
 
 name: Database (EF Core dispatch)
 
 on:
   workflow_dispatch:
     inputs:
+      scope:
+        description: 'WHO the DB belongs to: shared (your team) or a specific enterprise'
+        required: true
+        type: choice
+        options:
+          - shared
+          # Per-enterprise scopes. Add `- enterprise-<slug>` here as you onboard
+          # new customers. The slug (text after `enterprise-`) is what the
+          # Runner uses to find migrations/enterprise/<slug>/*.sql.
+          - enterprise-client1
+          - enterprise-client2
       environment:
-        description: GitHub environment to target (its DATABASE_URL secret + protection rules apply)
+        description: 'WHICH DB of theirs: dev / staging / production'
         required: true
         type: choice
         options:
           - dev
           - staging
           - production
-          # Per-enterprise environments. Add `- enterprise-<slug>` here as you
-          # onboard new customers (see header comment for the runbook). The
-          # part after `enterprise-` is passed to the Runner as TVS_ENTERPRISE,
-          # which selects `migrations/enterprise/<slug>/` for that deploy.
-          - enterprise-client1
-          - enterprise-client2
       command:
         description: What to do
         type: choice
@@ -97,7 +114,9 @@ on:
         default: ""
 
 concurrency:
-  group: tvs-sqlscript-${{ github.repository }}-${{ inputs.environment }}
+  # One in-flight job per (repo, scope, environment) — two runs against the
+  # same DB queue, but shared-dev and enterprise-acme-prod run in parallel.
+  group: tvs-sqlscript-${{ github.repository }}-${{ inputs.scope }}-${{ inputs.environment }}
   cancel-in-progress: false
 
 jobs:
@@ -107,11 +126,13 @@ jobs:
     permissions:
       contents: read
 
-    # Bind the job to the chosen GitHub environment. This is what unlocks:
-    #   - env-scoped secrets (e.g. DATABASE_URL),
+    # Bind the job to the chosen GitHub Environment. Naming convention:
+    # <scope>-<environment>  (e.g. shared-dev, enterprise-acme-production).
+    # This is what unlocks:
+    #   - env-scoped secrets (DATABASE_URL),
     #   - required reviewers / wait-timer protection rules,
     #   - the env tag in the run UI.
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.scope }}-${{ inputs.environment }}
 
     defaults:
       run:
@@ -145,7 +166,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${DATABASE_URL:-}" ]]; then
-            echo "::error::DATABASE_URL is not set on environment '${{ inputs.environment }}'. Open Settings → Environments → ${{ inputs.environment }} → Add secret."
+            echo "::error::DATABASE_URL is not set on environment '${{ inputs.scope }}-${{ inputs.environment }}'. Open Settings → Environments → ${{ inputs.scope }}-${{ inputs.environment }} → Add secret."
             exit 1
           fi
           # Mask the URL so it never lands in logs.
@@ -205,17 +226,17 @@ jobs:
       - name: Extract enterprise slug
         id: enterprise
         run: |
-          # If the env name starts with "enterprise-", the suffix is the slug
-          # that maps to migrations/enterprise/<slug>/.  Dev/staging/production
-          # leave the slug empty so the Runner skips the enterprise folder.
-          ENV="${{ inputs.environment }}"
-          if [[ "$ENV" == enterprise-* ]]; then
-            SLUG="${ENV#enterprise-}"
+          # If scope starts with "enterprise-", the suffix is the slug that
+          # maps to migrations/enterprise/<slug>/.  Scope=shared leaves the
+          # slug empty so the Runner skips the enterprise folder.
+          SCOPE="${{ inputs.scope }}"
+          if [[ "$SCOPE" == enterprise-* ]]; then
+            SLUG="${SCOPE#enterprise-}"
           else
             SLUG=""
           fi
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
-          echo "::notice::TVS_ENTERPRISE='$SLUG' (empty = no enterprise-specific SQL)"
+          echo "::notice::Target = ${{ inputs.scope }}-${{ inputs.environment }} (TVS_ENTERPRISE='$SLUG')"
 
       # ------------------------------------------------------------------
       # Runner actions: validate / verify / status / deploy / rollback
@@ -330,6 +351,6 @@ jobs:
         if: inputs.command == 'migrations-script'
         uses: actions/upload-artifact@v4
         with:
-          name: tvs-sqlscript-migrations-${{ inputs.environment }}-${{ inputs.module }}-${{ github.run_id }}
+          name: tvs-sqlscript-migrations-${{ inputs.scope }}-${{ inputs.environment }}-${{ inputs.module }}-${{ github.run_id }}
           path: artifacts/*.sql
           retention-days: 14
