@@ -8,23 +8,24 @@
 #     • enterprise-<slug>   = a specific customer (also runs migrations/enterprise/<slug>/*)
 #
 #   environment ───────► WHICH DB of theirs
-#     • dev / staging / production
+#     • dev / stage / prod
 #
-# The GitHub Environment name is computed as `<scope>-<environment>`:
+# GitHub Environment name = `<scope>-<environment>`:
 #
 #   ┌──────────────────────────────────┬────────────────┬────────────────────────┐
 #   │ GitHub Environment               │ Secret         │ Suggested protection   │
 #   ├──────────────────────────────────┼────────────────┼────────────────────────┤
-#   │ saas-dev                       │ DATABASE_URL   │ none                   │
-#   │ saas-staging                     │ DATABASE_URL   │ wait-timer             │
-#   │ saas-production                  │ DATABASE_URL   │ Required reviewers     │
-#   │ enterprise-acme-production       │ DATABASE_URL   │ Required reviewers     │
-#   │ enterprise-acme-staging  (opt.)  │ DATABASE_URL   │                        │
-#   │ enterprise-globex-production     │ DATABASE_URL   │ Required reviewers     │
+#   │ saas-dev                         │ DATABASE_URL   │ none                   │
+#   │ saas-stage                       │ DATABASE_URL   │ wait-timer             │
+#   │ saas-prod                        │ DATABASE_URL   │ Required reviewers     │
+#   │ enterprise-bidtl-dev    (opt.)   │ DATABASE_URL   │                        │
+#   │ enterprise-bidtl-stage  (opt.)   │ DATABASE_URL   │                        │
+#   │ enterprise-bidtl-prod            │ DATABASE_URL   │ Required reviewers     │
+#   │ enterprise-acme-prod             │ DATABASE_URL   │ Required reviewers     │
 #   └──────────────────────────────────┴────────────────┴────────────────────────┘
 #
-# Each cell that actually exists is a real GitHub Environment. Enterprises that
-# only have a production DB just don't create the dev/staging entries.
+# Each row that actually exists is a real GitHub Environment. Enterprises that
+# only run production just don't create the dev/stage entries.
 #
 # DATABASE_URL format (libpq URL):
 #   postgresql://user:password@host.example.com:5432/dbname?sslmode=require
@@ -65,13 +66,13 @@ on:
           - enterprise-client1
           - enterprise-client2
       environment:
-        description: 'WHICH DB of theirs: dev / staging / production'
+        description: 'WHICH DB of theirs: dev / stage / prod'
         required: true
         type: choice
         options:
           - dev
-          - staging
-          - production
+          - stage
+          - prod
       command:
         description: What to do
         type: choice
@@ -127,7 +128,8 @@ jobs:
       contents: read
 
     # Bind the job to the chosen GitHub Environment. Naming convention:
-    # <scope>-<environment>  (e.g. saas-dev, enterprise-acme-production).
+    # `<scope>-<environment>` — e.g. saas-dev, saas-stage, saas-prod,
+    # enterprise-bidtl-prod, enterprise-acme-stage.
     # This is what unlocks:
     #   - env-scoped secrets (DATABASE_URL),
     #   - required reviewers / wait-timer protection rules,
