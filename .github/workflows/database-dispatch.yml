@@ -25,8 +25,12 @@ on:
     inputs:
       environment:
         description: GitHub environment to target (its DATABASE_URL secret + protection rules apply)
-        type: environment
         required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
       command:
         description: What to do
         type: choice
