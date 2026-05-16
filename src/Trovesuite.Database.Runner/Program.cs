@@ -112,7 +112,87 @@ internal static class Program
             Success($"Module {mod.ModuleKey} deployed successfully");
         }
 
+        // Custom post-migration SQL on top of EF Core migrations:
+        //   migrations/shared/*.sql           — applied to every target
+        //   migrations/enterprise/<slug>/*.sql — applied when TVS_ENTERPRISE is set
+        await ApplyCustomMigrationSql(cfg);
+
         Success("All selected modules deployed successfully");
+    }
+
+    /// <summary>
+    /// Applies the on-disk SQL under <c>migrations/shared/</c> and (optionally)
+    /// <c>migrations/enterprise/&lt;slug&gt;/</c>. Order: shared first, then
+    /// enterprise — both in lexicographic filename order. Every file is expected
+    /// to be idempotent (CREATE … IF NOT EXISTS / ON CONFLICT DO NOTHING).
+    /// </summary>
+    private static async Task ApplyCustomMigrationSql(DbConfig cfg)
+    {
+        var migrationsRoot = ResolveMigrationsRoot();
+        if (migrationsRoot is null)
+        {
+            Info("  No 'migrations/' folder found — skipping shared/enterprise SQL.");
+            return;
+        }
+
+        var connectionString = cfg.ToConnectionString();
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+
+        await RunSqlFolder(conn, Path.Combine(migrationsRoot, "shared"), label: "shared");
+
+        var enterprise = Environment.GetEnvironmentVariable("TVS_ENTERPRISE");
+        if (!string.IsNullOrWhiteSpace(enterprise))
+        {
+            var enterpriseFolder = Path.Combine(migrationsRoot, "enterprise", enterprise.Trim());
+            if (Directory.Exists(enterpriseFolder))
+            {
+                await RunSqlFolder(conn, enterpriseFolder, label: $"enterprise/{enterprise}");
+            }
+            else
+            {
+                Info($"  TVS_ENTERPRISE='{enterprise}' set but '{enterpriseFolder}' doesn't exist — skipping.");
+            }
+        }
+    }
+
+    private static async Task RunSqlFolder(NpgsqlConnection conn, string folder, string label)
+    {
+        if (!Directory.Exists(folder)) return;
+
+        var files = Directory.GetFiles(folder, "*.sql", SearchOption.TopDirectoryOnly)
+            .OrderBy(f => Path.GetFileName(f), StringComparer.Ordinal)
+            .ToArray();
+
+        if (files.Length == 0) return;
+
+        PrintHeader($"Custom SQL: {label} ({files.Length} file{(files.Length == 1 ? "" : "s")})");
+        foreach (var file in files)
+        {
+            Info($"  Running {Path.GetFileName(file)}…");
+            var sql = await File.ReadAllTextAsync(file);
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            await cmd.ExecuteNonQueryAsync();
+        }
+        Success($"{label}: {files.Length} file(s) applied");
+    }
+
+    /// <summary>
+    /// Find the <c>migrations/</c> folder relative to the running binary
+    /// (walks up from <see cref="AppContext.BaseDirectory"/>) so the runner
+    /// works both from `dotnet run` (bin/Debug/net10.0/…) and from
+    /// `dotnet publish`-ed builds.
+    /// </summary>
+    private static string? ResolveMigrationsRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, "migrations");
+            if (Directory.Exists(candidate)) return candidate;
+            dir = dir.Parent;
+        }
+        return null;
     }
 
     private static async Task Verify(DbConfig cfg)
