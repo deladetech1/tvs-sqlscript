@@ -4,7 +4,7 @@
 # Two-axis target picker:
 #
 #   scope ─────────────► WHO the DB belongs to
-#     • shared              = your team (no enterprise-specific SQL applied)
+#     • saas                = your team (no enterprise-specific SQL applied)
 #     • enterprise-<slug>   = a specific customer (also runs migrations/enterprise/<slug>/*)
 #
 #   environment ───────► WHICH DB of theirs
@@ -15,9 +15,9 @@
 #   ┌──────────────────────────────────┬────────────────┬────────────────────────┐
 #   │ GitHub Environment               │ Secret         │ Suggested protection   │
 #   ├──────────────────────────────────┼────────────────┼────────────────────────┤
-#   │ shared-dev                       │ DATABASE_URL   │ none                   │
-#   │ shared-staging                   │ DATABASE_URL   │ wait-timer             │
-#   │ shared-production                │ DATABASE_URL   │ Required reviewers     │
+#   │ saas-dev                       │ DATABASE_URL   │ none                   │
+#   │ saas-staging                     │ DATABASE_URL   │ wait-timer             │
+#   │ saas-production                  │ DATABASE_URL   │ Required reviewers     │
 #   │ enterprise-acme-production       │ DATABASE_URL   │ Required reviewers     │
 #   │ enterprise-acme-staging  (opt.)  │ DATABASE_URL   │                        │
 #   │ enterprise-globex-production     │ DATABASE_URL   │ Required reviewers     │
@@ -54,11 +54,11 @@ on:
   workflow_dispatch:
     inputs:
       scope:
-        description: 'WHO the DB belongs to: shared (your team) or a specific enterprise'
+        description: 'WHO the DB belongs to: saas (your team) or a specific enterprise'
         required: true
         type: choice
         options:
-          - shared
+          - saas
           # Per-enterprise scopes. Add `- enterprise-<slug>` here as you onboard
           # new customers. The slug (text after `enterprise-`) is what the
           # Runner uses to find migrations/enterprise/<slug>/*.sql.
@@ -115,7 +115,7 @@ on:
 
 concurrency:
   # One in-flight job per (repo, scope, environment) — two runs against the
-  # same DB queue, but shared-dev and enterprise-acme-prod run in parallel.
+  # same DB queue, but saas-dev and enterprise-acme-prod run in parallel.
   group: tvs-sqlscript-${{ github.repository }}-${{ inputs.scope }}-${{ inputs.environment }}
   cancel-in-progress: false
 
@@ -127,7 +127,7 @@ jobs:
       contents: read
 
     # Bind the job to the chosen GitHub Environment. Naming convention:
-    # <scope>-<environment>  (e.g. shared-dev, enterprise-acme-production).
+    # <scope>-<environment>  (e.g. saas-dev, enterprise-acme-production).
     # This is what unlocks:
     #   - env-scoped secrets (DATABASE_URL),
     #   - required reviewers / wait-timer protection rules,
@@ -227,7 +227,7 @@ jobs:
         id: enterprise
         run: |
           # If scope starts with "enterprise-", the suffix is the slug that
-          # maps to migrations/enterprise/<slug>/.  Scope=shared leaves the
+          # maps to migrations/enterprise/<slug>/.  Scope=saas leaves the
           # slug empty so the Runner skips the enterprise folder.
           SCOPE="${{ inputs.scope }}"
           if [[ "$SCOPE" == enterprise-* ]]; then
