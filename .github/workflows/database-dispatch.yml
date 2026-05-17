@@ -80,7 +80,6 @@ on:
           - validate          # offline — builds every EF model, no DB touch
           - verify            # connects, prints PG version + current_database()
           - status            # alias for verify
-          - plan              # like `terraform plan` — shows what deploy WOULD do (read-only)
           - deploy            # CREATE SCHEMA + MigrateAsync + triggers + seeds
           - rollback          # DROP SCHEMA … CASCADE (destructive)
           - migrations-list   # show applied vs pending per module on this env
@@ -225,12 +224,65 @@ jobs:
             SLUG=""
           fi
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
-          echo "::notice::Target = ${{ inputs.scope }}-${{ inputs.environment }} (TVS_ENTERPRISE='$SLUG')"
+
+      - name: 📍 Target summary
+        run: |
+          ENV_LABEL="${{ inputs.scope }}-${{ inputs.environment }}"
+          COMMAND="${{ inputs.command }}"
+          MODULE="${{ inputs.module }}"
+          SLUG="${{ steps.enterprise.outputs.slug }}"
+          DB_HOST="${{ steps.db.outputs.DB_HOST }}"
+          DB_NAME="${{ steps.db.outputs.DB_NAME }}"
+          TRIGGER_USER="${{ github.actor }}"
+          GIT_REF="${{ github.ref_name }} @ ${{ github.sha }}"
+
+          # Pretty banner in the step log
+          {
+            echo "════════════════════════════════════════════════════════════"
+            printf "  🎯  Action      : %s\n"  "$COMMAND"
+            printf "  📦  Target env  : %s\n"  "$ENV_LABEL"
+            printf "  🗄️   Host         : %s\n" "$DB_HOST"
+            printf "  💾  Database    : %s\n"  "$DB_NAME"
+            printf "  🧩  Module(s)   : %s\n"  "$MODULE"
+            if [[ -n "$SLUG" ]]; then
+              printf "  🏢  Enterprise  : %s  (runs migrations/enterprise/%s/)\n" "$SLUG" "$SLUG"
+            else
+              printf "  🏢  Enterprise  : (none — scope=saas, no per-customer SQL)\n"
+            fi
+            printf "  👤  Triggered by: %s\n"  "$TRIGGER_USER"
+            printf "  🔖  Source      : %s\n"  "$GIT_REF"
+            echo "════════════════════════════════════════════════════════════"
+          }
+
+          # Same info as a one-line GitHub annotation that floats to the top
+          # of the run UI — easy to spot without opening the step log.
+          echo "::notice title=$COMMAND → $ENV_LABEL::Module=$MODULE  Host=$DB_HOST  DB=$DB_NAME  Enterprise=${SLUG:-none}  By=$TRIGGER_USER"
+
+          # And as a sticky header on the workflow run's Summary tab.
+          {
+            echo "## 🎯 \`$COMMAND\` → \`$ENV_LABEL\`"
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| **Action**       | \`$COMMAND\` |"
+            echo "| **Target env**   | \`$ENV_LABEL\` |"
+            echo "| **DB host**      | \`$DB_HOST\` |"
+            echo "| **DB name**      | \`$DB_NAME\` |"
+            echo "| **Module(s)**    | \`$MODULE\` |"
+            if [[ -n "$SLUG" ]]; then
+              echo "| **Enterprise**   | \`$SLUG\` (extras from \`migrations/enterprise/$SLUG/\`) |"
+            else
+              echo "| **Enterprise**   | _none — scope=saas_ |"
+            fi
+            echo "| **Triggered by** | @$TRIGGER_USER |"
+            echo "| **Source**       | \`$GIT_REF\` |"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # ------------------------------------------------------------------
       # Runner actions: validate / verify / status / deploy / rollback
       # ------------------------------------------------------------------
-      - name: Run (deploy / verify / status / validate)
+      - name: 🚀 ${{ inputs.command }} → ${{ inputs.scope }}-${{ inputs.environment }}
         if: contains(fromJson('["deploy","verify","status","validate"]'), inputs.command)
         env:
           DB_HOST: ${{ steps.db.outputs.DB_HOST }}
@@ -238,17 +290,29 @@ jobs:
           DB_USER: ${{ steps.db.outputs.DB_USER }}
           PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
           DB_NAME: ${{ steps.db.outputs.DB_NAME }}
-          # Empty for dev/staging/production; set for enterprise-<slug>.
+          # Empty for dev/stage/prod under scope=saas; set for enterprise-<slug>.
           # The Runner uses this to pick migrations/enterprise/<slug>/.
           TVS_ENTERPRISE: ${{ steps.enterprise.outputs.slug }}
         run: |
-          # Pipe the module choice (0 for ALL, 1..4 for specific).
+          echo "::group::Starting ${{ inputs.command }} on ${{ inputs.scope }}-${{ inputs.environment }}"
+          echo "Module pick: ${{ steps.map.outputs.pick }} (0=ALL, 1=core_platform, 2=loandrift, 3=mystoreguard, 4=human_resource)"
+          [[ -n "$TVS_ENTERPRISE" ]] \
+            && echo "TVS_ENTERPRISE=$TVS_ENTERPRISE → migrations/enterprise/$TVS_ENTERPRISE/*.sql will also run" \
+            || echo "TVS_ENTERPRISE=(unset) → migrations/enterprise/ skipped"
+          echo "::endgroup::"
+
+          # Pipe the module choice (0 for ALL, 1..4 for specific). The Runner
+          # already prints its own ===== banner per module; we collapse the
+          # whole Runner output into a single ::group:: for readability.
+          echo "::group::Runner output"
           printf '%s\n' "${{ steps.map.outputs.pick }}" \
             | dotnet run --no-build -c Release \
                 --project src/Trovesuite.Database.Runner -- \
                 "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "${{ inputs.command }}"
+          echo "::endgroup::"
+          echo "::notice title=✅ ${{ inputs.command }} succeeded::Target ${{ inputs.scope }}-${{ inputs.environment }} — module(s)=${{ inputs.module }}"
 
-      - name: Run (rollback — destructive)
+      - name: 💥 rollback → ${{ inputs.scope }}-${{ inputs.environment }}
         if: inputs.command == 'rollback'
         env:
           DB_HOST: ${{ steps.db.outputs.DB_HOST }}
@@ -257,166 +321,15 @@ jobs:
           PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
           DB_NAME: ${{ steps.db.outputs.DB_NAME }}
         run: |
+          echo "::warning title=DESTRUCTIVE: rollback::DROP SCHEMA … CASCADE on ${{ inputs.scope }}-${{ inputs.environment }} for module(s)=${{ inputs.module }}"
+          echo "::group::Runner output"
           # Rollback asks for module choice AND a y/N confirmation.
           printf '%s\ny\n' "${{ steps.map.outputs.pick }}" \
             | dotnet run --no-build -c Release \
                 --project src/Trovesuite.Database.Runner -- \
                 "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "rollback"
-
-      # ------------------------------------------------------------------
-      # plan — read-only preview of what `deploy` would do
-      # ------------------------------------------------------------------
-      - name: plan
-        if: inputs.command == 'plan'
-        env:
-          TVS_DESIGN_CONNECTION: >-
-            Host=${{ steps.db.outputs.DB_HOST }};Port=${{ steps.db.outputs.DB_PORT }};Username=${{ steps.db.outputs.DB_USER }};Password=${{ steps.db.outputs.PGPASSWORD }};Database=${{ steps.db.outputs.DB_NAME }};SSL Mode=Require;Trust Server Certificate=true
-          TVS_ENTERPRISE: ${{ steps.enterprise.outputs.slug }}
-        run: |
-          set -euo pipefail
-
-          declare -A SCHEMA=(
-            [CorePlatform]=core_platform
-            [LoanDrift]=loandrift
-            [MyStoreGuard]=mystoreguard
-            [HumanResource]=human_resource
-          )
-
-          DB_HOST="${{ steps.db.outputs.DB_HOST }}"
-          DB_PORT="${{ steps.db.outputs.DB_PORT }}"
-          DB_USER="${{ steps.db.outputs.DB_USER }}"
-          DB_NAME="${{ steps.db.outputs.DB_NAME }}"
-          export PGPASSWORD="${{ steps.db.outputs.PGPASSWORD }}"
-
-          ENV_LABEL="${{ inputs.scope }}-${{ inputs.environment }}"
-          mkdir -p plan-artifacts
-
-          {
-            echo "## 📋 Plan — \`$ENV_LABEL\`"
-            echo ""
-            echo "_Read-only preview. Nothing is applied. Run \`command=deploy\` to execute._"
-            echo ""
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-          # ── Section 1: pending EF migrations per module ──────────────────
-          {
-            echo "### EF migrations"
-            echo ""
-            echo "| Module | Pending migrations | Action |"
-            echo "| --- | --- | --- |"
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-          ANY_PENDING=0
-          ANY_ERROR=0
-          for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
-            schema="${SCHEMA[$name]}"
-
-            # ── List migrations from the repo for this module ──
-            EF_RAW="$(dotnet ef migrations list --no-build --configuration Release --no-connect \
-                          -p "src/Trovesuite.Database.$name" \
-                          -s src/Trovesuite.Database.Runner 2>&1 || true)"
-            ALL_MIGS="$(echo "$EF_RAW" | grep -E '^[0-9]{14}_' || true)"
-
-            if [[ -z "$ALL_MIGS" ]]; then
-              # Don't lie with "_none_". Emit a loud diagnostic.
-              echo "::warning::No migrations parsed from assembly for $name. dotnet-ef output below:"
-              echo "$EF_RAW"
-              echo "| $name | _(no migrations in repo — see step log)_ | ⚠️ error |" \
-                | tee -a "$GITHUB_STEP_SUMMARY"
-              ANY_ERROR=1
-              continue
-            fi
-
-            # ── What's applied on the target DB for this module? ──
-            # Try the new per-schema location first, then fall back to the
-            # legacy public.__EFMigrationsHistory (rows left over from before
-            # the MigrationsHistoryTable fix). Either source is treated as
-            # "applied" so plan accurately reflects DB state during the
-            # transition period.
-            APPLIED_NEW="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-                            -v ON_ERROR_STOP=0 -tA --no-psqlrc \
-                            -c "SELECT migration_id FROM \"$schema\".\"__EFMigrationsHistory\" ORDER BY 1" \
-                            2>/dev/null || true)"
-            APPLIED_LEGACY="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-                                -v ON_ERROR_STOP=0 -tA --no-psqlrc \
-                                -c "SELECT \"MigrationId\" FROM public.\"__EFMigrationsHistory\" ORDER BY 1" \
-                                2>/dev/null || true)"
-            APPLIED="$(printf '%s\n%s' "$APPLIED_NEW" "$APPLIED_LEGACY" | sort -u)"
-
-            # ── Diff ──
-            PENDING_LIST=()
-            while IFS= read -r mig; do
-              [[ -z "$mig" ]] && continue
-              if ! echo "$APPLIED" | grep -qx "$mig"; then
-                PENDING_LIST+=("$mig")
-              fi
-            done <<< "$ALL_MIGS"
-
-            if [[ ${#PENDING_LIST[@]} -eq 0 ]]; then
-              echo "| $name | _none_ | no action |" | tee -a "$GITHUB_STEP_SUMMARY"
-            else
-              ANY_PENDING=1
-              pending_cell=$(printf '<code>%s</code><br>' "${PENDING_LIST[@]}")
-              echo "| $name | $pending_cell | will apply ${#PENDING_LIST[@]} migration(s) |" \
-                | tee -a "$GITHUB_STEP_SUMMARY"
-
-              # Generate the idempotent SQL preview for this module.
-              if ! dotnet ef migrations script --idempotent --no-build --configuration Release \
-                      -p "src/Trovesuite.Database.$name" \
-                      -s src/Trovesuite.Database.Runner \
-                      -o "plan-artifacts/$name.sql" 2>/dev/null; then
-                echo "::warning::Could not generate SQL preview for $name (artifact will be missing)."
-              fi
-            fi
-          done
-
-          # ── Section 2: custom SQL files that always run on deploy ─────────
-          {
-            echo ""
-            echo "### Custom SQL files that will run after migrations"
-            echo ""
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-          SHARED_FILES=$(find migrations/shared -maxdepth 1 -name '*.sql' 2>/dev/null | sort || true)
-          if [[ -n "$SHARED_FILES" ]]; then
-            echo "**\`migrations/shared/\`** (every deploy):" | tee -a "$GITHUB_STEP_SUMMARY"
-            while IFS= read -r f; do echo "- \`$f\`" | tee -a "$GITHUB_STEP_SUMMARY"; done <<< "$SHARED_FILES"
-          else
-            echo "**\`migrations/shared/\`**: _no files_" | tee -a "$GITHUB_STEP_SUMMARY"
-          fi
-          echo "" | tee -a "$GITHUB_STEP_SUMMARY"
-
-          SLUG="${{ steps.enterprise.outputs.slug }}"
-          if [[ -n "$SLUG" ]]; then
-            ENT_FILES=$(find "migrations/enterprise/$SLUG" -maxdepth 1 -name '*.sql' 2>/dev/null | sort || true)
-            if [[ -n "$ENT_FILES" ]]; then
-              echo "**\`migrations/enterprise/$SLUG/\`** (this enterprise only):" | tee -a "$GITHUB_STEP_SUMMARY"
-              while IFS= read -r f; do echo "- \`$f\`" | tee -a "$GITHUB_STEP_SUMMARY"; done <<< "$ENT_FILES"
-            else
-              echo "**\`migrations/enterprise/$SLUG/\`**: _no files_" | tee -a "$GITHUB_STEP_SUMMARY"
-            fi
-          else
-            echo "_(scope=saas — no enterprise-specific folder)_" | tee -a "$GITHUB_STEP_SUMMARY"
-          fi
-
-          # ── Section 3: footer + artifact pointer ──────────────────────────
-          {
-            echo ""
-            if [[ "$ANY_PENDING" == "1" ]]; then
-              echo "🟡 **${ANY_PENDING} or more migrations are pending.** The SQL that would be executed is uploaded as a workflow artifact (look for **\`plan-${{ inputs.scope }}-${{ inputs.environment }}-…\`** on the run page)."
-            else
-              echo "✅ No pending EF migrations. Custom SQL files above will still re-run idempotently."
-            fi
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload plan SQL preview
-        if: inputs.command == 'plan'
-        uses: actions/upload-artifact@v4
-        with:
-          name: plan-${{ inputs.scope }}-${{ inputs.environment }}-${{ github.run_id }}
-          path: plan-artifacts/*.sql
-          retention-days: 14
-          if-no-files-found: ignore
+          echo "::endgroup::"
+          echo "::notice title=💥 rollback complete::Schemas dropped on ${{ inputs.scope }}-${{ inputs.environment }} — module(s)=${{ inputs.module }}"
 
       # ------------------------------------------------------------------
       # dotnet ef migrations …
