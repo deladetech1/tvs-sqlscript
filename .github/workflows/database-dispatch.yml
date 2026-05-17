@@ -307,19 +307,43 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
           ANY_PENDING=0
+          ANY_ERROR=0
           for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
             schema="${SCHEMA[$name]}"
 
-            ALL_MIGS="$(dotnet ef migrations list --no-build --configuration Release --no-connect \
+            # ── List migrations from the repo for this module ──
+            EF_RAW="$(dotnet ef migrations list --no-build --configuration Release --no-connect \
                           -p "src/Trovesuite.Database.$name" \
-                          -s src/Trovesuite.Database.Runner 2>&1 \
-                        | grep -E '^[0-9]{14}_' || true)"
+                          -s src/Trovesuite.Database.Runner 2>&1 || true)"
+            ALL_MIGS="$(echo "$EF_RAW" | grep -E '^[0-9]{14}_' || true)"
 
-            APPLIED="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-                         -v ON_ERROR_STOP=0 -tA --no-psqlrc \
-                         -c "SELECT migration_id FROM \"$schema\".\"__EFMigrationsHistory\" ORDER BY 1" \
-                         2>/dev/null || true)"
+            if [[ -z "$ALL_MIGS" ]]; then
+              # Don't lie with "_none_". Emit a loud diagnostic.
+              echo "::warning::No migrations parsed from assembly for $name. dotnet-ef output below:"
+              echo "$EF_RAW"
+              echo "| $name | _(no migrations in repo — see step log)_ | ⚠️ error |" \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              ANY_ERROR=1
+              continue
+            fi
 
+            # ── What's applied on the target DB for this module? ──
+            # Try the new per-schema location first, then fall back to the
+            # legacy public.__EFMigrationsHistory (rows left over from before
+            # the MigrationsHistoryTable fix). Either source is treated as
+            # "applied" so plan accurately reflects DB state during the
+            # transition period.
+            APPLIED_NEW="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                            -v ON_ERROR_STOP=0 -tA --no-psqlrc \
+                            -c "SELECT migration_id FROM \"$schema\".\"__EFMigrationsHistory\" ORDER BY 1" \
+                            2>/dev/null || true)"
+            APPLIED_LEGACY="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                                -v ON_ERROR_STOP=0 -tA --no-psqlrc \
+                                -c "SELECT \"MigrationId\" FROM public.\"__EFMigrationsHistory\" ORDER BY 1" \
+                                2>/dev/null || true)"
+            APPLIED="$(printf '%s\n%s' "$APPLIED_NEW" "$APPLIED_LEGACY" | sort -u)"
+
+            # ── Diff ──
             PENDING_LIST=()
             while IFS= read -r mig; do
               [[ -z "$mig" ]] && continue
@@ -332,18 +356,17 @@ jobs:
               echo "| $name | _none_ | no action |" | tee -a "$GITHUB_STEP_SUMMARY"
             else
               ANY_PENDING=1
-              # Render pending list in the table cell
               pending_cell=$(printf '<code>%s</code><br>' "${PENDING_LIST[@]}")
               echo "| $name | $pending_cell | will apply ${#PENDING_LIST[@]} migration(s) |" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
 
-              # Generate the SQL EF would emit for those pending migrations (idempotent).
-              # --idempotent guards each migration with IF NOT EXISTS checks so the file is
-              # safe to inspect or hand to a DBA. Output one file per module.
-              dotnet ef migrations script --idempotent --no-build --configuration Release \
-                  -p "src/Trovesuite.Database.$name" \
-                  -s src/Trovesuite.Database.Runner \
-                  -o "plan-artifacts/$name.sql" >/dev/null 2>&1 || true
+              # Generate the idempotent SQL preview for this module.
+              if ! dotnet ef migrations script --idempotent --no-build --configuration Release \
+                      -p "src/Trovesuite.Database.$name" \
+                      -s src/Trovesuite.Database.Runner \
+                      -o "plan-artifacts/$name.sql" 2>/dev/null; then
+                echo "::warning::Could not generate SQL preview for $name (artifact will be missing)."
+              fi
             fi
           done
 
@@ -456,27 +479,34 @@ jobs:
 
             # (1) What migrations exist in the repo for this module? Use --no-connect
             #     so EF doesn't try to read the DB — we'll do that ourselves with psql.
-            ALL_MIGS="$(dotnet ef migrations list --no-build --configuration Release --no-connect \
+            EF_RAW="$(dotnet ef migrations list --no-build --configuration Release --no-connect \
                           -p "src/Trovesuite.Database.$name" \
-                          -s src/Trovesuite.Database.Runner 2>&1 \
-                        | grep -E '^[0-9]{14}_' || true)"
+                          -s src/Trovesuite.Database.Runner 2>&1 || true)"
+            ALL_MIGS="$(echo "$EF_RAW" | grep -E '^[0-9]{14}_' || true)"
 
             if [[ -z "$ALL_MIGS" ]]; then
-              echo "| $name | _(no migration files in repo)_ | — |" \
+              echo "::warning::No migrations parsed from assembly for $name. dotnet-ef output below:"
+              echo "$EF_RAW"
+              echo "| $name | _(no migration files in repo — see step log)_ | ⚠️ error |" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
+              ANY_ERROR=1
               continue
             fi
 
-            # (2) What's actually applied on this DB? Query __EFMigrationsHistory in
-            #     the module's schema directly. If the schema or table is missing
-            #     (e.g. fresh DB or after a rollback), psql returns nothing on stdout
-            #     and we treat all migrations as pending.
-            # Column name is snake_cased by EFCore.NamingConventions
-            # (migration_id, not MigrationId).
-            APPLIED="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-                         -v ON_ERROR_STOP=0 -tA --no-psqlrc \
-                         -c "SELECT migration_id FROM \"$schema\".\"__EFMigrationsHistory\" ORDER BY 1" \
-                         2>/dev/null || true)"
+            # (2) What's actually applied on this DB? Try the per-schema table first
+            #     and ALSO the legacy public.__EFMigrationsHistory in case some rows
+            #     are still there from before the MigrationsHistoryTable fix.
+            #     Column name in the per-schema table is snake_cased (migration_id);
+            #     in legacy public it's the original "MigrationId" (PascalCase).
+            APPLIED_NEW="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                            -v ON_ERROR_STOP=0 -tA --no-psqlrc \
+                            -c "SELECT migration_id FROM \"$schema\".\"__EFMigrationsHistory\" ORDER BY 1" \
+                            2>/dev/null || true)"
+            APPLIED_LEGACY="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                                -v ON_ERROR_STOP=0 -tA --no-psqlrc \
+                                -c "SELECT \"MigrationId\" FROM public.\"__EFMigrationsHistory\" ORDER BY 1" \
+                                2>/dev/null || true)"
+            APPLIED="$(printf '%s\n%s' "$APPLIED_NEW" "$APPLIED_LEGACY" | sort -u)"
 
             # If psql itself can't connect (wrong creds, network), distinguish
             # that from "schema doesn't exist" by probing the server with a
