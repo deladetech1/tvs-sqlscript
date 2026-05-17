@@ -108,6 +108,28 @@ concurrency:
 
 jobs:
   run:
+    # Dynamic job name → shows up as the run title in the Actions list, the
+    # run-page header, and email/Slack notifications. Encodes:
+    #   • a command-specific emoji   (🚀 deploy, 💥 rollback, 🔍 validate, …)
+    #   • the command                (deploy / verify / status / rollback / migrations-list / validate)
+    #   • the target GitHub Environment            (e.g. enterprise-bidtl-dev)
+    #   • the module                 (all / core_platform / …)
+    #   • who triggered it           (@github-handle)
+    name: >-
+      ${{
+        inputs.command == 'deploy'           && '🚀'  ||
+        inputs.command == 'rollback'         && '💥'  ||
+        inputs.command == 'validate'         && '🔍'  ||
+        inputs.command == 'verify'           && '🩺'  ||
+        inputs.command == 'status'           && '🩺'  ||
+        inputs.command == 'migrations-list'  && '🗃️' ||
+        '▶️'
+      }}
+      ${{ inputs.command }}
+      → ${{ inputs.scope }}-${{ inputs.environment }}
+      · ${{ inputs.module }}
+      · @${{ github.actor }}
+
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
