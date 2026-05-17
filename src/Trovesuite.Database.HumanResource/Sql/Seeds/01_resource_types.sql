@@ -15,4 +15,7 @@ SET search_path TO human_resource;
 -- Insert resource types
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
 ('rt-subscribed-app-hr', 'HR APP', 'HR Subscribed APP', null)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;

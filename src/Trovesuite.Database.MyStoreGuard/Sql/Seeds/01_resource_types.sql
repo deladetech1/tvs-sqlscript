@@ -51,4 +51,7 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-store-returns', 'Store Returns', 'Store Returns management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-reports', 'Mystoreguard Reports', 'Centralized reporting and analytics module for Mystoreguard', 'rt-subscribed-app-msg')
 
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;

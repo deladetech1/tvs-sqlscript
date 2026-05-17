@@ -221,7 +221,10 @@ CREATE TABLE IF NOT EXISTS msg_meeting_participants
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
 ('rt-messaging', 'Messaging', 'Messaging management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-meetings', 'Meetings', 'Meetings management for Mystoreguard', 'rt-subscribed-app-msg')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;
 
 
 -- =====================================================
@@ -242,7 +245,10 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-meetings-update', 'Mystoreguard Meetings Update', 'rt-meetings', 'Can reschedule and update meetings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-meetings-delete', 'Mystoreguard Meetings Delete', 'rt-meetings', 'Can cancel and delete meetings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    permission_name  = EXCLUDED.permission_name,
+    resource_type_id = EXCLUDED.resource_type_id,
+    description      = EXCLUDED.description;
 
 
 -- =====================================================
@@ -252,7 +258,11 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
 ('role-msg-messaging-admin', 'system-tenant-id', 'Mystoreguard Messaging Admin', 'Administrator for messaging management with full access to compose, send, and manage messages', 'rt-messaging', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-meetings-admin', 'system-tenant-id', 'Mystoreguard Meetings Admin', 'Administrator for meetings management with full access to schedule and manage meetings', 'rt-meetings', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (tenant_id, role_name) DO NOTHING;
+ON CONFLICT (tenant_id, role_name) DO UPDATE SET
+    description      = EXCLUDED.description,
+    resource_type_id = EXCLUDED.resource_type_id,
+    is_system        = EXCLUDED.is_system,
+    is_active        = EXCLUDED.is_active;
 
 
 -- =====================================================

@@ -23,4 +23,9 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 
 -- Viewer Admin Role (read-only access to all Loandrift resources)
 ('role-loandrift-viewer-admin', 'system-tenant-id', 'Loandrift Viewer Admin', 'Viewer Admin for Loandrift - can view all Loandrift resources with GET permissions only', 'rt-subscribed-app-loandrift', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    role_name        = EXCLUDED.role_name,
+    description      = EXCLUDED.description,
+    resource_type_id = EXCLUDED.resource_type_id,
+    is_system        = EXCLUDED.is_system,
+    is_active        = EXCLUDED.is_active;

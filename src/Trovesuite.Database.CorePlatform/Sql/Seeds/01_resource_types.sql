@@ -35,4 +35,7 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-expenses', 'Expense', 'Expense management', null),
 ('rt-file', 'File', 'File management', null),
 ('rt-billing', 'Billing', 'Billing and billing logs management', null)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;

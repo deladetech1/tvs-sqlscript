@@ -83,4 +83,7 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-loandrift-logs-get', 'Loandrift Logs Get', 'rt-logs', 'Can view, list, and read activity logs', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-loandrift-logs-delete', 'Loandrift Logs Delete', 'rt-logs', 'Can delete activity logs', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    permission_name  = EXCLUDED.permission_name,
+    resource_type_id = EXCLUDED.resource_type_id,
+    description      = EXCLUDED.description;

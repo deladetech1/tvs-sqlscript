@@ -11,7 +11,12 @@ SET search_path TO core_platform;
 -- Insert system tenant (required before roles)
 INSERT INTO cp_tenants (id, delete_status, is_active, cdate, ctime, cdatetime, description, is_verified, is_system) VALUES
 ('system-tenant-id', 'NOT_DELETED', true, null, null, CURRENT_TIMESTAMP, 'Default System Tenant', true, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    delete_status = EXCLUDED.delete_status,
+    is_active     = EXCLUDED.is_active,
+    description   = EXCLUDED.description,
+    is_verified   = EXCLUDED.is_verified,
+    is_system     = EXCLUDED.is_system;
 
 -- Insert default roles
 -- Note: cp_roles now has tenant_id - system roles use 'system-tenant-id'
@@ -43,4 +48,10 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 
 -- Viewer Admin Role (read-only access to all Core Platform resources)
 ('role-cp-viewer-admin', 'system-tenant-id', 'Core Platform Viewer Admin', 'Viewer Admin for Core Platform - can view all Core Platform resources with GET permissions only', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    role_name        = EXCLUDED.role_name,
+    description      = EXCLUDED.description,
+    resource_type_id = EXCLUDED.resource_type_id,
+    is_system        = EXCLUDED.is_system,
+    is_active        = EXCLUDED.is_active;
+    -- Note: tenant_id is part of (tenant_id, role_name) unique index — kept stable.

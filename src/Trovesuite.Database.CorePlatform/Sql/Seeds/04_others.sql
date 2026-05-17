@@ -22,6 +22,7 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-default-group', 'permission-business-app-get'),
 ('system-tenant-id', 'role-default-group', 'permission-currency-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+-- cp_role_permissions has no data columns worth overwriting (pure many-to-many), keep DO NOTHING.
 
 -- Business App Admin needs to read the current app subscription when opening
 -- the appstore Subscribe modal (the tier picker hides itself if a tier already
@@ -34,13 +35,19 @@ ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 -- Then insert into cp_groups
 INSERT INTO core_platform.cp_groups (id, tenant_id, group_name, description, is_active, is_system, cdate, ctime, cdatetime) VALUES
 ('sysgrp-default-group', 'system-tenant-id', 'Default Group', 'Default system group for all users - provides basic self-service permissions', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (tenant_id, group_name) DO NOTHING;
+ON CONFLICT (tenant_id, group_name) DO UPDATE SET
+    description = EXCLUDED.description,
+    is_active   = EXCLUDED.is_active,
+    is_system   = EXCLUDED.is_system;
 
 -- Assign User Profile role to User Profile system group
 -- Now using cp_assign_roles table with is_system=true instead of separate system_assign_roles table
 INSERT INTO core_platform.cp_assign_roles (tenant_id, group_id, role_id, resource_type, is_active, is_system, cdate, ctime, cdatetime) VALUES
 ('system-tenant-id', 'sysgrp-default-group', 'role-default-group', 'system-group', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (tenant_id, group_id, role_id) DO NOTHING;
+ON CONFLICT (tenant_id, group_id, role_id) DO UPDATE SET
+    resource_type = EXCLUDED.resource_type,
+    is_active     = EXCLUDED.is_active,
+    is_system     = EXCLUDED.is_system;
 
 -- INSERT INTO SUBSCRIPTION TABLE --
 INSERT INTO core_platform.cp_subscriptions (id, subscription_name, description, cdate, ctime, cdatetime) VALUES
@@ -48,7 +55,9 @@ INSERT INTO core_platform.cp_subscriptions (id, subscription_name, description, 
 ('shared-subscription-premium', 'PREMIUM', 'Premium subscription', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('shared-subscription-advance', 'ADVANCE', 'Advance subscription', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('shared-subscription-basic', 'BASIC', 'Basic subscription', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    subscription_name = EXCLUDED.subscription_name,
+    description       = EXCLUDED.description;
 
 -- INSERT INTO APPS TABLE --
 INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, feature4, feature5, description, cdate, ctime, cdatetime, status, is_active) VALUES
@@ -58,7 +67,16 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 ('app-accounting', 'ACCOUNTING', 'General Ledger', 'Accounts Payable', 'Accounts Receivable', 'Financial Reporting', 'Tax Management', 'Comprehensive accounting system with chart of accounts, AP/AR modules, financial reporting, and tax compliance support', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    app_name    = EXCLUDED.app_name,
+    feature1    = EXCLUDED.feature1,
+    feature2    = EXCLUDED.feature2,
+    feature3    = EXCLUDED.feature3,
+    feature4    = EXCLUDED.feature4,
+    feature5    = EXCLUDED.feature5,
+    description = EXCLUDED.description,
+    status      = EXCLUDED.status,
+    is_active   = EXCLUDED.is_active;
 
 -- INSERT INTO APP TIER CONFIGS (caps + pricing per (app, tier)) --
 INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_login_users, price, rate, cdate, ctime, cdatetime) VALUES
@@ -74,7 +92,12 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-hr-advance',     'app-hr',           'shared-subscription-advance',   10,   130.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-hr-premium',     'app-hr',           'shared-subscription-premium',   20,   220.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-hr-enterprise',  'app-hr',           'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    app_id          = EXCLUDED.app_id,
+    subscription_id = EXCLUDED.subscription_id,
+    max_login_users = EXCLUDED.max_login_users,
+    price           = EXCLUDED.price,
+    rate            = EXCLUDED.rate;
 
 INSERT INTO cp_app_features (id, feature_type, title, description) VALUES
 ('upcoming-01', 'upcoming', 'Attendance Tracking', 'Enable employees or users to check in and out, track presence, and generate attendance logs.'),
@@ -90,4 +113,7 @@ INSERT INTO cp_app_features (id, feature_type, title, description) VALUES
 ('availble-03', 'available', 'Multi-Organization Support', 'Enable managing multiple organizations within one platform.'),
 ('availble-04', 'available', 'Multi-Business Management', 'Allow each organization to have multiple business entities under it.'),
 ('availble-05', 'available', 'Group & User Management', 'Create groups and assign permissions for managing multiple users effectively.')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    feature_type = EXCLUDED.feature_type,
+    title        = EXCLUDED.title,
+    description  = EXCLUDED.description;

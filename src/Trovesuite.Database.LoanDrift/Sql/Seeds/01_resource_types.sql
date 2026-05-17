@@ -29,4 +29,7 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-file', 'File', 'File management', 'rt-subscribed-app-loandrift'),
 ('rt-dashboard', 'Dashboard', 'Dashboard management for Loandrift', 'rt-subscribed-app-loandrift'),
 ('rt-reports', 'Loandrift Reports', 'Centralized reporting and analytics module for Loandrift', 'rt-subscribed-app-loandrift')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;

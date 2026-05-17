@@ -151,7 +151,11 @@ VALUES
     ('sec-mining', 'system-tenant-id', 'Mining and Quarrying', 'Mining and quarrying sector', true, true),
     ('sec-manuf', 'system-tenant-id', 'Manufacturing', 'Manufacturing sector', true, true),
     ('sec-const', 'system-tenant-id', 'Construction', 'Construction sector', true, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    sector_name = EXCLUDED.sector_name,
+    description = EXCLUDED.description,
+    is_active   = EXCLUDED.is_active,
+    is_system   = EXCLUDED.is_system;
 
 -- =============================================
 -- LOAN TYPES
@@ -163,7 +167,11 @@ VALUES
     ('lt-weekly', 'system-tenant-id', 'Weekly Loans', 'Loans with weekly repayment schedule', true, true),
     ('lt-staff', 'system-tenant-id', 'Staff Loans', 'Loans for staff members', true, true),
     ('lt-monthly', 'system-tenant-id', 'Monthly Loans', 'Loans with monthly repayment schedule', true, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    type_name   = EXCLUDED.type_name,
+    description = EXCLUDED.description,
+    is_active   = EXCLUDED.is_active,
+    is_system   = EXCLUDED.is_system;
 
 -- =============================================
 -- INTEREST TYPES
@@ -175,4 +183,8 @@ VALUES
     ('it-reducing', 'system-tenant-id', 'Reducing Balance', 'Interest calculated on reducing balance', true, true),
     ('it-direct', 'system-tenant-id', 'Direct Rate', 'Direct rate interest calculation', true, true),
     ('it-reducing-fixed', 'system-tenant-id', 'Reducing Balance Fixed Payment', 'Reducing balance with fixed payment schedule', true, true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    interest_type_name = EXCLUDED.interest_type_name,
+    description        = EXCLUDED.description,
+    is_active          = EXCLUDED.is_active,
+    is_system          = EXCLUDED.is_system;

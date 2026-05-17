@@ -63,8 +63,7 @@ on:
           # Per-enterprise scopes. Add `- enterprise-<slug>` here as you onboard
           # new customers. The slug (text after `enterprise-`) is what the
           # Runner uses to find migrations/enterprise/<slug>/*.sql.
-          - enterprise-client1
-          - enterprise-client2
+          - enterprise-bidtl
       environment:
         description: 'WHICH DB of theirs: dev / stage / prod'
         required: true
@@ -281,10 +280,18 @@ jobs:
       # ------------------------------------------------------------------
       - name: migrations-list
         if: inputs.command == 'migrations-list'
+        env:
+          # Pass the parsed DB connection through so `dotnet ef migrations list`
+          # can mark each migration as Applied/Pending against this environment's
+          # actual DB (instead of the design-time placeholder).
+          TVS_DESIGN_CONNECTION: >-
+            Host=${{ steps.db.outputs.DB_HOST }};Port=${{ steps.db.outputs.DB_PORT }};Username=${{ steps.db.outputs.DB_USER }};Password=${{ steps.db.outputs.PGPASSWORD }};Database=${{ steps.db.outputs.DB_NAME }};SSL Mode=Require;Trust Server Certificate=true
         run: |
           set -euo pipefail
+          echo "Reporting against environment: ${{ inputs.scope }}-${{ inputs.environment }}"
           if [[ "${{ inputs.module }}" == "all" ]]; then
             for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
+              echo ""
               echo "## $name"
               dotnet ef migrations list \
                 -p "src/Trovesuite.Database.$name" \

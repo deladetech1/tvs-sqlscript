@@ -41,4 +41,8 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 
 -- Viewer Admin Role (read-only access to all Mystoreguard resources)
 ('role-msg-viewer-admin', 'system-tenant-id', 'Mystoreguard Viewer Admin', 'Viewer Admin for Mystoreguard - can view all Mystoreguard resources with GET permissions only', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (tenant_id, role_name) DO NOTHING;
+ON CONFLICT (tenant_id, role_name) DO UPDATE SET
+    description      = EXCLUDED.description,
+    resource_type_id = EXCLUDED.resource_type_id,
+    is_system        = EXCLUDED.is_system,
+    is_active        = EXCLUDED.is_active;
