@@ -12,7 +12,11 @@ public sealed class CorePlatformModule : IModule
     public DbContext CreateContext(string connectionString)
     {
         var options = new DbContextOptionsBuilder<CorePlatformDbContext>()
-            .UseNpgsql(connectionString)
+            // Pin __EFMigrationsHistory inside the module's own schema. Npgsql's
+            // provider defaults to `public` even when HasDefaultSchema(...) is set,
+            // which makes per-module rollbacks (DROP SCHEMA CASCADE) leak history.
+            .UseNpgsql(connectionString, npg =>
+                npg.MigrationsHistoryTable("__EFMigrationsHistory", CorePlatformDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
             .Options;
         return new CorePlatformDbContext(options);

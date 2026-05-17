@@ -17,7 +17,8 @@ public sealed class CorePlatformDbContextFactory : IDesignTimeDbContextFactory<C
                  ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=trovesuite_design";
 
         var options = new DbContextOptionsBuilder<CorePlatformDbContext>()
-            .UseNpgsql(cs)
+            .UseNpgsql(cs, npg =>
+                npg.MigrationsHistoryTable("__EFMigrationsHistory", CorePlatformDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
             .Options;
 

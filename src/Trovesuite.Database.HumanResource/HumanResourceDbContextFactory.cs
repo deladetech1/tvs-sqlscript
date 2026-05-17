@@ -11,7 +11,8 @@ public sealed class HumanResourceDbContextFactory : IDesignTimeDbContextFactory<
                  ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=trovesuite_design";
 
         var options = new DbContextOptionsBuilder<HumanResourceDbContext>()
-            .UseNpgsql(cs)
+            .UseNpgsql(cs, npg =>
+                npg.MigrationsHistoryTable("__EFMigrationsHistory", HumanResourceDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
             .Options;
 

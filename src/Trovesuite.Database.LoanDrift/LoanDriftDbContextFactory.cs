@@ -11,7 +11,8 @@ public sealed class LoanDriftDbContextFactory : IDesignTimeDbContextFactory<Loan
                  ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=trovesuite_design";
 
         var options = new DbContextOptionsBuilder<LoanDriftDbContext>()
-            .UseNpgsql(cs)
+            .UseNpgsql(cs, npg =>
+                npg.MigrationsHistoryTable("__EFMigrationsHistory", LoanDriftDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
             .Options;
 

@@ -12,7 +12,10 @@ public sealed class LoanDriftModule : IModule
     public DbContext CreateContext(string connectionString)
     {
         var options = new DbContextOptionsBuilder<LoanDriftDbContext>()
-            .UseNpgsql(connectionString)
+            // See note in CorePlatformModule — Npgsql puts history in `public` by
+            // default; pin it to the module's schema so rollbacks are complete.
+            .UseNpgsql(connectionString, npg =>
+                npg.MigrationsHistoryTable("__EFMigrationsHistory", LoanDriftDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
             .Options;
         return new LoanDriftDbContext(options);

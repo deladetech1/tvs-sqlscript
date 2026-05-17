@@ -300,49 +300,87 @@ jobs:
             echo "| --- | --- | --- |"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+          # Map our module name → its Postgres schema (where __EFMigrationsHistory lives).
+          declare -A SCHEMA=(
+            [CorePlatform]=core_platform
+            [LoanDrift]=loandrift
+            [MyStoreGuard]=mystoreguard
+            [HumanResource]=human_resource
+          )
+
+          DB_HOST="${{ steps.db.outputs.DB_HOST }}"
+          DB_PORT="${{ steps.db.outputs.DB_PORT }}"
+          DB_USER="${{ steps.db.outputs.DB_USER }}"
+          DB_NAME="${{ steps.db.outputs.DB_NAME }}"
+          export PGPASSWORD="${{ steps.db.outputs.PGPASSWORD }}"
+
           ANY_PENDING=0
+          ANY_ERROR=0
+          ANY_ROWS=0
+
           for name in $MODULES; do
-            # Capture raw EF output for this module.
-            RAW="$(dotnet ef migrations list --no-build \
-                       -p "src/Trovesuite.Database.$name" \
-                       -s src/Trovesuite.Database.Runner 2>&1 || true)"
+            schema="${SCHEMA[$name]}"
 
-            # Connection-failed → EF emits this exact sentence; mark unknown.
-            if echo "$RAW" | grep -q "Pending status not shown"; then
-              echo "| $name | _(unknown — connection failed)_ | ⚠️ unknown |" \
+            # (1) What migrations exist in the repo for this module? Use --no-connect
+            #     so EF doesn't try to read the DB — we'll do that ourselves with psql.
+            ALL_MIGS="$(dotnet ef migrations list --no-build --configuration Release --no-connect \
+                          -p "src/Trovesuite.Database.$name" \
+                          -s src/Trovesuite.Database.Runner 2>&1 \
+                        | grep -E '^[0-9]{14}_' || true)"
+
+            if [[ -z "$ALL_MIGS" ]]; then
+              echo "| $name | _(no migration files in repo)_ | — |" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
               continue
             fi
 
-            # A migration line is `YYYYMMDDHHMMSS_Name` optionally followed by `[Pending]`.
-            MIGS="$(echo "$RAW" | grep -E '^[0-9]{14}_' || true)"
-            if [[ -z "$MIGS" ]]; then
-              echo "| $name | _(no migrations)_ | — |" \
+            # (2) What's actually applied on this DB? Query __EFMigrationsHistory in
+            #     the module's schema directly. If the schema or table is missing
+            #     (e.g. fresh DB or after a rollback), psql returns nothing on stdout
+            #     and we treat all migrations as pending.
+            # Column name is snake_cased by EFCore.NamingConventions
+            # (migration_id, not MigrationId).
+            APPLIED="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                         -v ON_ERROR_STOP=0 -tA --no-psqlrc \
+                         -c "SELECT migration_id FROM \"$schema\".\"__EFMigrationsHistory\" ORDER BY 1" \
+                         2>/dev/null || true)"
+
+            # If psql itself can't connect (wrong creds, network), distinguish
+            # that from "schema doesn't exist" by probing the server with a
+            # trivial query.
+            if ! psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                      -tA --no-psqlrc -c "SELECT 1" >/dev/null 2>&1; then
+              echo "| $name | _(connection failed)_ | ⚠️ unknown |" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
+              ANY_ERROR=1
               continue
             fi
 
-            while IFS= read -r line; do
-              if [[ "$line" == *"[Pending]"* ]]; then
-                mig="${line% \[Pending\]}"
+            while IFS= read -r mig; do
+              [[ -z "$mig" ]] && continue
+              if echo "$APPLIED" | grep -qx "$mig"; then
+                state="✅ Applied"
+              else
                 state="🟡 Pending"
                 ANY_PENDING=1
-              else
-                mig="$line"
-                state="✅ Applied"
               fi
               echo "| $name | \`$mig\` | $state |" \
                 | tee -a "$GITHUB_STEP_SUMMARY"
-            done <<< "$MIGS"
+              ANY_ROWS=1
+            done <<< "$ALL_MIGS"
           done
 
           # Trailing legend / hint.
           {
             echo ""
-            if [[ "$ANY_PENDING" == "1" ]]; then
+            if [[ "$ANY_ERROR" == "1" ]]; then
+              echo "⚠️  One or more modules couldn't be read from the DB. Check the step log."
+            elif [[ "$ANY_PENDING" == "1" ]]; then
               echo "🟡 **Pending** migrations exist for this environment. Run \`command=deploy\` to apply them."
-            else
+            elif [[ "$ANY_ROWS" == "1" ]]; then
               echo "✅ Everything in the repo is applied to **$ENV_LABEL**."
+            else
+              echo "ℹ️  No migrations found in the repo for the selected module(s)."
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
 

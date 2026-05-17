@@ -11,7 +11,8 @@ public sealed class MyStoreGuardDbContextFactory : IDesignTimeDbContextFactory<M
                  ?? "Host=localhost;Port=5432;Username=postgres;Password=postgres;Database=trovesuite_design";
 
         var options = new DbContextOptionsBuilder<MyStoreGuardDbContext>()
-            .UseNpgsql(cs)
+            .UseNpgsql(cs, npg =>
+                npg.MigrationsHistoryTable("__EFMigrationsHistory", MyStoreGuardDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
             .Options;
 

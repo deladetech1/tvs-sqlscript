@@ -12,7 +12,10 @@ public sealed class MyStoreGuardModule : IModule
     public DbContext CreateContext(string connectionString)
     {
         var options = new DbContextOptionsBuilder<MyStoreGuardDbContext>()
-            .UseNpgsql(connectionString)
+            // See note in CorePlatformModule — Npgsql puts history in `public` by
+            // default; pin it to the module's schema so rollbacks are complete.
+            .UseNpgsql(connectionString, npg =>
+                npg.MigrationsHistoryTable("__EFMigrationsHistory", MyStoreGuardDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
             .Options;
         return new MyStoreGuardDbContext(options);
