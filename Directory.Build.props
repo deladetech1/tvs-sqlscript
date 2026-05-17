@@ -9,6 +9,11 @@
     <Company>Trovesuite</Company>
     <Product>Trovesuite Core Platform</Product>
     <Version>1.0.0</Version>
+    <!-- NU1903 is a transitive vulnerability in System.Security.Cryptography.Xml
+         pulled in by EF Core's design-time package. It doesn't affect runtime
+         and we can't override until upstream bumps the dep. Mute it so CI logs
+         stay readable. Remove this once EF Core ships a clean release. -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -288,20 +288,76 @@ jobs:
             Host=${{ steps.db.outputs.DB_HOST }};Port=${{ steps.db.outputs.DB_PORT }};Username=${{ steps.db.outputs.DB_USER }};Password=${{ steps.db.outputs.PGPASSWORD }};Database=${{ steps.db.outputs.DB_NAME }};SSL Mode=Require;Trust Server Certificate=true
         run: |
           set -euo pipefail
-          echo "Reporting against environment: ${{ inputs.scope }}-${{ inputs.environment }}"
+
+          # Modules to query.
           if [[ "${{ inputs.module }}" == "all" ]]; then
-            for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
-              echo ""
-              echo "## $name"
-              dotnet ef migrations list \
-                -p "src/Trovesuite.Database.$name" \
-                -s src/Trovesuite.Database.Runner
-            done
+            MODULES="CorePlatform LoanDrift MyStoreGuard HumanResource"
           else
-            dotnet ef migrations list \
-              -p "${{ steps.map.outputs.proj }}" \
-              -s src/Trovesuite.Database.Runner
+            case "${{ inputs.module }}" in
+              core_platform)  MODULES="CorePlatform" ;;
+              loandrift)      MODULES="LoanDrift" ;;
+              mystoreguard)   MODULES="MyStoreGuard" ;;
+              human_resource) MODULES="HumanResource" ;;
+            esac
           fi
+
+          ENV_LABEL="${{ inputs.scope }}-${{ inputs.environment }}"
+
+          # Render the same Markdown table into:
+          #   - console (so the step log is readable),
+          #   - $GITHUB_STEP_SUMMARY (so it shows nicely on the run's Summary tab).
+          {
+            echo "## 🗃️  Migration status — \`$ENV_LABEL\`"
+            echo ""
+            echo "| Module | Migration | State |"
+            echo "| --- | --- | --- |"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          ANY_PENDING=0
+          for name in $MODULES; do
+            # Capture raw EF output for this module.
+            RAW="$(dotnet ef migrations list --no-build \
+                       -p "src/Trovesuite.Database.$name" \
+                       -s src/Trovesuite.Database.Runner 2>&1 || true)"
+
+            # Connection-failed → EF emits this exact sentence; mark unknown.
+            if echo "$RAW" | grep -q "Pending status not shown"; then
+              echo "| $name | _(unknown — connection failed)_ | ⚠️ unknown |" \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
+            # A migration line is `YYYYMMDDHHMMSS_Name` optionally followed by `[Pending]`.
+            MIGS="$(echo "$RAW" | grep -E '^[0-9]{14}_' || true)"
+            if [[ -z "$MIGS" ]]; then
+              echo "| $name | _(no migrations)_ | — |" \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
+            while IFS= read -r line; do
+              if [[ "$line" == *"[Pending]"* ]]; then
+                mig="${line% \[Pending\]}"
+                state="🟡 Pending"
+                ANY_PENDING=1
+              else
+                mig="$line"
+                state="✅ Applied"
+              fi
+              echo "| $name | \`$mig\` | $state |" \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+            done <<< "$MIGS"
+          done
+
+          # Trailing legend / hint.
+          {
+            echo ""
+            if [[ "$ANY_PENDING" == "1" ]]; then
+              echo "🟡 **Pending** migrations exist for this environment. Run \`command=deploy\` to apply them."
+            else
+              echo "✅ Everything in the repo is applied to **$ENV_LABEL**."
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: migrations-add
         if: inputs.command == 'migrations-add'
