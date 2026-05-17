@@ -80,6 +80,7 @@ on:
           - validate          # offline — builds every EF model, no DB touch
           - verify            # connects, prints PG version + current_database()
           - status            # alias for verify
+          - plan              # like `terraform plan` — shows what deploy WOULD do (read-only)
           - deploy            # CREATE SCHEMA + MigrateAsync + triggers + seeds
           - rollback          # DROP SCHEMA … CASCADE (destructive)
           - migrations-list   # show applied vs pending per module on this env
@@ -261,6 +262,138 @@ jobs:
             | dotnet run --no-build -c Release \
                 --project src/Trovesuite.Database.Runner -- \
                 "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "rollback"
+
+      # ------------------------------------------------------------------
+      # plan — read-only preview of what `deploy` would do
+      # ------------------------------------------------------------------
+      - name: plan
+        if: inputs.command == 'plan'
+        env:
+          TVS_DESIGN_CONNECTION: >-
+            Host=${{ steps.db.outputs.DB_HOST }};Port=${{ steps.db.outputs.DB_PORT }};Username=${{ steps.db.outputs.DB_USER }};Password=${{ steps.db.outputs.PGPASSWORD }};Database=${{ steps.db.outputs.DB_NAME }};SSL Mode=Require;Trust Server Certificate=true
+          TVS_ENTERPRISE: ${{ steps.enterprise.outputs.slug }}
+        run: |
+          set -euo pipefail
+
+          declare -A SCHEMA=(
+            [CorePlatform]=core_platform
+            [LoanDrift]=loandrift
+            [MyStoreGuard]=mystoreguard
+            [HumanResource]=human_resource
+          )
+
+          DB_HOST="${{ steps.db.outputs.DB_HOST }}"
+          DB_PORT="${{ steps.db.outputs.DB_PORT }}"
+          DB_USER="${{ steps.db.outputs.DB_USER }}"
+          DB_NAME="${{ steps.db.outputs.DB_NAME }}"
+          export PGPASSWORD="${{ steps.db.outputs.PGPASSWORD }}"
+
+          ENV_LABEL="${{ inputs.scope }}-${{ inputs.environment }}"
+          mkdir -p plan-artifacts
+
+          {
+            echo "## 📋 Plan — \`$ENV_LABEL\`"
+            echo ""
+            echo "_Read-only preview. Nothing is applied. Run \`command=deploy\` to execute._"
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          # ── Section 1: pending EF migrations per module ──────────────────
+          {
+            echo "### EF migrations"
+            echo ""
+            echo "| Module | Pending migrations | Action |"
+            echo "| --- | --- | --- |"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          ANY_PENDING=0
+          for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
+            schema="${SCHEMA[$name]}"
+
+            ALL_MIGS="$(dotnet ef migrations list --no-build --configuration Release --no-connect \
+                          -p "src/Trovesuite.Database.$name" \
+                          -s src/Trovesuite.Database.Runner 2>&1 \
+                        | grep -E '^[0-9]{14}_' || true)"
+
+            APPLIED="$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                         -v ON_ERROR_STOP=0 -tA --no-psqlrc \
+                         -c "SELECT migration_id FROM \"$schema\".\"__EFMigrationsHistory\" ORDER BY 1" \
+                         2>/dev/null || true)"
+
+            PENDING_LIST=()
+            while IFS= read -r mig; do
+              [[ -z "$mig" ]] && continue
+              if ! echo "$APPLIED" | grep -qx "$mig"; then
+                PENDING_LIST+=("$mig")
+              fi
+            done <<< "$ALL_MIGS"
+
+            if [[ ${#PENDING_LIST[@]} -eq 0 ]]; then
+              echo "| $name | _none_ | no action |" | tee -a "$GITHUB_STEP_SUMMARY"
+            else
+              ANY_PENDING=1
+              # Render pending list in the table cell
+              pending_cell=$(printf '<code>%s</code><br>' "${PENDING_LIST[@]}")
+              echo "| $name | $pending_cell | will apply ${#PENDING_LIST[@]} migration(s) |" \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+
+              # Generate the SQL EF would emit for those pending migrations (idempotent).
+              # --idempotent guards each migration with IF NOT EXISTS checks so the file is
+              # safe to inspect or hand to a DBA. Output one file per module.
+              dotnet ef migrations script --idempotent --no-build --configuration Release \
+                  -p "src/Trovesuite.Database.$name" \
+                  -s src/Trovesuite.Database.Runner \
+                  -o "plan-artifacts/$name.sql" >/dev/null 2>&1 || true
+            fi
+          done
+
+          # ── Section 2: custom SQL files that always run on deploy ─────────
+          {
+            echo ""
+            echo "### Custom SQL files that will run after migrations"
+            echo ""
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          SHARED_FILES=$(find migrations/shared -maxdepth 1 -name '*.sql' 2>/dev/null | sort || true)
+          if [[ -n "$SHARED_FILES" ]]; then
+            echo "**\`migrations/shared/\`** (every deploy):" | tee -a "$GITHUB_STEP_SUMMARY"
+            while IFS= read -r f; do echo "- \`$f\`" | tee -a "$GITHUB_STEP_SUMMARY"; done <<< "$SHARED_FILES"
+          else
+            echo "**\`migrations/shared/\`**: _no files_" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" | tee -a "$GITHUB_STEP_SUMMARY"
+
+          SLUG="${{ steps.enterprise.outputs.slug }}"
+          if [[ -n "$SLUG" ]]; then
+            ENT_FILES=$(find "migrations/enterprise/$SLUG" -maxdepth 1 -name '*.sql' 2>/dev/null | sort || true)
+            if [[ -n "$ENT_FILES" ]]; then
+              echo "**\`migrations/enterprise/$SLUG/\`** (this enterprise only):" | tee -a "$GITHUB_STEP_SUMMARY"
+              while IFS= read -r f; do echo "- \`$f\`" | tee -a "$GITHUB_STEP_SUMMARY"; done <<< "$ENT_FILES"
+            else
+              echo "**\`migrations/enterprise/$SLUG/\`**: _no files_" | tee -a "$GITHUB_STEP_SUMMARY"
+            fi
+          else
+            echo "_(scope=saas — no enterprise-specific folder)_" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+          # ── Section 3: footer + artifact pointer ──────────────────────────
+          {
+            echo ""
+            if [[ "$ANY_PENDING" == "1" ]]; then
+              echo "🟡 **${ANY_PENDING} or more migrations are pending.** The SQL that would be executed is uploaded as a workflow artifact (look for **\`plan-${{ inputs.scope }}-${{ inputs.environment }}-…\`** on the run page)."
+            else
+              echo "✅ No pending EF migrations. Custom SQL files above will still re-run idempotently."
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload plan SQL preview
+        if: inputs.command == 'plan'
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-${{ inputs.scope }}-${{ inputs.environment }}-${{ github.run_id }}
+          path: plan-artifacts/*.sql
+          retention-days: 14
+          if-no-files-found: ignore
 
       # ------------------------------------------------------------------
       # dotnet ef migrations …
