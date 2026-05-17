@@ -77,19 +77,14 @@ on:
         type: choice
         required: true
         options:
-          # Runner CLI actions (Program.cs)
-          - validate                  # offline — builds every EF model, no DB touch
-          - verify                    # connects, prints PG version + current_database()
-          - status                    # alias for verify
-          - deploy                    # CREATE SCHEMA + MigrateAsync + triggers + seeds
-          - rollback                  # DROP SCHEMA … CASCADE (destructive)
-          # dotnet ef migrations …  (requires module to be a specific one, not "all")
-          - migrations-list
-          - migrations-add
-          - migrations-remove
-          - migrations-script         # idempotent SQL script, uploaded as artifact
+          - validate          # offline — builds every EF model, no DB touch
+          - verify            # connects, prints PG version + current_database()
+          - status            # alias for verify
+          - deploy            # CREATE SCHEMA + MigrateAsync + triggers + seeds
+          - rollback          # DROP SCHEMA … CASCADE (destructive)
+          - migrations-list   # show applied vs pending per module on this env
       module:
-        description: Module to target (use "all" for runner actions, specific module for migrations-*)
+        description: Module to target ("all" is fine for every command)
         type: choice
         required: true
         default: all
@@ -99,16 +94,8 @@ on:
           - loandrift
           - mystoreguard
           - human_resource
-      migration_name:
-        description: 'Migration name (required for migrations-add, e.g. "AddOrderNotes")'
-        type: string
-        required: false
-      target_migration:
-        description: 'Optional target migration for migrations-script (omit = full script)'
-        type: string
-        required: false
       destructive_ack:
-        description: 'For rollback / migrations-remove: type exactly YESDestructive'
+        description: 'For rollback only: type exactly YESDestructive'
         type: string
         required: false
         default: ""
@@ -202,11 +189,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Destructive-command typo safeguard
-        if: contains(fromJson('["rollback","migrations-remove"]'), inputs.command)
+        if: inputs.command == 'rollback'
         run: |
           set -euo pipefail
           if [[ "${{ inputs.destructive_ack }}" != "YESDestructive" ]]; then
-            echo "::error::Command '${{ inputs.command }}' requires destructive_ack=YESDestructive (typo safeguard, separate from environment protection rules)."
+            echo "::error::rollback requires destructive_ack=YESDestructive (typo safeguard, separate from environment protection rules)."
             exit 1
           fi
 
@@ -359,63 +346,3 @@ jobs:
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: migrations-add
-        if: inputs.command == 'migrations-add'
-        run: |
-          set -euo pipefail
-          if [[ "${{ inputs.module }}" == "all" ]]; then
-            echo "::error::migrations-add requires a specific module, not 'all'."
-            exit 1
-          fi
-          if [[ -z "${{ inputs.migration_name }}" ]]; then
-            echo "::error::migration_name is required for migrations-add."
-            exit 1
-          fi
-          dotnet ef migrations add "${{ inputs.migration_name }}" \
-            -p "${{ steps.map.outputs.proj }}" \
-            -s src/Trovesuite.Database.Runner \
-            -o Migrations
-          echo "::notice::Migration file created. Commit it from your local checkout — workflow runs are read-only."
-
-      - name: migrations-remove
-        if: inputs.command == 'migrations-remove'
-        run: |
-          set -euo pipefail
-          if [[ "${{ inputs.module }}" == "all" ]]; then
-            echo "::error::migrations-remove requires a specific module, not 'all'."
-            exit 1
-          fi
-          dotnet ef migrations remove --force \
-            -p "${{ steps.map.outputs.proj }}" \
-            -s src/Trovesuite.Database.Runner
-
-      - name: migrations-script
-        if: inputs.command == 'migrations-script'
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts
-          TARGET=""
-          if [[ -n "${{ inputs.target_migration }}" ]]; then
-            TARGET="--to ${{ inputs.target_migration }}"
-          fi
-          if [[ "${{ inputs.module }}" == "all" ]]; then
-            for name in CorePlatform LoanDrift MyStoreGuard HumanResource; do
-              dotnet ef migrations script $TARGET --idempotent \
-                -p "src/Trovesuite.Database.$name" \
-                -s src/Trovesuite.Database.Runner \
-                -o "artifacts/$name.sql"
-            done
-          else
-            dotnet ef migrations script $TARGET --idempotent \
-              -p "${{ steps.map.outputs.proj }}" \
-              -s src/Trovesuite.Database.Runner \
-              -o "artifacts/${{ inputs.module }}.sql"
-          fi
-
-      - name: Upload script artifacts
-        if: inputs.command == 'migrations-script'
-        uses: actions/upload-artifact@v4
-        with:
-          name: tvs-sqlscript-migrations-${{ inputs.scope }}-${{ inputs.environment }}-${{ inputs.module }}-${{ github.run_id }}
-          path: artifacts/*.sql
-          retention-days: 14
