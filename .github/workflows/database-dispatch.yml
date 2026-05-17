@@ -153,6 +153,11 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       # Force SSL for all cloud Postgres connections.
       TVS_SSL: Require
+      # actions/checkout@v4 + actions/setup-dotnet@v4 still bundle a Node 20
+      # runtime. GitHub is dropping Node 20 in Sep 2026; this flag tells the
+      # runner to run them on Node 24 instead, silencing the deprecation
+      # warning. Remove once those actions publish v5 with native Node 24.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
       - uses: actions/checkout@v4

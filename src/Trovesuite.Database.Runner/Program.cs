@@ -102,7 +102,7 @@ internal static class Program
             await using var ctx = mod.CreateContext(cfg.ToConnectionString());
 
             Info($"  Ensuring schema '{mod.SchemaName}' exists…");
-            await ctx.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS {mod.SchemaName};");
+            await EnsureSchemaAsync(ctx, mod.SchemaName);
 
             Info("  Applying EF Core migrations…");
             await ctx.Database.MigrateAsync();
@@ -118,6 +118,27 @@ internal static class Program
         await ApplyCustomMigrationSql(cfg);
 
         Success("All selected modules deployed successfully");
+    }
+
+    /// <summary>
+    /// Runs <c>CREATE SCHEMA IF NOT EXISTS</c> for a module schema. The schema
+    /// name comes from <see cref="IModule.SchemaName"/> (always a hard-coded
+    /// const like <c>core_platform</c>) so it's safe to inline into DDL —
+    /// schema identifiers can't be parameterized in Postgres. We validate
+    /// against a strict allow-list as belt-and-braces against accidental
+    /// future use with untrusted input.
+    /// </summary>
+    private static async Task EnsureSchemaAsync(DbContext ctx, string schemaName)
+    {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(schemaName, "^[A-Za-z_][A-Za-z0-9_]{0,62}$"))
+            throw new InvalidOperationException($"Refusing to CREATE SCHEMA with unsafe name: '{schemaName}'");
+
+        // EF1002 fires because EF can't statically verify the interpolated
+        // value. We just did (regex above), and identifiers can't be passed
+        // as SQL parameters — so suppress the analyzer locally.
+#pragma warning disable EF1002
+        await ctx.Database.ExecuteSqlRawAsync($"CREATE SCHEMA IF NOT EXISTS {schemaName};");
+#pragma warning restore EF1002
     }
 
     /// <summary>
