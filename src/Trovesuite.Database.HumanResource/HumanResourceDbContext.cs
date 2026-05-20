@@ -12,6 +12,20 @@ public class HumanResourceDbContext : DbContext
 
     public DbSet<Employee> Employees => Set<Employee>();
 
+    public DbSet<ZhrBranch> ZhrBranches => Set<ZhrBranch>();
+    public DbSet<ZhrDepartment> ZhrDepartments => Set<ZhrDepartment>();
+    public DbSet<ZhrEmployee> ZhrEmployees => Set<ZhrEmployee>();
+    public DbSet<ZhrAuditLog> ZhrAuditLogs => Set<ZhrAuditLog>();
+    public DbSet<ZhrLifecycleEvent> ZhrLifecycleEvents => Set<ZhrLifecycleEvent>();
+    public DbSet<ZhrAttendanceRecord> ZhrAttendanceRecords => Set<ZhrAttendanceRecord>();
+    public DbSet<ZhrLeaveRequest> ZhrLeaveRequests => Set<ZhrLeaveRequest>();
+    public DbSet<ZhrLeaveBalance> ZhrLeaveBalances => Set<ZhrLeaveBalance>();
+    public DbSet<ZhrJobPosting> ZhrJobPostings => Set<ZhrJobPosting>();
+    public DbSet<ZhrOnboardingTask> ZhrOnboardingTasks => Set<ZhrOnboardingTask>();
+    public DbSet<ZhrPerformanceReview> ZhrPerformanceReviews => Set<ZhrPerformanceReview>();
+    public DbSet<ZhrDisciplinaryCase> ZhrDisciplinaryCases => Set<ZhrDisciplinaryCase>();
+    public DbSet<ZhrEmployeeDocument> ZhrEmployeeDocuments => Set<ZhrEmployeeDocument>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);
