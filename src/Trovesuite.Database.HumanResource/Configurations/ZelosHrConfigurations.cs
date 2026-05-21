@@ -20,6 +20,9 @@ public sealed class ZhrBranchConfiguration : IEntityTypeConfiguration<ZhrBranch>
         b.Property(x => x.TenantId).HasMaxLength(128);
         b.Property(x => x.OrgId).HasMaxLength(128);
         b.Property(x => x.Name).HasMaxLength(150);
+        b.Property(x => x.IsArchived).HasDefaultValue(false);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
     }
 }
@@ -33,6 +36,9 @@ public sealed class ZhrDepartmentConfiguration : IEntityTypeConfiguration<ZhrDep
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.HasOne<ZhrDepartment>().WithMany().HasForeignKey(x => x.ParentDepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
+        b.Property(x => x.IsArchived).HasDefaultValue(false);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
     }
 }
@@ -45,12 +51,60 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.Property(x => x.EmployeeCode).HasMaxLength(32);
+        b.Property(x => x.FullName).HasMaxLength(500);
+        b.Property(x => x.UserId).HasMaxLength(128);
+        b.Property(x => x.GrossSalary).HasPrecision(18, 4);
+        b.Property(x => x.AnnualizedCost).HasPrecision(18, 4);
+        b.Property(x => x.Currency).HasMaxLength(8).HasDefaultValue("GHS");
         b.HasIndex(x => x.EmployeeCode).IsUnique();
-        b.HasIndex(x => new { x.TenantId, x.GhanaCardNumber }).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.OrgId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmploymentStatus, x.DepartmentId, x.BranchId });
+        b.HasIndex(x => new { x.TenantId, x.GhanaCardNumber })
+            .IsUnique()
+            .HasFilter("ghana_card_number IS NOT NULL AND ghana_card_number <> ''");
+        b.HasIndex(x => new { x.TenantId, x.UserId })
+            .IsUnique()
+            .HasFilter("user_id IS NOT NULL");
+        b.Property(x => x.LifecycleState).HasDefaultValue("Pre-hire");
+        b.Property(x => x.LifecycleStatus).HasDefaultValue("draft");
+        b.Property(x => x.IsDraft).HasDefaultValue(true);
+        b.Property(x => x.EmploymentStatus).HasDefaultValue("Active");
+        b.Property(x => x.IsDeleted).HasDefaultValue(false);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
         b.HasOne<ZhrDepartment>().WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ZhrBranch>().WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.ManagerId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.ReportsToId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.DottedLineManagerId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class ZhrEmployeeEducationConfiguration : IEntityTypeConfiguration<ZhrEmployeeEducation>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeEducation> b)
+    {
+        b.ToZelosHrTable("zhr_employee_education");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeeCertificationConfiguration : IEntityTypeConfiguration<ZhrEmployeeCertification>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeCertification> b)
+    {
+        b.ToZelosHrTable("zhr_employee_certifications");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
     }
 }
 
@@ -159,6 +213,12 @@ public sealed class ZhrEmployeeDocumentConfiguration : IEntityTypeConfiguration<
         b.ToZelosHrTable("zhr_employee_documents");
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
-        b.Property(x => x.Status).HasDefaultValue("Active");
+        b.Property(x => x.BlobUrl).HasMaxLength(2048);
+        b.Property(x => x.ContentType).HasMaxLength(128);
+        b.Property(x => x.FileName).HasMaxLength(512);
+        b.Property(x => x.IsDeleted).HasDefaultValue(false);
+        b.Property(x => x.UploadedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.Category });
     }
 }

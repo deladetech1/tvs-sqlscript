@@ -25,6 +25,8 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrPerformanceReview> ZhrPerformanceReviews => Set<ZhrPerformanceReview>();
     public DbSet<ZhrDisciplinaryCase> ZhrDisciplinaryCases => Set<ZhrDisciplinaryCase>();
     public DbSet<ZhrEmployeeDocument> ZhrEmployeeDocuments => Set<ZhrEmployeeDocument>();
+    public DbSet<ZhrEmployeeEducation> ZhrEmployeeEducations => Set<ZhrEmployeeEducation>();
+    public DbSet<ZhrEmployeeCertification> ZhrEmployeeCertifications => Set<ZhrEmployeeCertification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

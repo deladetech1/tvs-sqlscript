@@ -36,28 +36,97 @@ public class ZhrEmployee
     public string EmployeeCode { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
-    public string FirstName { get; set; } = default!;
+
+    /// <summary>core_platform.cp_users.id (text). Nullable until finalise/import.</summary>
+    public string? UserId { get; set; }
+
+    public string FullName { get; set; } = default!;
+
+    // Legacy directory fields (kept for backward compatibility; optional on drafts).
+    public string? FirstName { get; set; }
     public string? MiddleName { get; set; }
-    public string LastName { get; set; } = default!;
-    public DateOnly DateOfBirth { get; set; }
-    public string Gender { get; set; } = default!;
-    public string Nationality { get; set; } = default!;
-    public string GhanaCardNumber { get; set; } = default!;
-    public string PersonalEmail { get; set; } = default!;
-    public string PersonalPhone { get; set; } = default!;
-    public string ResidentialAddress { get; set; } = default!;
-    public string GhanaPostGps { get; set; } = default!;
+    public string? LastName { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? Nationality { get; set; }
+    public string? NationalityIdType { get; set; }
+    public string? IdNumber { get; set; }
+    public string? GhanaCardNumber { get; set; }
+    public string? PersonalEmail { get; set; }
+    public string? WorkEmail { get; set; }
+    public string? PersonalPhone { get; set; }
+    public string? Phone { get; set; }
+    public string? LinkedInUrl { get; set; }
+    public string? ResidentialAddress { get; set; }
+    public string? GhanaPostGps { get; set; }
+    public string? State { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
+
     public string LifecycleState { get; set; } = "Pre-hire";
+    public string LifecycleStatus { get; set; } = "draft";
+    public bool IsDraft { get; set; } = true;
+
     public string? JobTitle { get; set; }
     public Guid? DepartmentId { get; set; }
     public Guid? BranchId { get; set; }
     public string? EmploymentType { get; set; }
+    public string? WorkArrangement { get; set; }
+    public string? WorkLocation { get; set; }
+    public string? PayGrade { get; set; }
     public Guid? ManagerId { get; set; }
+    public Guid? ReportsToId { get; set; }
+    public Guid? DottedLineManagerId { get; set; }
     public string EmploymentStatus { get; set; } = "Active";
     public string? ContractType { get; set; } = "Permanent";
     public DateOnly? ProbationEndDate { get; set; }
     public DateOnly? EmploymentStartDate { get; set; }
+    public DateOnly? StartDate { get; set; }
+    public string? WorkingHours { get; set; }
+    public string? NoticePeriod { get; set; }
+
+    public decimal? GrossSalary { get; set; }
+    public string? PayFrequency { get; set; }
+    public decimal? AnnualizedCost { get; set; }
+    public DateOnly? SalaryEffectiveFrom { get; set; }
+    public string Currency { get; set; } = "GHS";
+    public string? SsnitNumber { get; set; }
+    public string? TinNumber { get; set; }
+    public string? Tier2PensionProvider { get; set; }
+    public string? Tier3PensionProvider { get; set; }
+    public string? PaymentMethod { get; set; }
+    public string? BankAccountNumber { get; set; }
+    public string? MobileMoneyNumber { get; set; }
+
     public bool IsDeleted { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeEducation
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Institution { get; set; } = default!;
+    public string? Degree { get; set; }
+    public string? FieldOfStudy { get; set; }
+    public int? StartYear { get; set; }
+    public int? EndYear { get; set; }
+    public bool IsCurrent { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeCertification
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public string? IssuingBody { get; set; }
+    public DateOnly? IssueDate { get; set; }
+    public DateOnly? ExpiryDate { get; set; }
+    public string? CredentialId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
@@ -209,11 +278,17 @@ public class ZhrEmployeeDocument
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public Guid EmployeeId { get; set; }
-    public string EmployeeFullName { get; set; } = default!;
-    public string DocumentName { get; set; } = default!;
+    public string? EmployeeFullName { get; set; }
     public string Category { get; set; } = default!;
-    public int FileSizeKb { get; set; }
-    public string UploadedBy { get; set; } = default!;
+    public string FileName { get; set; } = default!;
+    public long FileSizeBytes { get; set; }
+    public string BlobUrl { get; set; } = default!;
+    public string ContentType { get; set; } = default!;
+    public string? UploadedBy { get; set; }
     public DateTimeOffset UploadedAt { get; set; }
-    public string Status { get; set; } = "Active";
+    public bool IsDeleted { get; set; }
+    /// <summary>Legacy HR documents module status.</summary>
+    public string? Status { get; set; }
+    public int? FileSizeKb { get; set; }
+    public string? DocumentName { get; set; }
 }
