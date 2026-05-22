@@ -220,11 +220,9 @@ public class ProductTransfer
     public string SourceId { get; set; } = default!;
     public string Destination { get; set; } = default!;
     public string DestinationId { get; set; } = default!;
-    public string ProductId { get; set; } = default!;
     public string DeleteStatus { get; set; } = "NOT_DELETED";
     public string Status { get; set; } = "PENDING_APPROVAL";
     public string? Description { get; set; }
-    public int Qty { get; set; }
     public string TransferNumber { get; set; } = default!;
     public string? PersonToApproveId { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }
@@ -233,6 +231,21 @@ public class ProductTransfer
     public string? CreatedBy { get; set; }
     public string? UpdatedBy { get; set; }
     public string? DeletedBy { get; set; }
+}
+
+// Line items for a product transfer. Each row is one product + quantity that
+// belongs to the parent transfer (msg_product_transfers). A transfer can carry
+// many items; the header holds the shared source/destination/approval context.
+public class ProductTransferItem
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string TransferId { get; set; } = default!;
+    public string ProductId { get; set; } = default!;
+    public int Qty { get; set; }
+    public string Status { get; set; } = "PENDING_APPROVAL";
 }
 
 public class ProductDocumentId : TenantScopedEntity

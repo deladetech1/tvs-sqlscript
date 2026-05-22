@@ -220,7 +220,8 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         b.ToTable("msg_products");
         b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
         b.Property(x => x.Id).AsTextUuidDefault();
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Name }).IsUnique();
+        // Non-unique index on name (product names are NOT required to be unique).
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Name });
         b.ApplyAuditDefaults();
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusFks();
@@ -391,7 +392,28 @@ public sealed class ProductTransferConfiguration : IEntityTypeConfiguration<Prod
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
-        b.WithProductFk();
+    }
+}
+
+public sealed class ProductTransferItemConfiguration : IEntityTypeConfiguration<ProductTransferItem>
+{
+    public void Configure(EntityTypeBuilder<ProductTransferItem> b)
+    {
+        b.ToTable("msg_product_transfer_items");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Status).HasDefaultValue("PENDING_APPROVAL");
+        b.HasInCheck("status", "PENDING_APPROVAL", "APPROVED", "REJECTED", "COMPLETED");
+        // one line per product per transfer
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.TransferId, x.ProductId }).IsUnique();
+        b.WithTenantFk();
+        // (tenant_id, org_id, bus_id, transfer_id) → msg_product_transfers, deleting the
+        // header removes its items
+        b.HasOne<ProductTransfer>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "TransferId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.WithProductFk(DeleteBehavior.Restrict);
     }
 }
 

@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521235651_AddProductTransferItems")]
+    partial class AddProductTransferItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3474,6 +3477,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasDatabaseName("ix_msg_products_updated_by_tenant_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "Name")
+                        .IsUnique()
                         .HasDatabaseName("ix_msg_products_tenant_id_org_id_bus_id_name");
 
                     b.ToTable("msg_products", "mystoreguard", t =>
