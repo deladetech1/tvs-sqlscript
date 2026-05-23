@@ -38,6 +38,7 @@ public class CorePlatformDbContext : DbContext
     public DbSet<AppFeature> AppFeatures => Set<AppFeature>();
     public DbSet<AppSubscription> AppSubscriptions => Set<AppSubscription>();
     public DbSet<AppSubscriptionHistory> AppSubscriptionHistories => Set<AppSubscriptionHistory>();
+    public DbSet<PaymentAuthorization> PaymentAuthorizations => Set<PaymentAuthorization>();
 
     // Organizations
     public DbSet<Group> Groups => Set<Group>();

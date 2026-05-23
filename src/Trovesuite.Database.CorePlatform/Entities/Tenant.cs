@@ -15,6 +15,17 @@ public class Tenant
     public string? Description { get; set; }
     public bool IsVerified { get; set; }
     public bool IsSystem { get; set; } = true;
+
+    // One free trial per tenant, ever. The first subscription made with
+    // use_free_tier=true opens a single tenant-wide window; every app
+    // subscribed while the window is open is free until it ends.
+    public bool FreeTrialUsed { get; set; }
+    public DateTimeOffset? FreeTrialStartedAt { get; set; }
+    public DateTimeOffset? FreeTrialEndsAt { get; set; }
+    public string? FreeTrialConsumedAppSubscriptionId { get; set; }
+    // Last time the trial-expiry reminder job emailed the owner — drives the
+    // daily "once per day" idempotency guard in the reminder function.
+    public DateTimeOffset? LastTrialReminderSentAt { get; set; }
 }
 
 public class TenantOwnerRegistryEntry

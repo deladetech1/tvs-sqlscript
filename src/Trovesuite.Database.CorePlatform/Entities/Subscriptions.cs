@@ -66,6 +66,40 @@ public class AppSubscription : TenantScopedEntity
     public string BusinessId { get; set; } = default!;
     public string AppId { get; set; } = default!;
     public string SharedSubscriptionId { get; set; } = default!;
+
+    // Lifecycle status of the live subscription. During a tenant trial window
+    // every subscription sits at TRIALING; payment moves it to ACTIVE.
+    public string Status { get; set; } = "TRIALING";
+
+    // Current paid billing cycle. Set when the subscription becomes ACTIVE
+    // (for trial subscriptions, the first cycle starts at trial end).
+    public DateTimeOffset? CurrentPeriodStart { get; set; }
+    public DateTimeOffset? CurrentPeriodEnd { get; set; }
+    public DateTimeOffset? NextChargeDate { get; set; }
+
+    // Enterprise deals are billed off-platform. is_payment_required=false means
+    // we never collect a card / auto-charge (free trial or enterprise-offline);
+    // true means a card is required and access is blocked until first payment.
+    public bool IsEnterprise { get; set; }
+    public bool IsPaymentRequired { get; set; } = true;
+}
+
+// Tenant-level saved Paystack card reference. Stores ONLY the reusable
+// authorization token plus non-sensitive display metadata — never the PAN/CVV.
+public class PaymentAuthorization : TenantScopedEntity
+{
+    public string Id { get; set; } = default!;
+    public string? PaystackCustomerCode { get; set; }
+    public string AuthorizationCode { get; set; } = default!;
+    public string Email { get; set; } = default!;
+    public string? Last4 { get; set; }
+    public string? CardType { get; set; }
+    public string? ExpMonth { get; set; }
+    public string? ExpYear { get; set; }
+    public string? Bank { get; set; }
+    public string? Signature { get; set; }
+    public bool Reusable { get; set; } = true;
+    public bool IsDefault { get; set; } = true;
 }
 
 public class AppSubscriptionHistory : TenantScopedEntity

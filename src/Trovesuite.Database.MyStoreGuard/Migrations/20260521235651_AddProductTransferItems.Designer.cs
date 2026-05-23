@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521235651_AddProductTransferItems")]
+    partial class AddProductTransferItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -406,22 +409,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
-
-                    b.Property<string>("FreeTrialConsumedAppSubscriptionId")
-                        .HasColumnType("text")
-                        .HasColumnName("free_trial_consumed_app_subscription_id");
-
-                    b.Property<DateTimeOffset?>("FreeTrialEndsAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("free_trial_ends_at");
-
-                    b.Property<DateTimeOffset?>("FreeTrialStartedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("free_trial_started_at");
-
-                    b.Property<bool>("FreeTrialUsed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("free_trial_used");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -3490,6 +3477,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasDatabaseName("ix_msg_products_updated_by_tenant_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "Name")
+                        .IsUnique()
                         .HasDatabaseName("ix_msg_products_tenant_id_org_id_bus_id_name");
 
                     b.ToTable("msg_products", "mystoreguard", t =>
@@ -4038,74 +4026,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                             t.HasCheckConstraint("ck_msg_product_transfers_source", "source IN ('STORE','WAREHOUSE')");
 
                             t.HasCheckConstraint("ck_msg_product_transfers_status", "status IN ('PENDING_APPROVAL','APPROVED','REJECTED','COMPLETED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.ProductTransferApproval", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("action");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("PerformedBy")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("performed_by");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("text")
-                        .HasColumnName("reason");
-
-                    b.Property<string>("TransferId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("transfer_id");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
-                        .HasName("pk_msg_product_transfer_approvals");
-
-                    b.HasIndex("PerformedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_product_transfer_approvals_performed_by_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "TransferId")
-                        .HasDatabaseName("ix_msg_product_transfer_approvals_tenant_id_org_id_bus_id_tran");
-
-                    b.ToTable("msg_product_transfer_approvals", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_product_transfer_approvals_action", "action IN ('APPROVED','REJECTED')");
                         });
                 });
 
@@ -8168,30 +8088,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_msg_product_transfers_cp_locations_source_id_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.ProductTransferApproval", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_product_transfer_approvals_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("PerformedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_product_transfer_approvals_cp_users_performed_by_tenant");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.ProductTransfer", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "TransferId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_product_transfer_approvals_product_transfers_tenant_id_");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.ProductTransferItem", b =>
