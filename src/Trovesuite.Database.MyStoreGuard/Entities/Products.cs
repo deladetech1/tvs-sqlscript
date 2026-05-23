@@ -248,6 +248,23 @@ public class ProductTransferItem
     public string Status { get; set; } = "PENDING_APPROVAL";
 }
 
+// Approval / rejection decisions recorded against a transfer. One row per
+// decision: who acted, whether they APPROVED or REJECTED, and an optional reason.
+public class ProductTransferApproval
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string TransferId { get; set; } = default!;
+    public string Action { get; set; } = default!;   // APPROVED | REJECTED
+    public string? Reason { get; set; }
+    public string PerformedBy { get; set; } = default!;
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+}
+
 public class ProductDocumentId : TenantScopedEntity
 {
     public string Id { get; set; } = default!;

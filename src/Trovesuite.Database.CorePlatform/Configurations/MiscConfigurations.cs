@@ -162,8 +162,8 @@ public sealed class BillingLogConfiguration : IEntityTypeConfiguration<BillingLo
             .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.SetNull);
         b.HasOne<Location>().WithMany().HasForeignKey(x => new { x.LocationId, x.TenantId })
             .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.SetNull);
-        b.HasInCheck("paid_method", "CASH", "CHEQUE", "MOMO", "BANK_TRANSFER", "OTHERS", null!);
-        b.HasInCheck("paid_status", "PENDING", "PAID", "FAILED", "CANCELLED", "REFUNDED", "OTHERS", null!);
+        b.HasInCheck("paid_method", "CASH", "CHEQUE", "MOMO", "BANK_TRANSFER", "CARD", "OTHERS", null!);
+        b.HasInCheck("paid_status", "PENDING", "PAID", "FAILED", "CANCELLED", "REFUNDED", "WAIVED", "OTHERS", null!);
         b.HasDeleteStatusCheck();
         // bkup does not declare audit-user FKs (created_by defaults to 'SYSTEM'), so no WithAuditUserFks here.
     }

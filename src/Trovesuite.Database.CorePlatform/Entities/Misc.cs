@@ -108,6 +108,10 @@ public class BillingLog : TenantScopedEntity
     public string? PaidMethod { get; set; }
     public string? PaidNote { get; set; }
     public string? PaidStatus { get; set; }
+
+    // Paystack reconciliation references (set when settled via card charge).
+    public string? PaystackReference { get; set; }
+    public string? PaystackInvoiceCode { get; set; }
 }
 
 public class ExpenseHistory : TenantScopedEntity

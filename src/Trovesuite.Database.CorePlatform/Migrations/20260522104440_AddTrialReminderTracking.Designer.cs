@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.CorePlatform;
@@ -12,9 +13,11 @@ using Trovesuite.Database.CorePlatform;
 namespace Trovesuite.Database.CorePlatform.Migrations
 {
     [DbContext(typeof(CorePlatformDbContext))]
-    partial class CorePlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260522104440_AddTrialReminderTracking")]
+    partial class AddTrialReminderTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -294,18 +297,6 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("is_active");
 
-                    b.Property<bool>("IsEnterprise")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_enterprise");
-
-                    b.Property<bool>("IsPaymentRequired")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_payment_required");
-
                     b.Property<DateTimeOffset?>("NextChargeDate")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("next_charge_date");
@@ -360,7 +351,7 @@ namespace Trovesuite.Database.CorePlatform.Migrations
 
                             t.HasCheckConstraint("ck_cp_app_subscriptions_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 
-                            t.HasCheckConstraint("ck_cp_app_subscriptions_status", "status IN ('TRIALING','ACTIVE','PENDING_PAYMENT','PAST_DUE','SUSPENDED','CANCELLED')");
+                            t.HasCheckConstraint("ck_cp_app_subscriptions_status", "status IN ('TRIALING','ACTIVE','PAST_DUE','SUSPENDED','CANCELLED')");
                         });
                 });
 

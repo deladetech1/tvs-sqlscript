@@ -369,7 +369,10 @@ public sealed class ProductTransferConfiguration : IEntityTypeConfiguration<Prod
     public void Configure(EntityTypeBuilder<ProductTransfer> b)
     {
         b.ToTable("msg_product_transfers");
-        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        // Pin the PK constraint name. Without this, the naming convention reclassifies
+        // the key once a second child table references it (msg_product_transfer_approvals),
+        // producing a spurious drop/recreate of the primary key in the migration.
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id }).HasName("pk_msg_product_transfers");
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
         b.Property(x => x.Status).HasDefaultValue("PENDING_APPROVAL");
@@ -414,6 +417,29 @@ public sealed class ProductTransferItemConfiguration : IEntityTypeConfiguration<
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
             .OnDelete(DeleteBehavior.Cascade);
         b.WithProductFk(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class ProductTransferApprovalConfiguration : IEntityTypeConfiguration<ProductTransferApproval>
+{
+    public void Configure(EntityTypeBuilder<ProductTransferApproval> b)
+    {
+        b.ToTable("msg_product_transfer_approvals");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+        b.HasInCheck("action", "APPROVED", "REJECTED");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.TransferId });
+        b.WithTenantFk();
+        // (tenant_id, org_id, bus_id, transfer_id) → msg_product_transfers, decisions
+        // are removed when the parent transfer is deleted
+        b.HasOne<ProductTransfer>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "TransferId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        // performed_by → core_platform.cp_users(id, tenant_id)
+        b.HasOne<User>().WithMany().HasForeignKey("PerformedBy", "TenantId")
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

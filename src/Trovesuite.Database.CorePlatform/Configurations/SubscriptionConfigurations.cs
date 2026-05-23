@@ -78,7 +78,11 @@ public sealed class AppSubscriptionConfiguration : IEntityTypeConfiguration<AppS
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
         b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.Status).HasDefaultValue("TRIALING");
+        b.Property(x => x.IsPaymentRequired).HasDefaultValue(true);
+        b.Property(x => x.IsEnterprise).HasDefaultValue(false);
         b.Property(x => x.Cdatetime).AsTimestampDefault();
+        b.HasInCheck("status", "TRIALING", "ACTIVE", "PENDING_PAYMENT", "PAST_DUE", "SUSPENDED", "CANCELLED");
         b.HasIndex(x => new { x.TenantId, x.BusinessId, x.AppId }).IsUnique();
         b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne<App>().WithMany().HasForeignKey(x => x.AppId).OnDelete(DeleteBehavior.Restrict);
@@ -104,10 +108,32 @@ public sealed class AppSubscriptionHistoryConfiguration : IEntityTypeConfigurati
         b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne<App>().WithMany().HasForeignKey(x => x.AppId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Subscription>().WithMany().HasForeignKey(x => x.SharedSubscriptionId).OnDelete(DeleteBehavior.Restrict);
-        b.HasOne<AppSubscription>().WithMany().HasForeignKey(x => new { x.AppSubscriptionId, x.TenantId })
-            .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Cascade);
+        // NOTE: deliberately NO FK to cp_app_subscriptions. This table is the durable
+        // record of past subscription periods, so it must survive the hard-delete of
+        // its parent app subscription on unsubscribe (same pattern as
+        // cp_tenant_owners_registry). app_subscription_id is kept as a plain column.
         b.HasOne<Business>().WithMany().HasForeignKey(x => new { x.BusinessId, x.TenantId })
             .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Cascade);
+        b.HasDeleteStatusCheck();
+        b.WithAuditUserFks();
+    }
+}
+
+public sealed class PaymentAuthorizationConfiguration : IEntityTypeConfiguration<PaymentAuthorization>
+{
+    public void Configure(EntityTypeBuilder<PaymentAuthorization> b)
+    {
+        b.ToTable("cp_payment_authorizations", t => t.HasComment(
+            "Tenant-level saved Paystack card reference. Holds only the reusable authorization token and non-sensitive display metadata — never the PAN or CVV."));
+        b.HasKey(x => new { x.Id, x.TenantId });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.Reusable).HasDefaultValue(true);
+        b.Property(x => x.IsDefault).HasDefaultValue(true);
+        b.Property(x => x.Cdatetime).AsTimestampDefault();
+        b.HasIndex(x => new { x.TenantId, x.AuthorizationCode }).IsUnique();
+        b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
         b.HasDeleteStatusCheck();
         b.WithAuditUserFks();
     }
