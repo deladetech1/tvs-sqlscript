@@ -53,6 +53,9 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.Property(x => x.EmployeeCode).HasMaxLength(32);
         b.Property(x => x.FullName).HasMaxLength(500);
         b.Property(x => x.UserId).HasMaxLength(128);
+        b.Property(x => x.LinkedInUrl).HasColumnName("linked_in_url");
+        b.Property(x => x.Tier2PensionProvider).HasColumnName("tier2pension_provider");
+        b.Property(x => x.Tier3PensionProvider).HasColumnName("tier3pension_provider");
         b.Property(x => x.GrossSalary).HasPrecision(18, 4);
         b.Property(x => x.AnnualizedCost).HasPrecision(18, 4);
         b.Property(x => x.Currency).HasMaxLength(8).HasDefaultValue("GHS");
