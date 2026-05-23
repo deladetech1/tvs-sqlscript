@@ -42,7 +42,15 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-zeloshr-disciplinary-get', 'ZelosHR Disciplinary Get', 'rt-zeloshr-disciplinary', 'Can list disciplinary cases', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-zeloshr-disciplinary-manage', 'ZelosHR Disciplinary Manage', 'rt-zeloshr-disciplinary', 'Can open and update disciplinary cases', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-zeloshr-documents-get', 'ZelosHR Documents Get', 'rt-zeloshr-documents', 'Can list employee documents', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-zeloshr-documents-manage', 'ZelosHR Documents Manage', 'rt-zeloshr-documents', 'Can upload and update document metadata', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-zeloshr-documents-manage', 'ZelosHR Documents Manage', 'rt-zeloshr-documents', 'Can upload and update document metadata', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+('permission-zeloshr-custom-fields-read', 'ZelosHR Custom Fields Read', 'rt-zeloshr-custom-fields', 'View custom field definitions and form schema', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-custom-fields-write', 'ZelosHR Custom Fields Write', 'rt-zeloshr-custom-fields', 'Create and update custom field definitions', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-custom-fields-delete', 'ZelosHR Custom Fields Delete', 'rt-zeloshr-custom-fields', 'Soft-delete custom field definitions', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-custom-fields-admin', 'ZelosHR Custom Fields Admin', 'rt-zeloshr-custom-fields', 'Reorder and administer custom field definitions', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-custom-field-values-read', 'ZelosHR Custom Field Values Read', 'rt-zeloshr-custom-fields', 'Read custom field values on entities', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-custom-field-values-write', 'ZelosHR Custom Field Values Write', 'rt-zeloshr-custom-fields', 'Write custom field values on entities', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-sensitive-fields-reveal', 'ZelosHR Sensitive Fields Reveal', 'rt-zeloshr-custom-fields', 'Reveal masked sensitive custom field values', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,

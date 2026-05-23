@@ -22,6 +22,13 @@ FROM (VALUES
     ('permission-hr-departments-manage'),
     ('permission-hr-banks-manage'),
     ('permission-hr-pension-providers-manage'),
-    ('permission-hr-file-upload')
+    ('permission-hr-file-upload'),
+    ('permission-zeloshr-custom-fields-read'),
+    ('permission-zeloshr-custom-fields-write'),
+    ('permission-zeloshr-custom-fields-delete'),
+    ('permission-zeloshr-custom-fields-admin'),
+    ('permission-zeloshr-custom-field-values-read'),
+    ('permission-zeloshr-custom-field-values-write'),
+    ('permission-zeloshr-sensitive-fields-reveal')
 ) AS p(permission_id)
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;

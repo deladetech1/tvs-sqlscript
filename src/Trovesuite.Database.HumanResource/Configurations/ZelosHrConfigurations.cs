@@ -21,9 +21,11 @@ public sealed class ZhrBranchConfiguration : IEntityTypeConfiguration<ZhrBranch>
         b.Property(x => x.OrgId).HasMaxLength(128);
         b.Property(x => x.Name).HasMaxLength(150);
         b.Property(x => x.IsArchived).HasDefaultValue(false);
+        b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
         b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
+        b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
     }
 }
 
@@ -37,9 +39,11 @@ public sealed class ZhrDepartmentConfiguration : IEntityTypeConfiguration<ZhrDep
         b.HasOne<ZhrDepartment>().WithMany().HasForeignKey(x => x.ParentDepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.IsArchived).HasDefaultValue(false);
+        b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
         b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
+        b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
     }
 }
 
@@ -73,8 +77,10 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.Property(x => x.IsDraft).HasDefaultValue(true);
         b.Property(x => x.EmploymentStatus).HasDefaultValue("Active");
         b.Property(x => x.IsDeleted).HasDefaultValue(false);
+        b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
         b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
         b.HasOne<ZhrDepartment>().WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ZhrBranch>().WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.ManagerId).OnDelete(DeleteBehavior.Restrict);
@@ -130,6 +136,8 @@ public sealed class ZhrLifecycleEventConfiguration : IEntityTypeConfiguration<Zh
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.DueDate });
+        b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
+        b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
     }
 }
 
@@ -220,8 +228,55 @@ public sealed class ZhrEmployeeDocumentConfiguration : IEntityTypeConfiguration<
         b.Property(x => x.ContentType).HasMaxLength(128);
         b.Property(x => x.FileName).HasMaxLength(512);
         b.Property(x => x.IsDeleted).HasDefaultValue(false);
+        b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.UploadedAt).HasDefaultValueSql("NOW()");
         b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.Category });
+        b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
+    }
+}
+
+public sealed class ZhrCustomFieldDefinitionConfiguration : IEntityTypeConfiguration<ZhrCustomFieldDefinition>
+{
+    public void Configure(EntityTypeBuilder<ZhrCustomFieldDefinition> b)
+    {
+        b.ToZelosHrTable("zhr_custom_field_definitions");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.EntityType).HasMaxLength(64);
+        b.Property(x => x.FieldKey).HasMaxLength(64);
+        b.Property(x => x.Label).HasMaxLength(128);
+        b.Property(x => x.FieldType).HasMaxLength(32);
+        b.Property(x => x.Options).HasColumnType("jsonb");
+        b.Property(x => x.ValidationRules).HasColumnType("jsonb");
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.IsDeleted).HasDefaultValue(false);
+        b.Property(x => x.DisplayOrder).HasDefaultValue(0);
+        b.Property(x => x.SectionOrder).HasDefaultValue(0);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EntityType, x.FieldKey })
+            .IsUnique()
+            .HasFilter("is_deleted = false");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EntityType, x.SectionOrder, x.DisplayOrder });
+    }
+}
+
+public sealed class ZhrCustomFieldAuditLogConfiguration : IEntityTypeConfiguration<ZhrCustomFieldAuditLog>
+{
+    public void Configure(EntityTypeBuilder<ZhrCustomFieldAuditLog> b)
+    {
+        b.ToZelosHrTable("zhr_custom_field_audit_log");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.EntityType).HasMaxLength(64);
+        b.Property(x => x.FieldKey).HasMaxLength(64);
+        b.Property(x => x.ChangeType).HasMaxLength(32);
+        b.Property(x => x.ChangedAt).HasDefaultValueSql("NOW()");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EntityType, x.EntityId, x.ChangedAt });
     }
 }

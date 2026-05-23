@@ -37,6 +37,8 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrEmployeeDocument> ZhrEmployeeDocuments => Set<ZhrEmployeeDocument>();
     public DbSet<ZhrEmployeeEducation> ZhrEmployeeEducations => Set<ZhrEmployeeEducation>();
     public DbSet<ZhrEmployeeCertification> ZhrEmployeeCertifications => Set<ZhrEmployeeCertification>();
+    public DbSet<ZhrCustomFieldDefinition> ZhrCustomFieldDefinitions => Set<ZhrCustomFieldDefinition>();
+    public DbSet<ZhrCustomFieldAuditLog> ZhrCustomFieldAuditLogs => Set<ZhrCustomFieldAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
