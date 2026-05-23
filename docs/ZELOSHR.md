@@ -26,6 +26,8 @@ dotnet run --project src/Trovesuite.Database.Runner -- localhost 5431 user passw
 TVS_SEED_ZELOSHR_DEMO=1 dotnet run --project src/Trovesuite.Database.Runner -- localhost 5431 user password zeloshrdb deploy
 ```
 
-API headers: `X-Tenant-Id: demo-tenant`, `X-Org-Id: demo-org`.
+API Trove headers (tenant from JWT `tenant_id` claim): `app-id: app-hr`, `org-id: org_bcf5a0951f5ed22448dc5262e641e428caa3638d38b94cfa3b79c13d38a`, `bus-id: bus_5d929457b0ea7e6d55c5da25c8cfb38aeef0573658121bf5399f6f1e64d`, `loc-id: loc_c79fd9a5c53a8eaa82805e63a84da112387743c5dcdff7f7b254c02302c`, `authorization: Bearer <JWT>`.
+
+Platform seed in `05_zeloshr_demo.sql` inserts `cp_tenants`, `cp_organizations`, `cp_businesses`, `cp_locations`, `cp_business_app_locations`, and `cp_user_locations` for the demo admin user.
 
 Consumer repo: [ZelosHR](https://github.com/deladetech1/ZelosHR) — see `AGENTS.md` there.
