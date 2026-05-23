@@ -8,26 +8,24 @@ ZelosHR application tables live in the **`zeloshr`** schema, deployed as part of
 |-----------|---------|
 | `20260516195150_Initial` | `human_resource.hr_employees` (platform membership) |
 | `20260520095923_ZelosHrAppTables` | All `zeloshr.zhr_*` tables |
+| `20260521193953_AddEmployeeRegistration` | Registration wizard columns / related tables |
 
-## Seeds (`Sql/Seeds/`)
+DDL is EF Core only (`dotnet ef migrations add`). Do not hand-edit generated migrations.
 
-| File | When applied |
-|------|----------------|
-| `01_resource_types.sql` | Every deploy |
-| `02_permissions.sql` | Every deploy |
-| `03_roles.sql` | Every deploy |
-| `05_zeloshr_demo.sql` | Only when `TVS_SEED_ZELOSHR_DEMO=1` or `true` |
+## Seeds (reference data only)
 
-## Deploy for ZelosHR development
+| Source | When applied |
+|--------|----------------|
+| `Sql/Seeds/01–03` (RBAC resource types, permissions, roles) | Every deploy via `HumanResourceModule.SeedAsync` |
+| CorePlatform `Sql/Seeds/*` (apps incl. `app-hr`, tiers, etc.) | Every deploy via `CorePlatformModule.SeedAsync` |
+
+**No demo tenant / employee rows** are shipped from this repo. Production and shared environments already have `core_platform` and `zeloshr` data. For local API testing, insert matching `cp_*` context and `zhr_*` rows yourself (pgAdmin/SQL) and align ZelosHR `LocalDevelopment` / Trove headers with those ids.
+
+## Deploy
 
 ```bash
 dotnet build
 dotnet run --project src/Trovesuite.Database.Runner -- localhost 5431 user password zeloshrdb deploy
-TVS_SEED_ZELOSHR_DEMO=1 dotnet run --project src/Trovesuite.Database.Runner -- localhost 5431 user password zeloshrdb deploy
 ```
 
-API Trove headers (tenant from JWT `tenant_id` claim): `app-id: app-hr`, `org-id: org_bcf5a0951f5ed22448dc5262e641e428caa3638d38b94cfa3b79c13d38a`, `bus-id: bus_5d929457b0ea7e6d55c5da25c8cfb38aeef0573658121bf5399f6f1e64d`, `loc-id: loc_c79fd9a5c53a8eaa82805e63a84da112387743c5dcdff7f7b254c02302c`, `authorization: Bearer <JWT>`.
-
-Platform seed in `05_zeloshr_demo.sql` inserts `cp_tenants`, `cp_organizations`, `cp_businesses`, `cp_locations`, `cp_business_app_locations`, and `cp_user_locations` for the demo admin user.
-
-Consumer repo: [ZelosHR](https://github.com/deladetech1/ZelosHR) — see `AGENTS.md` there.
+Consumer repo: [ZelosHR](https://github.com/deladetech1/ZelosHR) — see `AGENTS.md` and `docs/LOCAL_DEV.md` there.
