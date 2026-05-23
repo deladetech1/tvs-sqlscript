@@ -1,0 +1,31 @@
+# ZelosHR database module
+
+ZelosHR application tables live in the **`zeloshr`** schema, deployed as part of **`Trovesuite.Database.HumanResource`** (module 4).
+
+## Migrations
+
+| Migration | Purpose |
+|-----------|---------|
+| `20260516195150_Initial` | `human_resource.hr_employees` (platform membership) |
+| `20260520095923_ZelosHrAppTables` | All `zeloshr.zhr_*` tables |
+| `20260521193953_AddEmployeeRegistration` | Registration wizard columns / related tables |
+
+DDL is EF Core only (`dotnet ef migrations add`). Do not hand-edit generated migrations.
+
+## Seeds (reference data only)
+
+| Source | When applied |
+|--------|----------------|
+| `Sql/Seeds/01–03` (RBAC resource types, permissions, roles) | Every deploy via `HumanResourceModule.SeedAsync` |
+| CorePlatform `Sql/Seeds/*` (apps incl. `app-hr`, tiers, etc.) | Every deploy via `CorePlatformModule.SeedAsync` |
+
+**No demo tenant / employee rows** are shipped from this repo. Production and shared environments already have `core_platform` and `zeloshr` data. For local API testing, insert matching `cp_*` context and `zhr_*` rows yourself (pgAdmin/SQL) and align ZelosHR `LocalDevelopment` / Trove headers with those ids.
+
+## Deploy
+
+```bash
+dotnet build
+dotnet run --project src/Trovesuite.Database.Runner -- localhost 5431 user password zeloshrdb deploy
+```
+
+Consumer repo: [ZelosHR](https://github.com/deladetech1/ZelosHR) — see `AGENTS.md` and `docs/LOCAL_DEV.md` there.
