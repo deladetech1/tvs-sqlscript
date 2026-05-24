@@ -93,7 +93,6 @@ on:
           - core_platform
           - loandrift
           - mystoreguard
-          - human_resource
       destructive_ack:
         description: 'For rollback only: type exactly YESDestructive'
         type: string
@@ -232,7 +231,6 @@ jobs:
             core_platform)  PROJ="src/Trovesuite.Database.CorePlatform";  PICK=1 ;;
             loandrift)      PROJ="src/Trovesuite.Database.LoanDrift";     PICK=2 ;;
             mystoreguard)   PROJ="src/Trovesuite.Database.MyStoreGuard";  PICK=3 ;;
-            human_resource) PROJ="src/Trovesuite.Database.HumanResource"; PICK=4 ;;
             all)            PROJ="";                                       PICK=0 ;;
           esac
           echo "proj=$PROJ" >> "$GITHUB_OUTPUT"
@@ -322,7 +320,7 @@ jobs:
           TVS_ENTERPRISE: ${{ steps.enterprise.outputs.slug }}
         run: |
           echo "::group::Starting ${{ inputs.command }} on ${{ inputs.scope }}-${{ inputs.environment }}"
-          echo "Module pick: ${{ steps.map.outputs.pick }} (0=ALL, 1=core_platform, 2=loandrift, 3=mystoreguard, 4=human_resource)"
+          echo "Module pick: ${{ steps.map.outputs.pick }} (0=ALL, 1=core_platform, 2=loandrift, 3=mystoreguard)"
           [[ -n "$TVS_ENTERPRISE" ]] \
             && echo "TVS_ENTERPRISE=$TVS_ENTERPRISE → migrations/enterprise/$TVS_ENTERPRISE/*.sql will also run" \
             || echo "TVS_ENTERPRISE=(unset) → migrations/enterprise/ skipped"
@@ -374,13 +372,12 @@ jobs:
 
           # Modules to query.
           if [[ "${{ inputs.module }}" == "all" ]]; then
-            MODULES="CorePlatform LoanDrift MyStoreGuard HumanResource"
+            MODULES="CorePlatform LoanDrift MyStoreGuard"
           else
             case "${{ inputs.module }}" in
               core_platform)  MODULES="CorePlatform" ;;
               loandrift)      MODULES="LoanDrift" ;;
               mystoreguard)   MODULES="MyStoreGuard" ;;
-              human_resource) MODULES="HumanResource" ;;
             esac
           fi
 
@@ -401,7 +398,6 @@ jobs:
             [CorePlatform]=core_platform
             [LoanDrift]=loandrift
             [MyStoreGuard]=mystoreguard
-            [HumanResource]=human_resource
           )
 
           DB_HOST="${{ steps.db.outputs.DB_HOST }}"

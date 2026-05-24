@@ -11,6 +11,5 @@
     <ProjectReference Include="..\Trovesuite.Database.CorePlatform\Trovesuite.Database.CorePlatform.csproj" />
     <ProjectReference Include="..\Trovesuite.Database.LoanDrift\Trovesuite.Database.LoanDrift.csproj" />
     <ProjectReference Include="..\Trovesuite.Database.MyStoreGuard\Trovesuite.Database.MyStoreGuard.csproj" />
-    <ProjectReference Include="..\Trovesuite.Database.HumanResource\Trovesuite.Database.HumanResource.csproj" />
   </ItemGroup>
 </Project>

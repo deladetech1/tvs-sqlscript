@@ -33,7 +33,7 @@ public sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
     public void Configure(EntityTypeBuilder<Member> b)
     {
         b.ToTable("cp_members", t => t.HasComment(
-            "Rows here are users added directly at the core-platform level. HR-onboarded users live in cp_users + human_resource.hr_employees, NOT here."));
+            "Rows here are users added directly at the core-platform level, NOT app-onboarded users."));
         b.HasKey(x => new { x.Id, x.TenantId });
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
