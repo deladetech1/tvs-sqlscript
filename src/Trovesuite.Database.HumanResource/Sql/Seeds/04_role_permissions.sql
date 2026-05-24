@@ -6,29 +6,13 @@ CREATE SCHEMA IF NOT EXISTS human_resource;
 SET search_path TO human_resource;
 
 -- =====================================================
--- Bind every HR permission to the HR Admin role
--- (role-subscribed-app-hr-admin was created in 03_roles.sql)
+-- Bind all HR + ZelosHR permissions to the HR Admin role.
+-- New permissions are also auto-assigned via core_platform triggers when inserted.
 -- =====================================================
 
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
-SELECT 'system-tenant-id', 'role-subscribed-app-hr-admin', p.permission_id
-FROM (VALUES
-    ('permission-hr-employees-create'),
-    ('permission-hr-employees-get'),
-    ('permission-hr-employees-update'),
-    ('permission-hr-employees-delete'),
-    ('permission-hr-employees-reveal-sensitive'),
-    ('permission-hr-employees-manage-salary'),
-    ('permission-hr-departments-manage'),
-    ('permission-hr-banks-manage'),
-    ('permission-hr-pension-providers-manage'),
-    ('permission-hr-file-upload'),
-    ('permission-zeloshr-custom-fields-read'),
-    ('permission-zeloshr-custom-fields-write'),
-    ('permission-zeloshr-custom-fields-delete'),
-    ('permission-zeloshr-custom-fields-admin'),
-    ('permission-zeloshr-custom-field-values-read'),
-    ('permission-zeloshr-custom-field-values-write'),
-    ('permission-zeloshr-sensitive-fields-reveal')
-) AS p(permission_id)
+SELECT 'system-tenant-id', 'role-subscribed-app-hr-admin', p.id
+FROM core_platform.cp_permissions p
+WHERE p.id LIKE 'permission-hr-%'
+   OR p.id LIKE 'permission-zeloshr-%'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;

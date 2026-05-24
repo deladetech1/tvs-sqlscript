@@ -20,7 +20,9 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 -- ZelosHR API modules (feature/uplift)
 ('rt-zeloshr-dashboard', 'ZelosHR Dashboard', 'Executive HR dashboard', 'rt-subscribed-app-hr'),
 ('rt-zeloshr-employee', 'ZelosHR Employee', 'Employee directory and profiles', 'rt-subscribed-app-hr'),
-('rt-zeloshr-org', 'ZelosHR Org Structure', 'Departments, branches, org chart', 'rt-subscribed-app-hr'),
+('rt-zeloshr-org', 'ZelosHR Org Structure', 'Org chart and organisation summary', 'rt-subscribed-app-hr'),
+('rt-zeloshr-departments', 'ZelosHR Departments', 'Department management', 'rt-subscribed-app-hr'),
+('rt-zeloshr-branches', 'ZelosHR Branches', 'Branch management', 'rt-subscribed-app-hr'),
 ('rt-zeloshr-lifecycle', 'ZelosHR Lifecycle', 'Lifecycle events and workflows', 'rt-subscribed-app-hr'),
 ('rt-zeloshr-audit', 'ZelosHR Audit', 'Audit logs', 'rt-subscribed-app-hr'),
 ('rt-zeloshr-attendance', 'ZelosHR Attendance', 'Attendance records', 'rt-subscribed-app-hr'),
