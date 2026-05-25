@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Trovesuite.Database.Common.Abstractions;
+using Trovesuite.Database.HumanResource.Seeds;
 
 namespace Trovesuite.Database.HumanResource;
 
@@ -23,9 +24,10 @@ public sealed class HumanResourceModule : IModule
 
     public async Task SeedAsync(DbContext context, CancellationToken ct = default)
     {
-        var assembly = typeof(HumanResourceModule).Assembly;
+        if (context is not HumanResourceDbContext hrContext)
+            throw new InvalidOperationException(
+                $"{nameof(HumanResourceModule)} requires a {nameof(HumanResourceDbContext)} instance.");
 
-        foreach (var (_, body) in EmbeddedSql.LoadAllOrdered(assembly, "Seeds"))
-            await context.Database.ExecuteSqlRawAsync(body, ct);
+        await HumanResourceRbacSeeder.SeedAsync(hrContext, ct);
     }
 }

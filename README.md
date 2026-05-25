@@ -62,7 +62,7 @@ Identical to `script_db_setup.sh`:
 | 1     | `core_platform`  | `core_platform`  | 4 PL/pgSQL functions for automatic role↔permission assignment                           |
 | 2     | `loandrift`      | `loandrift`      | Status-CHECK self-heal; `ld_loan_details_view`                                          |
 | 3     | `mystoreguard`   | `mystoreguard`   | `COALESCE`-based partial unique index on `msg_product_prices`; PO items column patches  |
-| 4     | `human_resource` | `human_resource` | — (seeds only)                                                                          |
+| 4     | `human_resource` | `human_resource` | EF RBAC seeds into `core_platform` (resource types, permissions, roles)                 |
 
 After all four modules complete, the Runner additionally applies:
 

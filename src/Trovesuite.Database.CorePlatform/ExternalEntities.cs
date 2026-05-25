@@ -65,5 +65,24 @@ public static class ExternalCorePlatformEntities
             e.ToTable("cp_resource_types", CorePlatformDbContext.SchemaName, t => t.ExcludeFromMigrations());
             e.HasKey(x => x.Id);
         });
+
+        b.Entity<Permission>(e =>
+        {
+            e.ToTable("cp_permissions", CorePlatformDbContext.SchemaName, t => t.ExcludeFromMigrations());
+            e.HasKey(x => x.Id);
+        });
+
+        b.Entity<Role>(e =>
+        {
+            e.ToTable("cp_roles", CorePlatformDbContext.SchemaName, t => t.ExcludeFromMigrations());
+            e.HasKey(x => x.Id);
+        });
+
+        b.Entity<RolePermission>(e =>
+        {
+            e.ToTable("cp_role_permissions", CorePlatformDbContext.SchemaName, t => t.ExcludeFromMigrations());
+            e.HasKey(x => new { x.Id, x.TenantId });
+            e.HasIndex(x => new { x.TenantId, x.RoleId, x.PermissionId }).IsUnique();
+        });
     }
 }
