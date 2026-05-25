@@ -100,6 +100,8 @@ public class PaymentAuthorization : TenantScopedEntity
     public string? Signature { get; set; }
     public bool Reusable { get; set; } = true;
     public bool IsDefault { get; set; } = true;
+    // Paystack payment channel for this saved instrument: "card", "mobile_money", etc.
+    public string? Channel { get; set; }
 }
 
 public class AppSubscriptionHistory : TenantScopedEntity
