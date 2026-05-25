@@ -30,7 +30,6 @@ tvs-sqlscript/
 │   ├── Trovesuite.Database.CorePlatform/   # module 1  - 42 entities, schema core_platform
 │   ├── Trovesuite.Database.LoanDrift/      # module 2  - 19 entities, schema loandrift
 │   ├── Trovesuite.Database.MyStoreGuard/   # module 3  - 50 entities, schema mystoreguard
-│   ├── Trovesuite.Database.HumanResource/  # module 4  -  1 entity,  schema human_resource
 │   └── Trovesuite.Database.Runner/         # CLI: tvs-db
 └── migrations/
     ├── shared/                             # applies to every deploy (saas + every enterprise)
@@ -62,7 +61,7 @@ Identical to `script_db_setup.sh`:
 | 1     | `core_platform`  | `core_platform`  | 4 PL/pgSQL functions for automatic role↔permission assignment                           |
 | 2     | `loandrift`      | `loandrift`      | Status-CHECK self-heal; `ld_loan_details_view`                                          |
 | 3     | `mystoreguard`   | `mystoreguard`   | `COALESCE`-based partial unique index on `msg_product_prices`; PO items column patches  |
-| 4     | `human_resource` | `human_resource` | EF RBAC seeds into `core_platform` (resource types, permissions, roles)                 |
+| 4     | `human_resource` | `human_resource` | ZelosHR `zeloshr` tables + EF RBAC seeds into `core_platform`                             |
 
 After all four modules complete, the Runner additionally applies:
 
