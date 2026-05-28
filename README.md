@@ -68,8 +68,8 @@ After all four modules complete, the Runner additionally applies:
 5. `migrations/shared/*.sql` — runs on every deploy.
 6. `migrations/enterprise/<slug>/*.sql` — runs **only** when the
    `TVS_ENTERPRISE` env var is set (the GitHub workflow sets it from the
-   `scope` input). For example, scope=`enterprise-bidtl` → applies
-   `migrations/enterprise/bidtl/*.sql`.
+   `scope` input). For example, scope=`enterprise-bgclt` → applies
+   `migrations/enterprise/bgclt/*.sql`.
 
 Cross-module FKs (loandrift → core_platform.cp_users, etc.) work because all
 schemas live in the same physical database.
@@ -80,7 +80,7 @@ Two axes pick the target DB:
 
 ```
 scope  ─────────►  saas                       (your team's DBs)
-                   enterprise-bidtl           (a specific customer)
+                   enterprise-bgclt           (a specific customer)
                    enterprise-<slug>          (… others as they onboard)
 
 env    ─────────►  dev / stage / prod
@@ -91,7 +91,7 @@ GitHub Environment name = `<scope>-<environment>`:
 | Scope               | dev                  | stage                  | prod                  |
 | ------------------- | -------------------- | ---------------------- | --------------------- |
 | `saas`              | `saas-dev`           | `saas-stage`           | `saas-prod`           |
-| `enterprise-bidtl`  | `enterprise-bidtl-dev` (opt.) | `enterprise-bidtl-stage` (opt.) | `enterprise-bidtl-prod` |
+| `enterprise-bgclt`  | `enterprise-bgclt-dev` (opt.) | `enterprise-bgclt-stage` (opt.) | `enterprise-bgclt-prod` |
 
 Each cell that actually exists is a real GitHub Environment in
 **Settings → Environments**, with:
@@ -122,14 +122,14 @@ dotnet run --project src/Trovesuite.Database.Runner -- localhost 5432 u p d veri
 dotnet run --project src/Trovesuite.Database.Runner -- localhost 5432 u p d deploy
 
 # To also run an enterprise's customizations from migrations/enterprise/<slug>/:
-TVS_ENTERPRISE=bidtl  dotnet run --project src/Trovesuite.Database.Runner -- … deploy
+TVS_ENTERPRISE=bgclt  dotnet run --project src/Trovesuite.Database.Runner -- … deploy
 ```
 
 **Via GitHub Actions** (Actions → "Database (EF Core dispatch)" → Run workflow):
 
 | Input | Example |
 | --- | --- |
-| `scope` | `saas` or `enterprise-bidtl` |
+| `scope` | `saas` or `enterprise-bgclt` |
 | `environment` | `dev` / `stage` / `prod` |
 | `command` | `validate` / `verify` / `deploy` / `rollback` / `migrations-*` |
 | `module` | `all` (most commands) or a specific module (for `migrations-*`) |
@@ -201,7 +201,7 @@ for the full onboarding runbook for new enterprises.
 1. Get the libpq URL(s) from the enterprise — one per DB they want managed
    (typically just production, sometimes stage + production).
 2. **Repo → Settings → Environments → New environment** for each:
-   - Name: `enterprise-<slug>-<env>` — e.g. `enterprise-bidtl-prod`.
+   - Name: `enterprise-<slug>-<env>` — e.g. `enterprise-bgclt-prod`.
    - Add environment secret: `DATABASE_URL` = the libpq URL.
    - *(Recommended for `*-prod`)* Add required reviewers.
 3. Edit [`.github/workflows/database-dispatch.yml`](.github/workflows/database-dispatch.yml):

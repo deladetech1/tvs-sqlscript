@@ -5,17 +5,17 @@ One subfolder per customer:
 
 ```
 migrations/enterprise/
-├── bidtl/
-│   ├── 20260520-01-bidtl-custom-roles.sql
-│   └── 20260601-02-bidtl-vat-tax-rule.sql
+├── bgclt/
+│   ├── 20260520-01-bgclt-custom-roles.sql
+│   └── 20260601-02-bgclt-vat-tax-rule.sql
 └── README.md      ← this file
 ```
 
 ## How the Runner picks the right folder
 
 When deploying, the Runner reads the `TVS_ENTERPRISE` environment variable
-(set by the GitHub workflow from the chosen scope — e.g. `scope=enterprise-bidtl`
-→ `TVS_ENTERPRISE=bidtl`). Files under `migrations/enterprise/<slug>/` then
+(set by the GitHub workflow from the chosen scope — e.g. `scope=enterprise-bgclt`
+→ `TVS_ENTERPRISE=bgclt`). Files under `migrations/enterprise/<slug>/` then
 run after `migrations/shared/`.
 
 Internal targets (scope=`saas`) leave `TVS_ENTERPRISE` unset — no enterprise

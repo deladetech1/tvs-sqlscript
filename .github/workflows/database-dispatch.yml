@@ -18,9 +18,9 @@
 #   │ saas-dev                         │ DATABASE_URL   │ none                   │
 #   │ saas-stage                       │ DATABASE_URL   │ wait-timer             │
 #   │ saas-prod                        │ DATABASE_URL   │ Required reviewers     │
-#   │ enterprise-bidtl-dev    (opt.)   │ DATABASE_URL   │                        │
-#   │ enterprise-bidtl-stage  (opt.)   │ DATABASE_URL   │                        │
-#   │ enterprise-bidtl-prod            │ DATABASE_URL   │ Required reviewers     │
+#   │ enterprise-bgclt-dev    (opt.)   │ DATABASE_URL   │                        │
+#   │ enterprise-bgclt-stage  (opt.)   │ DATABASE_URL   │                        │
+#   │ enterprise-bgclt-prod            │ DATABASE_URL   │ Required reviewers     │
 #   │ enterprise-acme-prod             │ DATABASE_URL   │ Required reviewers     │
 #   └──────────────────────────────────┴────────────────┴────────────────────────┘
 #
@@ -63,7 +63,7 @@ on:
           # Per-enterprise scopes. Add `- enterprise-<slug>` here as you onboard
           # new customers. The slug (text after `enterprise-`) is what the
           # Runner uses to find migrations/enterprise/<slug>/*.sql.
-          - enterprise-bidtl
+          - enterprise-bgclt
       environment:
         description: 'WHICH DB of theirs: dev / stage / prod'
         required: true
@@ -111,7 +111,7 @@ jobs:
     # run-page header, and email/Slack notifications. Encodes:
     #   • a command-specific emoji   (🚀 deploy, 💥 rollback, 🔍 validate, …)
     #   • the command                (deploy / verify / status / rollback / migrations-list / validate)
-    #   • the target GitHub Environment            (e.g. enterprise-bidtl-dev)
+    #   • the target GitHub Environment            (e.g. enterprise-bgclt-dev)
     #   • the module                 (all / core_platform / …)
     #   • who triggered it           (@github-handle)
     name: >-
@@ -136,7 +136,7 @@ jobs:
 
     # Bind the job to the chosen GitHub Environment. Naming convention:
     # `<scope>-<environment>` — e.g. saas-dev, saas-stage, saas-prod,
-    # enterprise-bidtl-prod, enterprise-acme-stage.
+    # enterprise-bgclt-prod, enterprise-acme-stage.
     # This is what unlocks:
     #   - env-scoped secrets (DATABASE_URL),
     #   - required reviewers / wait-timer protection rules,
