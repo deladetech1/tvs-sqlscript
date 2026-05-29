@@ -52,6 +52,8 @@ public class ZhrEmployee
     public string? Gender { get; set; }
     public string? Nationality { get; set; }
     public string? NationalityIdType { get; set; }
+    public DateOnly? IdIssueDate { get; set; }
+    public DateOnly? IdExpiryDate { get; set; }
     public string? IdNumber { get; set; }
     public string? GhanaCardNumber { get; set; }
     public string? PersonalEmail { get; set; }
@@ -158,8 +160,8 @@ public class ZhrEmployeeEducation
     public string Institution { get; set; } = default!;
     public string? Degree { get; set; }
     public string? FieldOfStudy { get; set; }
-    public int? StartYear { get; set; }
-    public int? EndYear { get; set; }
+    public DateOnly? StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
     public bool IsCurrent { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

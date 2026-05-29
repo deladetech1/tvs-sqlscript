@@ -9,6 +9,7 @@ ZelosHR application tables live in the **`zeloshr`** schema, deployed as part of
 | `20260516195150_Initial` | `human_resource.hr_employees` (platform membership) |
 | `20260520095923_ZelosHrAppTables` | All `zeloshr.zhr_*` tables |
 | `20260521193953_AddEmployeeRegistration` | Registration wizard columns / related tables |
+| `20260529234850_EmployeeIdAndEducationDates` | Employee ID issue/expiry dates; education `start_date` / `end_date` (replaces year columns) |
 
 DDL is EF Core only (`dotnet ef migrations add`). Do not hand-edit generated migrations.
 
