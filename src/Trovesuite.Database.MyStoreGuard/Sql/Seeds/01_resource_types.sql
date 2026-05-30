@@ -17,9 +17,7 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-shop', 'Store', 'Store management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-clients', 'Clients', 'Clients management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-expenses', 'Expenses', 'Expenses management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-creditors', 'Creditors', 'Creditors management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-depositors', 'Depositors', 'Depositors management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-returns', 'Returns', 'Returns management for Mystoreguard', 'rt-subscribed-app-msg'),
+-- Removed rt-creditors / rt-depositors / rt-returns: placeholder resource types for features that were never built (cleaned up in Seeds/04_others.sql)
 ('rt-invoice', 'Invoice', 'Invoice management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-sales', 'Sales', 'Sales management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-suppliers', 'Suppliers', 'Suppliers management for Mystoreguard', 'rt-subscribed-app-msg'),

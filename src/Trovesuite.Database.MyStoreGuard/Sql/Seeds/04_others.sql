@@ -73,29 +73,10 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-expenses-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-expenses-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-creditors-admin', 'permission-app-get'),
-('system-tenant-id', 'role-msg-creditors-admin', 'permission-business-get'),
-('system-tenant-id', 'role-msg-creditors-admin', 'permission-organization-get'),
-('system-tenant-id', 'role-msg-creditors-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-creditors-admin', 'permission-business-app-subscribe'),
-('system-tenant-id', 'role-msg-creditors-admin', 'permission-business-app-get-locations'),
-('system-tenant-id', 'role-msg-creditors-admin', 'permission-user-get-locations'),
-
-('system-tenant-id', 'role-msg-depositors-admin', 'permission-app-get'),
-('system-tenant-id', 'role-msg-depositors-admin', 'permission-business-get'),
-('system-tenant-id', 'role-msg-depositors-admin', 'permission-organization-get'),
-('system-tenant-id', 'role-msg-depositors-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-depositors-admin', 'permission-business-app-subscribe'),
-('system-tenant-id', 'role-msg-depositors-admin', 'permission-business-app-get-locations'),
-('system-tenant-id', 'role-msg-depositors-admin', 'permission-user-get-locations'),
-
-('system-tenant-id', 'role-msg-returns-admin', 'permission-app-get'),
-('system-tenant-id', 'role-msg-returns-admin', 'permission-business-get'),
-('system-tenant-id', 'role-msg-returns-admin', 'permission-organization-get'),
-('system-tenant-id', 'role-msg-returns-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-returns-admin', 'permission-business-app-subscribe'),
-('system-tenant-id', 'role-msg-returns-admin', 'permission-business-app-get-locations'),
-('system-tenant-id', 'role-msg-returns-admin', 'permission-user-get-locations'),
+-- Removed: role-msg-creditors-admin, role-msg-depositors-admin, role-msg-returns-admin
+-- These were placeholder roles for features that were never built (no controllers, routes,
+-- or feature-specific permissions anywhere in the codebase). The roles, their resource types,
+-- and any leftover rows are dropped in the cleanup block at the end of this file.
 
 ('system-tenant-id', 'role-msg-invoice-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-invoice-admin', 'permission-business-get'),
@@ -257,3 +238,66 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-sales-get'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-products-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Link Store Admin role (rt-shop) to all store-domain permissions.
+-- The auto-assign trigger cannot reach these: store permissions live under sibling
+-- resource types (rt-store-products, rt-store-transfers, etc.), not children of rt-shop,
+-- so they must be mapped manually (same approach as Store Sales above).
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-config-create'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-config-get'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-products-create'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-products-get'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-products-update'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-products-delete'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-transfers-create'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-transfers-approve'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-transfers-get'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-transfers-update'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-transfers-delete'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-create'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-get'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-update'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-cancel'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-delete'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-create'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-get'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-update'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-approve')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Link Warehouse Admin role (rt-warehouse) to all warehouse-domain permissions.
+-- Same reasoning as Store Admin: warehouse permissions live under sibling resource types
+-- (rt-warehouse-configs, rt-warehouse-products, rt-warehouse-transfers), not children of
+-- rt-warehouse, so the trigger never attaches them — map manually.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-config-create'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-config-get'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-products-create'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-products-get'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-products-update'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-products-delete'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-create'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-approve'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-get'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-update'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-delete')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- =============================================
+-- CLEANUP: remove dead placeholder roles & resource types (creditors / depositors / returns)
+-- These features were never implemented (no controllers, routes, or feature permissions).
+-- Idempotent: re-running on a clean database is a harmless no-op.
+-- Deleted child-first to respect foreign keys: assignments -> role_permissions -> roles -> resource_types.
+-- =============================================
+DELETE FROM core_platform.cp_assign_roles
+WHERE role_id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin');
+
+DELETE FROM core_platform.cp_role_permissions
+WHERE role_id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin');
+
+DELETE FROM core_platform.cp_roles
+WHERE id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin');
+
+DELETE FROM core_platform.cp_resource_types
+WHERE id IN ('rt-creditors', 'rt-depositors', 'rt-returns');

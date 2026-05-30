@@ -19,9 +19,7 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-msg-store-admin', 'system-tenant-id', 'Mystoreguard Store Admin', 'Administrator for store management', 'rt-shop', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-clients-admin', 'system-tenant-id', 'Mystoreguard Clients Admin', 'Administrator for clients management', 'rt-clients', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-expenses-admin', 'system-tenant-id', 'Mystoreguard Expenses Admin', 'Administrator for expenses management', 'rt-expenses', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-msg-creditors-admin', 'system-tenant-id', 'Mystoreguard Creditors Admin', 'Administrator for creditors management', 'rt-creditors', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-msg-depositors-admin', 'system-tenant-id', 'Mystoreguard Depositors Admin', 'Administrator for depositors management', 'rt-depositors', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-msg-returns-admin', 'system-tenant-id', 'Mystoreguard Returns Admin', 'Administrator for returns management', 'rt-returns', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Removed creditors/depositors/returns admin roles: placeholder roles for features that were never built (cleaned up in 04_others.sql)
 ('role-msg-invoice-admin', 'system-tenant-id', 'Mystoreguard Invoice Admin', 'Administrator for invoice management', 'rt-invoice', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-suppliers-admin', 'system-tenant-id', 'Mystoreguard Suppliers Admin', 'Administrator for suppliers management', 'rt-suppliers', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-product-admin', 'system-tenant-id', 'Mystoreguard Product Admin', 'Administrator for product management', 'rt-product', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
