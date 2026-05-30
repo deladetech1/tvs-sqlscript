@@ -10,6 +10,7 @@ ZelosHR application tables live in the **`zeloshr`** schema, deployed as part of
 | `20260520095923_ZelosHrAppTables` | All `zeloshr.zhr_*` tables |
 | `20260521193953_AddEmployeeRegistration` | Registration wizard columns / related tables |
 | `20260529234850_EmployeeIdAndEducationDates` | Employee ID issue/expiry dates; education `start_date` / `end_date` (replaces year columns) |
+| `20260530000750_RenameCredentialIdToCredentialUrl` | Certification `credential_url` column (was `credential_id`) |
 
 DDL is EF Core only (`dotnet ef migrations add`). Do not hand-edit generated migrations.
 
