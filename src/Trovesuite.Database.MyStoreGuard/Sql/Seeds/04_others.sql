@@ -240,16 +240,20 @@ ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 -- =============================================
 
 -- Link Store Sales Admin role to its permissions (includes cancel and delete)
+-- Also granted store-products-get so sales staff can view the shop's item catalog
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-create'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-get'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-update'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-cancel'),
-('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-delete')
+('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-delete'),
+('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-products-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Store Sales Personnel role to its permissions (create and get only)
+-- Also granted store-products-get so sales staff can view the shop's item catalog
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-sales-create'),
-('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-sales-get')
+('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-sales-get'),
+('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-products-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
