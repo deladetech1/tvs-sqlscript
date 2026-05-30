@@ -2612,13 +2612,9 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("created_by");
 
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasDefaultValue("GHS")
-                        .HasColumnName("currency");
+                    b.Property<string>("CurrencyId")
+                        .HasColumnType("text")
+                        .HasColumnName("currency_id");
 
                     b.Property<string>("CustomFieldsData")
                         .IsRequired()
@@ -2626,6 +2622,13 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("jsonb")
                         .HasDefaultValue("{}")
                         .HasColumnName("custom_fields_data");
+
+                    b.Property<string>("DocumentIds")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValueSql("'[]'::jsonb")
+                        .HasColumnName("document_ids");
 
                     b.Property<DateOnly?>("DateOfBirth")
                         .HasColumnType("date")
@@ -2896,6 +2899,9 @@ namespace Trovesuite.Database.HumanResource.Migrations
 
                     b.HasIndex("ReportsToId")
                         .HasDatabaseName("ix_zhr_employees_reports_to_id");
+
+                    b.HasIndex("CurrencyId", "TenantId")
+                        .HasDatabaseName("ix_zhr_employees_currency_id_tenant_id");
 
                     b.HasIndex("TenantId", "GhanaCardNumber")
                         .IsUnique()
@@ -3932,6 +3938,12 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_zhr_employees_zhr_branches_branch_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Currency", null)
+                        .WithMany()
+                        .HasForeignKey("CurrencyId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_zhr_employees_cp_currencies_currency_id_tenant_id");
 
                     b.HasOne("Trovesuite.Database.HumanResource.Entities.ZhrDepartment", null)
                         .WithMany()

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Trovesuite.Database.CorePlatform.Entities;
 using Trovesuite.Database.HumanResource.Entities;
 
 namespace Trovesuite.Database.HumanResource.Configurations;
@@ -62,7 +63,14 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.Property(x => x.Tier3PensionProvider).HasColumnName("tier3pension_provider");
         b.Property(x => x.GrossSalary).HasPrecision(18, 4);
         b.Property(x => x.AnnualizedCost).HasPrecision(18, 4);
-        b.Property(x => x.Currency).HasMaxLength(8).HasDefaultValue("GHS");
+        b.Property(x => x.CurrencyId).HasColumnName("currency_id");
+        b.Property(x => x.DocumentIds)
+            .HasColumnName("document_ids")
+            .HasColumnType("jsonb")
+            .HasDefaultValueSql("'[]'::jsonb");
+        b.HasOne<Currency>().WithMany()
+            .HasForeignKey(x => new { x.CurrencyId, x.TenantId })
+            .OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => x.EmployeeCode).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.OrgId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmploymentStatus, x.DepartmentId, x.BranchId });
