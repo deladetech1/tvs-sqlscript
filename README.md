@@ -24,12 +24,14 @@ tvs-sqlscript/
 ├── Trovesuite.Database.sln
 ├── Directory.Build.props                   # central package versions
 ├── .github/workflows/
-│   └── database-dispatch.yml               # manual workflow_dispatch entrypoint
+│   ├── database-dispatch.yml               # manual workflow_dispatch entrypoint
+│   └── database-deploy-branches.yml        # auto deploy on push (dev → saas-dev, main → saas-prod)
 ├── src/
 │   ├── Trovesuite.Database.Common/         # shared base entities, fluent helpers, IModule
 │   ├── Trovesuite.Database.CorePlatform/   # module 1  - 42 entities, schema core_platform
 │   ├── Trovesuite.Database.LoanDrift/      # module 2  - 19 entities, schema loandrift
 │   ├── Trovesuite.Database.MyStoreGuard/   # module 3  - 50 entities, schema mystoreguard
+│   ├── Trovesuite.Database.HumanResource/  # module 4  - ZelosHR / HR schema (human_resource + zeloshr)
 │   └── Trovesuite.Database.Runner/         # CLI: tvs-db
 └── migrations/
     ├── shared/                             # applies to every deploy (saas + every enterprise)
@@ -125,14 +127,23 @@ dotnet run --project src/Trovesuite.Database.Runner -- localhost 5432 u p d depl
 TVS_ENTERPRISE=bgclt  dotnet run --project src/Trovesuite.Database.Runner -- … deploy
 ```
 
-**Via GitHub Actions** (Actions → "Database (EF Core dispatch)" → Run workflow):
+**Via GitHub Actions**
+
+| Workflow | When | Target |
+| --- | --- | --- |
+| **Database deploy (branch push)** | Push to `dev`, `main`, or `master` (under `src/**` or `migrations/**`) | `dev` → `saas-dev` · `main`/`master` → `saas-prod` |
+| **Database (EF Core dispatch)** | Manual **Run workflow** | Any scope/environment/command |
+
+Branch push deploy runs **all modules** (including `human_resource` / ZelosHR). Align prod branch name with ZelosHR: use **`main`** ( `master` is still accepted as a legacy alias).
+
+Manual dispatch inputs:
 
 | Input | Example |
 | --- | --- |
 | `scope` | `saas` or `enterprise-bgclt` |
 | `environment` | `dev` / `stage` / `prod` |
 | `command` | `validate` / `verify` / `deploy` / `rollback` / `migrations-*` |
-| `module` | `all` (most commands) or a specific module (for `migrations-*`) |
+| `module` | `all` (most commands) or `core_platform` / `loandrift` / `mystoreguard` / `human_resource` |
 
 See the comments at the top of
 [`.github/workflows/database-dispatch.yml`](.github/workflows/database-dispatch.yml)
