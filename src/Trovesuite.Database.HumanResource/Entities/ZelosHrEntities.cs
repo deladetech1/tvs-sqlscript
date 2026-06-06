@@ -70,9 +70,9 @@ public class ZhrEmployee
     public string? State { get; set; }
     public string? ProfilePhotoUrl { get; set; }
 
-    public string LifecycleState { get; set; } = default!;
-    public string LifecycleStatus { get; set; } = default!;
-    public bool IsDraft { get; set; }
+    public string LifecycleState { get; set; } = "Pre-hire";
+    public string LifecycleStatus { get; set; } = "draft";
+    public bool IsDraft { get; set; } = true;
 
     public string? JobTitle { get; set; }
     public Guid? DepartmentId { get; set; }
@@ -84,8 +84,8 @@ public class ZhrEmployee
     public Guid? ManagerId { get; set; }
     public Guid? ReportsToId { get; set; }
     public Guid? DottedLineManagerId { get; set; }
-    public string? EmploymentStatus { get; set; }
-    public string? ContractType { get; set; }
+    public string EmploymentStatus { get; set; } = "Active";
+    public string? ContractType { get; set; } = "Permanent";
     public DateOnly? ProbationEndDate { get; set; }
     public DateOnly? EmploymentStartDate { get; set; }
     public DateOnly? StartDate { get; set; }
