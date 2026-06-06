@@ -12,6 +12,10 @@ public class ZhrBranch
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string Name { get; set; } = default!;
+    public string? City { get; set; }
+    public string? Region { get; set; }
+    /// <summary>ISO 3166-1 alpha-2 (e.g. GH).</summary>
+    public string? CountryCode { get; set; }
     public bool IsArchived { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }

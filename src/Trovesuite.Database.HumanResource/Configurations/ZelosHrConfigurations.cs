@@ -21,6 +21,9 @@ public sealed class ZhrBranchConfiguration : IEntityTypeConfiguration<ZhrBranch>
         b.Property(x => x.TenantId).HasMaxLength(128);
         b.Property(x => x.OrgId).HasMaxLength(128);
         b.Property(x => x.Name).HasMaxLength(150);
+        b.Property(x => x.City).HasMaxLength(100);
+        b.Property(x => x.Region).HasMaxLength(100);
+        b.Property(x => x.CountryCode).HasMaxLength(2);
         b.Property(x => x.IsArchived).HasDefaultValue(false);
         b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
