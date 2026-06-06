@@ -71,7 +71,7 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.HasOne<Currency>().WithMany()
             .HasForeignKey(x => new { x.CurrencyId, x.TenantId })
             .OnDelete(DeleteBehavior.Restrict);
-        b.HasIndex(x => x.EmployeeCode).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.EmployeeCode }).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.OrgId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmploymentStatus, x.DepartmentId, x.BranchId });
         b.HasIndex(x => new { x.TenantId, x.GhanaCardNumber })
