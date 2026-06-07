@@ -1,10 +1,14 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Trovesuite.Database.HumanResource;
 
 #nullable disable
 
 namespace Trovesuite.Database.HumanResource.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(HumanResourceDbContext))]
+    [Migration("20260609120000_ReplaceZhrBranchLocationAndAddDepartmentDescription")]
     public partial class ReplaceZhrBranchLocationAndAddDepartmentDescription : Migration
     {
         /// <inheritdoc />
