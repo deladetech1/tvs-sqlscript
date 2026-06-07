@@ -21,9 +21,9 @@ public sealed class ZhrBranchConfiguration : IEntityTypeConfiguration<ZhrBranch>
         b.Property(x => x.TenantId).HasMaxLength(128);
         b.Property(x => x.OrgId).HasMaxLength(128);
         b.Property(x => x.Name).HasMaxLength(150);
-        b.Property(x => x.City).HasMaxLength(100);
-        b.Property(x => x.Region).HasMaxLength(100);
-        b.Property(x => x.CountryCode).HasMaxLength(2);
+        b.Property(x => x.Address).HasMaxLength(500);
+        b.Property(x => x.Country).HasMaxLength(100);
+        b.Property(x => x.Description).HasMaxLength(500);
         b.Property(x => x.IsArchived).HasDefaultValue(false);
         b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
@@ -40,6 +40,7 @@ public sealed class ZhrDepartmentConfiguration : IEntityTypeConfiguration<ZhrDep
         b.ToZelosHrTable("zhr_departments");
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Description).HasMaxLength(500);
         b.HasOne<ZhrDepartment>().WithMany().HasForeignKey(x => x.ParentDepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.IsArchived).HasDefaultValue(false);

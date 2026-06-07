@@ -12,10 +12,10 @@ public class ZhrBranch
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string Name { get; set; } = default!;
-    public string? City { get; set; }
-    public string? Region { get; set; }
-    /// <summary>ISO 3166-1 alpha-2 (e.g. GH).</summary>
-    public string? CountryCode { get; set; }
+    public string? Address { get; set; }
+    /// <summary>Country name (e.g. Ghana, Nigeria, United Kingdom).</summary>
+    public string? Country { get; set; }
+    public string? Description { get; set; }
     public bool IsArchived { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
@@ -28,6 +28,7 @@ public class ZhrDepartment
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string Name { get; set; } = default!;
+    public string? Description { get; set; }
     public Guid? ParentDepartmentId { get; set; }
     public Guid? HeadOfDepartmentId { get; set; }
     public bool IsArchived { get; set; }
