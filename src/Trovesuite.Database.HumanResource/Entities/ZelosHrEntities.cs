@@ -20,6 +20,8 @@ public class ZhrBranch
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrDepartment
@@ -35,6 +37,8 @@ public class ZhrDepartment
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrEmployee
