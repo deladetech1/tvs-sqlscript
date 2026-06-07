@@ -2193,6 +2193,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
                     b.Property<string>("CustomFieldsData")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -2234,6 +2238,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id")
                         .HasName("pk_zhr_branches");
@@ -2476,6 +2484,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
                     b.Property<string>("CustomFieldsData")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -2522,6 +2534,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id")
                         .HasName("pk_zhr_departments");
