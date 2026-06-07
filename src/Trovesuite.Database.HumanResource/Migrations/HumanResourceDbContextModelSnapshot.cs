@@ -2500,6 +2500,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("description");
 
+                    b.Property<int?>("HeadcountCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("headcount_capacity");
+
                     b.Property<Guid?>("HeadOfDepartmentId")
                         .HasColumnType("uuid")
                         .HasColumnName("head_of_department_id");

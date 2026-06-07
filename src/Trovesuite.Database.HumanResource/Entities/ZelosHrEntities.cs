@@ -33,6 +33,7 @@ public class ZhrDepartment
     public string? Description { get; set; }
     public Guid? ParentDepartmentId { get; set; }
     public Guid? HeadOfDepartmentId { get; set; }
+    public int? HeadcountCapacity { get; set; }
     public bool IsArchived { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
