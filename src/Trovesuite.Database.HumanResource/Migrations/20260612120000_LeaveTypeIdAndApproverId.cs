@@ -59,7 +59,7 @@ namespace Trovesuite.Database.HumanResource.Migrations
                 table: "zhr_leave_balances");
 
             migrationBuilder.CreateIndex(
-                name: "ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type_id",
+                name: "ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type_",
                 schema: "zeloshr",
                 table: "zhr_leave_balances",
                 columns: new[] { "tenant_id", "org_id", "employee_id", "leave_type_id" },
@@ -70,7 +70,7 @@ namespace Trovesuite.Database.HumanResource.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
-                name: "ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type_id",
+                name: "ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type_",
                 schema: "zeloshr",
                 table: "zhr_leave_balances");
 
