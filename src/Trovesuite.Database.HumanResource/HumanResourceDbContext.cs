@@ -30,6 +30,8 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrAttendanceRecord> ZhrAttendanceRecords => Set<ZhrAttendanceRecord>();
     public DbSet<ZhrLeaveRequest> ZhrLeaveRequests => Set<ZhrLeaveRequest>();
     public DbSet<ZhrLeaveBalance> ZhrLeaveBalances => Set<ZhrLeaveBalance>();
+    public DbSet<ZhrLeaveType> ZhrLeaveTypes => Set<ZhrLeaveType>();
+    public DbSet<ZhrPublicHoliday> ZhrPublicHolidays => Set<ZhrPublicHoliday>();
     public DbSet<ZhrJobPosting> ZhrJobPostings => Set<ZhrJobPosting>();
     public DbSet<ZhrOnboardingTask> ZhrOnboardingTasks => Set<ZhrOnboardingTask>();
     public DbSet<ZhrPerformanceReview> ZhrPerformanceReviews => Set<ZhrPerformanceReview>();

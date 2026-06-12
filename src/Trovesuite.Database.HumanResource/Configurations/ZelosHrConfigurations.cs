@@ -190,6 +190,34 @@ public sealed class ZhrLeaveBalanceConfiguration : IEntityTypeConfiguration<ZhrL
         b.Property(x => x.EntitledDays).HasPrecision(5, 1);
         b.Property(x => x.UsedDays).HasPrecision(5, 1);
         b.Property(x => x.RemainingDays).HasPrecision(5, 1);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.LeaveType }).IsUnique();
+    }
+}
+
+public sealed class ZhrLeaveTypeConfiguration : IEntityTypeConfiguration<ZhrLeaveType>
+{
+    public void Configure(EntityTypeBuilder<ZhrLeaveType> b)
+    {
+        b.ToZelosHrTable("zhr_leave_types");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Name).HasMaxLength(80);
+        b.Property(x => x.CountryCode).HasMaxLength(2);
+        b.Property(x => x.DefaultEntitledDays).HasPrecision(5, 1);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
+    }
+}
+
+public sealed class ZhrPublicHolidayConfiguration : IEntityTypeConfiguration<ZhrPublicHoliday>
+{
+    public void Configure(EntityTypeBuilder<ZhrPublicHoliday> b)
+    {
+        b.ToZelosHrTable("zhr_public_holidays");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.CountryCode).HasMaxLength(2);
+        b.Property(x => x.Name).HasMaxLength(200);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.CountryCode, x.HolidayDate, x.Name });
     }
 }
 
