@@ -255,11 +255,13 @@ public class ZhrLeaveRequest
     public string OrgId { get; set; } = default!;
     public Guid EmployeeId { get; set; }
     public string EmployeeFullName { get; set; } = default!;
+    public Guid? LeaveTypeId { get; set; }
     public string LeaveType { get; set; } = default!;
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public decimal DaysRequested { get; set; }
     public string Status { get; set; } = default!;
+    public string? ApproverId { get; set; }
     public string? ApproverName { get; set; }
     public string? Notes { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }
@@ -301,6 +303,7 @@ public class ZhrLeaveBalance
     public string OrgId { get; set; } = default!;
     public Guid EmployeeId { get; set; }
     public string EmployeeFullName { get; set; } = default!;
+    public Guid? LeaveTypeId { get; set; }
     public string LeaveType { get; set; } = default!;
     public decimal EntitledDays { get; set; }
     public decimal UsedDays { get; set; }

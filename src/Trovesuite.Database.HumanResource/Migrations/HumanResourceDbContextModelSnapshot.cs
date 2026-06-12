@@ -3264,6 +3264,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("leave_type");
 
+                    b.Property<Guid?>("LeaveTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("leave_type_id");
+
                     b.Property<string>("OrgId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3287,9 +3291,9 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.HasKey("Id")
                         .HasName("pk_zhr_leave_balances");
 
-                    b.HasIndex("TenantId", "OrgId", "EmployeeId", "LeaveType")
+                    b.HasIndex("TenantId", "OrgId", "EmployeeId", "LeaveTypeId")
                         .IsUnique()
-                        .HasDatabaseName("ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type");
+                        .HasDatabaseName("ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type_id");
 
                     b.ToTable("zhr_leave_balances", "zeloshr");
                 });
@@ -3301,6 +3305,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("ApproverId")
+                        .HasColumnType("text")
+                        .HasColumnName("approver_id");
 
                     b.Property<string>("ApproverName")
                         .HasColumnType("text")
@@ -3328,6 +3336,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("leave_type");
+
+                    b.Property<Guid?>("LeaveTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("leave_type_id");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text")
