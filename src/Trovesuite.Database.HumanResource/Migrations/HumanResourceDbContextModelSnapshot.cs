@@ -3674,7 +3674,7 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasName("pk_zhr_public_holidays");
 
                     b.HasIndex("TenantId", "OrgId", "CountryCode", "HolidayDate", "Name")
-                        .HasDatabaseName("ix_zhr_public_holidays_tenant_id_org_id_country_code_holiday_da");
+                        .HasDatabaseName("ix_zhr_public_holidays_tenant_id_org_id_country_code_holiday_d");
 
                     b.ToTable("zhr_public_holidays", "zeloshr");
                 });

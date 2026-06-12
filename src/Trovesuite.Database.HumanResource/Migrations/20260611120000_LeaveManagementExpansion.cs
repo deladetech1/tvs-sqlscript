@@ -75,7 +75,7 @@ namespace Trovesuite.Database.HumanResource.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_zhr_public_holidays_tenant_id_org_id_country_code_holiday_da",
+                name: "ix_zhr_public_holidays_tenant_id_org_id_country_code_holiday_d",
                 schema: "zeloshr",
                 table: "zhr_public_holidays",
                 columns: new[] { "tenant_id", "org_id", "country_code", "holiday_date", "name" });
