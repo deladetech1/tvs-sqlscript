@@ -3287,6 +3287,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.HasKey("Id")
                         .HasName("pk_zhr_leave_balances");
 
+                    b.HasIndex("TenantId", "OrgId", "EmployeeId", "LeaveType")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type");
+
                     b.ToTable("zhr_leave_balances", "zeloshr");
                 });
 
@@ -3325,6 +3329,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("leave_type");
 
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
                     b.Property<string>("OrgId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3352,6 +3360,66 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasName("pk_zhr_leave_requests");
 
                     b.ToTable("zhr_leave_requests", "zeloshr");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrLeaveType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("CountryCode")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<decimal>("DefaultEntitledDays")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("numeric(5,1)")
+                        .HasColumnName("default_entitled_days");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_paid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_leave_types");
+
+                    b.HasIndex("TenantId", "OrgId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_leave_types_tenant_id_org_id_name");
+
+                    b.ToTable("zhr_leave_types", "zeloshr");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrLifecycleEvent", b =>
@@ -3546,6 +3614,69 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasName("pk_zhr_performance_reviews");
 
                     b.ToTable("zhr_performance_reviews", "zeloshr");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPublicHoliday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("HolidayDate")
+                        .HasColumnType("date")
+                        .HasColumnName("holiday_date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_recurring");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_public_holidays");
+
+                    b.HasIndex("TenantId", "OrgId", "CountryCode", "HolidayDate", "Name")
+                        .HasDatabaseName("ix_zhr_public_holidays_tenant_id_org_id_country_code_holiday_da");
+
+                    b.ToTable("zhr_public_holidays", "zeloshr");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.Bank", b =>
