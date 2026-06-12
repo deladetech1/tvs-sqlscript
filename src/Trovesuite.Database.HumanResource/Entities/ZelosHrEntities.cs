@@ -261,8 +261,14 @@ public class ZhrLeaveRequest
     public DateOnly EndDate { get; set; }
     public decimal DaysRequested { get; set; }
     public string Status { get; set; } = default!;
+    public string ApprovalStage { get; set; } = "pending_line_manager";
+    public string? LmApproverId { get; set; }
+    public DateTimeOffset? LmDecidedAt { get; set; }
+    public string? HodApproverId { get; set; }
+    public DateTimeOffset? HodDecidedAt { get; set; }
     public string? ApproverId { get; set; }
     public string? ApproverName { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
     public string? Notes { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }
 }

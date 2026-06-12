@@ -177,6 +177,7 @@ public sealed class ZhrLeaveRequestConfiguration : IEntityTypeConfiguration<ZhrL
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.Property(x => x.DaysRequested).HasPrecision(4, 1);
+        b.Property(x => x.ApprovalStage).HasMaxLength(40);
     }
 }
 

@@ -3306,6 +3306,12 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<string>("ApprovalStage")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("approval_stage");
+
                     b.Property<string>("ApproverId")
                         .HasColumnType("text")
                         .HasColumnName("approver_id");
@@ -3313,6 +3319,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<string>("ApproverName")
                         .HasColumnType("text")
                         .HasColumnName("approver_name");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
 
                     b.Property<decimal>("DaysRequested")
                         .HasPrecision(4, 1)
@@ -3340,6 +3350,22 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<Guid?>("LeaveTypeId")
                         .HasColumnType("uuid")
                         .HasColumnName("leave_type_id");
+
+                    b.Property<DateTimeOffset?>("HodDecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("hod_decided_at");
+
+                    b.Property<string>("HodApproverId")
+                        .HasColumnType("text")
+                        .HasColumnName("hod_approver_id");
+
+                    b.Property<DateTimeOffset?>("LmDecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lm_decided_at");
+
+                    b.Property<string>("LmApproverId")
+                        .HasColumnType("text")
+                        .HasColumnName("lm_approver_id");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text")
