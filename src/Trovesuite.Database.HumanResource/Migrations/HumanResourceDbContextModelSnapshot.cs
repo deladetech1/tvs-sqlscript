@@ -3288,6 +3288,26 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("numeric(5,1)")
                         .HasColumnName("used_days");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
                     b.HasKey("Id")
                         .HasName("pk_zhr_leave_balances");
 
@@ -3319,6 +3339,16 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<string>("ApproverName")
                         .HasColumnType("text")
                         .HasColumnName("approver_name");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
 
                     b.Property<DateTimeOffset?>("DecidedAt")
                         .HasColumnType("timestamp with time zone")
@@ -3394,6 +3424,16 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tenant_id");
 
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
                     b.HasKey("Id")
                         .HasName("pk_zhr_leave_requests");
 
@@ -3416,6 +3456,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
 
                     b.Property<decimal>("DefaultEntitledDays")
                         .HasPrecision(5, 1)
@@ -3449,6 +3493,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id")
                         .HasName("pk_zhr_leave_types");
@@ -3676,6 +3724,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
                     b.Property<DateOnly>("HolidayDate")
                         .HasColumnType("date")
                         .HasColumnName("holiday_date");
@@ -3707,6 +3759,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id")
                         .HasName("pk_zhr_public_holidays");

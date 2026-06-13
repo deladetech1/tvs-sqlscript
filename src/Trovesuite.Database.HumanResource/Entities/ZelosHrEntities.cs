@@ -271,6 +271,10 @@ public class ZhrLeaveRequest
     public DateTimeOffset? DecidedAt { get; set; }
     public string? Notes { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrLeaveType
@@ -285,6 +289,8 @@ public class ZhrLeaveType
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrPublicHoliday
@@ -300,6 +306,8 @@ public class ZhrPublicHoliday
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrLeaveBalance
@@ -314,6 +322,10 @@ public class ZhrLeaveBalance
     public decimal EntitledDays { get; set; }
     public decimal UsedDays { get; set; }
     public decimal RemainingDays { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrJobPosting

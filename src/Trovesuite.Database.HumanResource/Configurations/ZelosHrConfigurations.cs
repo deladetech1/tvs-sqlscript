@@ -178,6 +178,10 @@ public sealed class ZhrLeaveRequestConfiguration : IEntityTypeConfiguration<ZhrL
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.Property(x => x.DaysRequested).HasPrecision(4, 1);
         b.Property(x => x.ApprovalStage).HasMaxLength(40);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
     }
 }
 
@@ -191,6 +195,10 @@ public sealed class ZhrLeaveBalanceConfiguration : IEntityTypeConfiguration<ZhrL
         b.Property(x => x.EntitledDays).HasPrecision(5, 1);
         b.Property(x => x.UsedDays).HasPrecision(5, 1);
         b.Property(x => x.RemainingDays).HasPrecision(5, 1);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.LeaveTypeId }).IsUnique();
     }
 }
@@ -205,6 +213,8 @@ public sealed class ZhrLeaveTypeConfiguration : IEntityTypeConfiguration<ZhrLeav
         b.Property(x => x.Name).HasMaxLength(80);
         b.Property(x => x.CountryCode).HasMaxLength(2);
         b.Property(x => x.DefaultEntitledDays).HasPrecision(5, 1);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
     }
 }
@@ -218,6 +228,8 @@ public sealed class ZhrPublicHolidayConfiguration : IEntityTypeConfiguration<Zhr
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.Property(x => x.CountryCode).HasMaxLength(2);
         b.Property(x => x.Name).HasMaxLength(200);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.CountryCode, x.HolidayDate, x.Name });
     }
 }
