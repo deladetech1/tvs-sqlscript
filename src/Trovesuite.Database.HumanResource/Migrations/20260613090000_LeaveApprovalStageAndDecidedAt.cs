@@ -1,10 +1,14 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Trovesuite.Database.HumanResource;
 
 #nullable disable
 
 namespace Trovesuite.Database.HumanResource.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(HumanResourceDbContext))]
+    [Migration("20260613090000_LeaveApprovalStageAndDecidedAt")]
     public partial class LeaveApprovalStageAndDecidedAt : Migration
     {
         /// <inheritdoc />
