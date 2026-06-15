@@ -287,6 +287,13 @@ public class ZhrLeaveType
     public decimal DefaultEntitledDays { get; set; }
     public bool IsPaid { get; set; } = true;
     public bool IsActive { get; set; } = true;
+    public string AccrualMethod { get; set; } = "front_loaded";
+    public bool CarryOverAllowed { get; set; }
+    /// <summary>JSON array of employment types; null = all types.</summary>
+    public string? AppliesToEmploymentTypes { get; set; }
+    public int? MinNoticeWorkingDays { get; set; }
+    public int? MaxConsecutiveDays { get; set; }
+    public bool RequiresSupportingDocument { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }

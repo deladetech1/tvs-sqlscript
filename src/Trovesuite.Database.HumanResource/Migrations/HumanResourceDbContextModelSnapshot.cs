@@ -3474,6 +3474,35 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_paid");
 
+                    b.Property<string>("AccrualMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("accrual_method")
+                        .HasDefaultValue("front_loaded");
+
+                    b.Property<bool>("CarryOverAllowed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("carry_over_allowed")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("AppliesToEmploymentTypes")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("applies_to_employment_types");
+
+                    b.Property<int?>("MinNoticeWorkingDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("min_notice_working_days");
+
+                    b.Property<int?>("MaxConsecutiveDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_consecutive_days");
+
+                    b.Property<bool>("RequiresSupportingDocument")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_supporting_document")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(80)
