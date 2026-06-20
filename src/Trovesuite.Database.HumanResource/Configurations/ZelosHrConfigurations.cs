@@ -56,6 +56,28 @@ public sealed class ZhrDepartmentConfiguration : IEntityTypeConfiguration<ZhrDep
     }
 }
 
+public sealed class ZhrEmploymentTypeConfiguration : IEntityTypeConfiguration<ZhrEmploymentType>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmploymentType> b)
+    {
+        b.ToZelosHrTable("zhr_employment_types");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Name).HasMaxLength(100);
+        b.Property(x => x.Description).HasMaxLength(500);
+        b.Property(x => x.IsSystemDefault).HasDefaultValue(false);
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.IsActive });
+    }
+}
+
 public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmployee>
 {
     public void Configure(EntityTypeBuilder<ZhrEmployee> b)
@@ -99,6 +121,7 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
         b.HasOne<ZhrDepartment>().WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ZhrBranch>().WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ZhrEmploymentType>().WithMany().HasForeignKey(x => x.EmploymentTypeId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.ManagerId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.ReportsToId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.DottedLineManagerId).OnDelete(DeleteBehavior.Restrict);

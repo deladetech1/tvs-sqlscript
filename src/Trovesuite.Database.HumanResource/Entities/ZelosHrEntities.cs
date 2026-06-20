@@ -42,6 +42,22 @@ public class ZhrDepartment
     public string? UpdatedBy { get; set; }
 }
 
+public class ZhrEmploymentType
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? Description { get; set; }
+    /// <summary>Ghana defaults ship pre-loaded; cannot be renamed or deleted.</summary>
+    public bool IsSystemDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ZhrEmployee
 {
     public Guid Id { get; set; }
@@ -84,6 +100,7 @@ public class ZhrEmployee
     public Guid? DepartmentId { get; set; }
     public Guid? BranchId { get; set; }
     public string? EmploymentType { get; set; }
+    public Guid? EmploymentTypeId { get; set; }
     public string? WorkArrangement { get; set; }
     public string? WorkLocation { get; set; }
     public string? PayGrade { get; set; }
