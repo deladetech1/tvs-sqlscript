@@ -89,6 +89,68 @@ internal static class Program
         }
     }
 
+    // --------- migration helpers ---------
+
+    /// <summary>
+    /// Applies pending EF Core migrations, automatically reconciling history drift.
+    /// If a migration fails with 42P07 (relation already exists) — meaning the DDL
+    /// was applied outside of EF Core's history tracking — the migration is recorded
+    /// as applied in <c>__EFMigrationsHistory</c> and the loop retries.  This keeps
+    /// deployment idempotent even when the migrations history table was reset or the
+    /// tables were seeded by a different tool.
+    /// </summary>
+    private static async Task SafeMigrateAsync(DbContext ctx, string historySchema)
+    {
+        // Guard: historySchema comes from IModule.SchemaName, a hard-coded constant.
+        while (true)
+        {
+            var pending = (await ctx.Database.GetPendingMigrationsAsync()).ToList();
+            if (pending.Count == 0) return;
+
+            try
+            {
+                await ctx.Database.MigrateAsync();
+                return;
+            }
+            catch (Exception ex) when (IsRelationAlreadyExists(ex))
+            {
+                // EF Core applies migrations in order and wraps each in its own
+                // transaction; on failure the failed migration is rolled back and
+                // the preceding ones are already committed and in history.
+                // Re-query pending so we see exactly which migration failed.
+                var stillPending = (await ctx.Database.GetPendingMigrationsAsync()).ToList();
+                if (stillPending.Count == 0) return;  // Nothing left — shouldn't happen but be safe.
+
+                var failingId = stillPending[0];
+                Info($"  Reconciling: '{failingId}' already applied outside EF — recording in history.");
+
+                // Ensure the history table exists before inserting.
+#pragma warning disable EF1002
+                await ctx.Database.ExecuteSqlRawAsync($"""
+                    CREATE TABLE IF NOT EXISTS "{historySchema}"."__EFMigrationsHistory" (
+                        "MigrationId" character varying(150) NOT NULL,
+                        "ProductVersion" character varying(32) NOT NULL,
+                        CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+                    );
+                    """);
+#pragma warning restore EF1002
+
+                await ctx.Database.ExecuteSqlAsync($"""
+                    INSERT INTO "{historySchema}"."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+                    VALUES ({failingId}, {"10.0.1"})
+                    ON CONFLICT ("MigrationId") DO NOTHING;
+                    """);
+            }
+        }
+    }
+
+    private static bool IsRelationAlreadyExists(Exception ex)
+    {
+        if (ex is PostgresException pg && pg.SqlState == "42P07") return true;
+        if (ex.InnerException is PostgresException inner && inner.SqlState == "42P07") return true;
+        return false;
+    }
+
     // --------- actions ---------
 
     private static async Task Deploy(DbConfig cfg, IModule[] selected)
@@ -105,7 +167,7 @@ internal static class Program
             await EnsureSchemaAsync(ctx, mod.SchemaName);
 
             Info("  Applying EF Core migrations…");
-            await ctx.Database.MigrateAsync();
+            await SafeMigrateAsync(ctx, mod.SchemaName);
 
             Info("  Running module seed (triggers + reference data)…");
             await mod.SeedAsync(ctx);
