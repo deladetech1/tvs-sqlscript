@@ -58,6 +58,22 @@ public class ZhrEmploymentType
     public string? UpdatedBy { get; set; }
 }
 
+public class ZhrIdCardType
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? Description { get; set; }
+    /// <summary>Ghana defaults (National ID, Voter's ID, Driver's License, NHIS) cannot be renamed or deleted.</summary>
+    public bool IsSystemDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ZhrEmployee
 {
     public Guid Id { get; set; }
