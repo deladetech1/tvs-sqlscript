@@ -1,0 +1,192 @@
+# Reusable migration entrypoint — called by each backend's deploy pipeline
+# (build-and-deploy-tvs.yml) to apply that backend's schema BEFORE the new image
+# rolls out. This is the single, authoritative way an app deploy triggers a
+# migration: the migrator (tvs_migrator) owns the schemas and runs them here, the
+# apps connect with per-role CRUD creds and never migrate in real environments.
+#
+# Target axes (same model as database-dispatch.yml):
+#   scope        WHO the DB belongs to:  saas  |  enterprise-<slug>
+#   environment  WHICH DB of theirs:     dev | stage | prod
+#   module       which app's schema:     core_platform | loandrift | mystoreguard
+#                                         | human_resource | all
+#
+# The job binds to the GitHub Environment `<scope>-<environment>` IN THIS REPO
+# (tvs-sqlscript), so DATABASE_URL (the migrator libpq URL) and any required
+# reviewers live here — the backend repos never hold the migrator credential.
+# They only need read access to call this workflow (Settings → Actions → repo
+# access on tvs-sqlscript must allow the backend repos).
+#
+# Callers pass scope/environment/module; gate their deploy on this job's success.
+
+name: Database migrate (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      scope:
+        description: "saas | enterprise-<slug>"
+        required: true
+        type: string
+      environment:
+        description: "dev | stage | prod"
+        required: true
+        type: string
+      module:
+        description: "core_platform | loandrift | mystoreguard | human_resource | all"
+        required: false
+        type: string
+        default: all
+      command:
+        description: "deploy | validate | verify (defaults to deploy)"
+        required: false
+        type: string
+        default: deploy
+
+concurrency:
+  # One in-flight migration per (repo, scope, environment) — a backend deploy and
+  # a manual dispatch against the same DB queue instead of racing.
+  group: tvs-sqlscript-${{ github.repository }}-${{ inputs.scope }}-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: 🚀 ${{ inputs.command }} → ${{ inputs.scope }}-${{ inputs.environment }} · ${{ inputs.module }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    # Environment lives in THIS repo (tvs-sqlscript): supplies DATABASE_URL and
+    # any required-reviewer / wait-timer protection rules for prod targets.
+    environment: ${{ inputs.scope }}-${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      TVS_SSL: Require
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+    steps:
+      # When called from another repo the `github` context points at the CALLER,
+      # so a bare checkout would clone the backend, not this migrator. Pin the
+      # tvs-sqlscript source explicitly. PACKAGES_TOKEN (org PAT, contents:read
+      # on tvs-sqlscript) flows in via the caller's `secrets: inherit`.
+      - uses: actions/checkout@v4
+        with:
+          repository: deladetech1/tvs-sqlscript
+          ref: main
+          token: ${{ secrets.PACKAGES_TOKEN }}
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build solution
+        run: dotnet build Trovesuite.Database.sln -c Release --nologo
+
+      - name: Parse DATABASE_URL into env vars
+        id: db
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${DATABASE_URL:-}" ]]; then
+            echo "::error::DATABASE_URL is not set on environment '${{ inputs.scope }}-${{ inputs.environment }}' (tvs-sqlscript → Settings → Environments). The calling repo never holds this — it lives here."
+            exit 1
+          fi
+          echo "::add-mask::${DATABASE_URL}"
+
+          # libpq URL → fields: postgresql://user:password@host:port/dbname?sslmode=require
+          proto_stripped="${DATABASE_URL#postgresql://}"
+          proto_stripped="${proto_stripped#postgres://}"
+          creds="${proto_stripped%%@*}"
+          rest="${proto_stripped#*@}"
+          DB_USER="${creds%%:*}"
+          PGPASSWORD="${creds#*:}"
+          hostport="${rest%%/*}"
+          DB_HOST="${hostport%%:*}"
+          DB_PORT="${hostport#*:}"
+          [[ "$DB_PORT" == "$hostport" ]] && DB_PORT=5432
+          dbpart="${rest#*/}"
+          DB_NAME="${dbpart%%\?*}"
+
+          echo "::add-mask::$PGPASSWORD"
+          echo "::add-mask::$DB_USER"
+          echo "::add-mask::$DB_HOST"
+
+          {
+            echo "DB_HOST=$DB_HOST"
+            echo "DB_PORT=$DB_PORT"
+            echo "DB_USER=$DB_USER"
+            echo "PGPASSWORD=$PGPASSWORD"
+            echo "DB_NAME=$DB_NAME"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Map module → pick & extract enterprise slug
+        id: map
+        run: |
+          set -euo pipefail
+          case "${{ inputs.module }}" in
+            core_platform)  PICK=1 ;;
+            loandrift)      PICK=2 ;;
+            mystoreguard)   PICK=3 ;;
+            human_resource) PICK=4 ;;
+            all)            PICK=0 ;;
+            *) echo "::error::unknown module '${{ inputs.module }}'"; exit 1 ;;
+          esac
+          echo "pick=$PICK" >> "$GITHUB_OUTPUT"
+
+          # scope=enterprise-<slug> → slug drives migrations/enterprise/<slug>/*.sql.
+          # scope=saas leaves it empty so the Runner skips the enterprise folder.
+          SCOPE="${{ inputs.scope }}"
+          if [[ "$SCOPE" == enterprise-* ]]; then
+            echo "slug=${SCOPE#enterprise-}" >> "$GITHUB_OUTPUT"
+          else
+            echo "slug=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 📍 Target summary
+        run: |
+          SLUG="${{ steps.map.outputs.slug }}"
+          {
+            echo "## 🎯 \`${{ inputs.command }}\` → \`${{ inputs.scope }}-${{ inputs.environment }}\`"
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| **Command**     | \`${{ inputs.command }}\` |"
+            echo "| **Target env**  | \`${{ inputs.scope }}-${{ inputs.environment }}\` |"
+            echo "| **DB host**     | \`${{ steps.db.outputs.DB_HOST }}\` |"
+            echo "| **DB name**     | \`${{ steps.db.outputs.DB_NAME }}\` |"
+            echo "| **Module**      | \`${{ inputs.module }}\` |"
+            echo "| **Enterprise**  | \`${SLUG:-none — scope=saas}\` |"
+            echo "| **Called by**   | \`${{ github.repository }}\` @ \`${{ github.sha }}\` |"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🚀 ${{ inputs.command }}
+        env:
+          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
+          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
+          DB_USER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
+          # Empty for scope=saas; set for enterprise-<slug> so the Runner also
+          # applies migrations/enterprise/<slug>/*.sql.
+          TVS_ENTERPRISE: ${{ steps.map.outputs.slug }}
+        run: |
+          set -euo pipefail
+          case "${{ inputs.command }}" in
+            deploy|validate|verify) ;;
+            *) echo "::error::command '${{ inputs.command }}' not allowed here (deploy|validate|verify). Use database-dispatch.yml for rollback."; exit 1 ;;
+          esac
+          echo "::group::Runner output (module pick ${{ steps.map.outputs.pick }}; 0=ALL)"
+          printf '%s\n' "${{ steps.map.outputs.pick }}" \
+            | dotnet run --no-build -c Release \
+                --project src/Trovesuite.Database.Runner -- \
+                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "${{ inputs.command }}"
+          echo "::endgroup::"
+          echo "::notice title=✅ ${{ inputs.command }} succeeded::${{ inputs.scope }}-${{ inputs.environment }} — module=${{ inputs.module }}"
