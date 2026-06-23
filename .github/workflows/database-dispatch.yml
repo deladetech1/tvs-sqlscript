@@ -157,7 +157,7 @@ jobs:
 
     steps:
       # saas-dev must always run migration code from the dev branch — never the repo
-      # default branch (master/main). Sprint DDL lives on dev; prod deploys use main.
+      # default branch (master). Sprint DDL lives on dev; prod deploys use master.
       - name: Resolve migration source ref
         id: source
         run: |
@@ -167,7 +167,7 @@ jobs:
           if [[ "$SCOPE" == "saas" && "$ENV" == "dev" ]]; then
             REF="dev"
           elif [[ "$SCOPE" == "saas" && "$ENV" != "dev" ]]; then
-            REF="main"
+            REF="master"
           else
             REF="${{ github.ref_name }}"
           fi
