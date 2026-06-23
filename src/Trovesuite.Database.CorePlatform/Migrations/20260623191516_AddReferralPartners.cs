@@ -18,6 +18,7 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                 {
                     id = table.Column<string>(type: "text", nullable: false, defaultValueSql: "gen_random_uuid()::text"),
                     fullname = table.Column<string>(type: "text", nullable: false),
+                    email = table.Column<string>(type: "text", nullable: false),
                     whatsapp_number = table.Column<string>(type: "text", nullable: false),
                     address = table.Column<string>(type: "text", nullable: false),
                     profession = table.Column<string>(type: "text", nullable: false),
