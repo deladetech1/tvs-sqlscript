@@ -95,11 +95,19 @@ internal static class Program
 
     /// <summary>
     /// Applies pending EF Core migrations, automatically reconciling history drift.
-    /// If a migration fails with 42P07 (relation already exists) — meaning the DDL
-    /// was applied outside of EF Core's history tracking — the migration is recorded
-    /// as applied in <c>__EFMigrationsHistory</c> and the loop retries.  This keeps
-    /// deployment idempotent even when the migrations history table was reset or the
-    /// tables were seeded by a different tool.
+    /// If a migration fails because its target object already exists (any of the
+    /// Postgres "duplicate object" SQLSTATEs — see <see cref="DuplicateObjectSqlStates"/>)
+    /// — meaning the DDL was applied outside of EF Core's history tracking — the
+    /// migration is recorded as applied in <c>__EFMigrationsHistory</c> and the loop
+    /// retries. This baselines a DB whose schema was created by another tool (or whose
+    /// history was reset) in a single pass.
+    ///
+    /// Caveat: a migration is reconciled as a whole — if it both touches an existing
+    /// object AND introduces a genuinely-new one, the failed transaction rolls back and
+    /// the migration is skipped entirely, so the new object is NOT created. This is safe
+    /// when the DB is a full materialization of the model (the baseline case); after a
+    /// reconciling deploy, run <c>command=migrations-list</c> and confirm the model and
+    /// DB agree if the DB might only be partially materialized.
     /// </summary>
     private static async Task SafeMigrateAsync(DbContext ctx)
     {
@@ -113,7 +121,7 @@ internal static class Program
                 await ctx.Database.MigrateAsync();
                 return;
             }
-            catch (Exception ex) when (IsRelationAlreadyExists(ex))
+            catch (Exception ex) when (IsObjectAlreadyExists(ex))
             {
                 // EF Core applies migrations in order and wraps each in its own
                 // transaction; on failure the failed migration is rolled back and
@@ -139,10 +147,28 @@ internal static class Program
         }
     }
 
-    private static bool IsRelationAlreadyExists(Exception ex)
+    /// <summary>
+    /// Postgres "duplicate object" SQLSTATEs — raised when a migration's DDL targets
+    /// something that already exists because the schema was materialized outside EF.
+    /// Catching the whole family (not just duplicate-table) lets one deploy baseline a
+    /// pre-existing DB in a single pass instead of failing on each new error code.
+    /// </summary>
+    private static readonly HashSet<string> DuplicateObjectSqlStates = new()
     {
-        if (ex is PostgresException pg && pg.SqlState == "42P07") return true;
-        if (ex.InnerException is PostgresException inner && inner.SqlState == "42P07") return true;
+        "42P07", // duplicate_table (also index / sequence / view)
+        "42701", // duplicate_column
+        "42710", // duplicate_object (constraint, trigger, …)
+        "42P06", // duplicate_schema
+        "42723", // duplicate_function
+    };
+
+    private static bool IsObjectAlreadyExists(Exception ex)
+    {
+        for (var e = ex; e is not null; e = e.InnerException)
+        {
+            if (e is PostgresException pg && DuplicateObjectSqlStates.Contains(pg.SqlState))
+                return true;
+        }
         return false;
     }
 
