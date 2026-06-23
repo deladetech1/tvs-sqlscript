@@ -126,3 +126,28 @@ public class EnterpriseSubscription
     public string? UpdatedBy { get; set; }
     public string? DeletedBy { get; set; }
 }
+
+// Referral Partner Programme — public "Expression of Interest" submissions from
+// the landing page. Like EnterpriseSubscription this is a tenant-less lead capture
+// table (no tenant_id, bare audit text columns).
+public class ReferralPartner
+{
+    public string Id { get; set; } = default!;
+    public string Fullname { get; set; } = default!;
+    public string WhatsappNumber { get; set; } = default!;
+    // Country & residential address, captured as a single free-text field on the form.
+    public string Address { get; set; } = default!;
+    public string Profession { get; set; } = default!;
+    // Which product(s) the partner would refer: LOANDRIFT | MYSTOREGUARD | BOTH.
+    public string Products { get; set; } = default!;
+    // Confirms interest in the programme and consent to be contacted.
+    public bool Consent { get; set; }
+    public string DeleteStatus { get; set; } = DeleteStatuses.NotDeleted;
+    public bool IsActive { get; set; } = true;
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    public string? DeletedBy { get; set; }
+}

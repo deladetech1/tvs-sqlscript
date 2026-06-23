@@ -149,3 +149,18 @@ public sealed class EnterpriseSubscriptionConfiguration : IEntityTypeConfigurati
         b.HasDeleteStatusCheck();
     }
 }
+
+public sealed class ReferralPartnerConfiguration : IEntityTypeConfiguration<ReferralPartner>
+{
+    public void Configure(EntityTypeBuilder<ReferralPartner> b)
+    {
+        // Tenant-less lead capture, mirrors EnterpriseSubscription: no tenant_id, bare audit text.
+        b.ToTable("cp_referral_partners");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Consent).HasDefaultValue(false);
+        b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.HasDeleteStatusCheck();
+    }
+}

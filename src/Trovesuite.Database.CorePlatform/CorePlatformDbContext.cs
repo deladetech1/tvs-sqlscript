@@ -22,6 +22,7 @@ public class CorePlatformDbContext : DbContext
     public DbSet<ChangePasswordPolicy> ChangePasswordPolicies => Set<ChangePasswordPolicy>();
     public DbSet<UserLoginTracking> UserLoginTracking => Set<UserLoginTracking>();
     public DbSet<EnterpriseSubscription> EnterpriseSubscriptions => Set<EnterpriseSubscription>();
+    public DbSet<ReferralPartner> ReferralPartners => Set<ReferralPartner>();
 
     // Access control
     public DbSet<ResourceType> ResourceTypes => Set<ResourceType>();
