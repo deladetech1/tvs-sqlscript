@@ -134,6 +134,7 @@ public class ReferralPartner
 {
     public string Id { get; set; } = default!;
     public string Fullname { get; set; } = default!;
+    public string Email { get; set; } = default!;
     public string WhatsappNumber { get; set; } = default!;
     // Country & residential address, captured as a single free-text field on the form.
     public string Address { get; set; } = default!;

@@ -13,7 +13,7 @@ using Trovesuite.Database.CorePlatform;
 namespace Trovesuite.Database.CorePlatform.Migrations
 {
     [DbContext(typeof(CorePlatformDbContext))]
-    [Migration("20260623162158_AddReferralPartners")]
+    [Migration("20260623191516_AddReferralPartners")]
     partial class AddReferralPartners
     {
         /// <inheritdoc />
@@ -2883,6 +2883,11 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                     b.Property<string>("DeletedBy")
                         .HasColumnType("text")
                         .HasColumnName("deleted_by");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email");
 
                     b.Property<string>("Fullname")
                         .IsRequired()

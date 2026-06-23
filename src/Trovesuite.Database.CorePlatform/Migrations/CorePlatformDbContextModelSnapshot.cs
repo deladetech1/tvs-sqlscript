@@ -2881,6 +2881,11 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         .HasColumnType("text")
                         .HasColumnName("deleted_by");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
                     b.Property<string>("Fullname")
                         .IsRequired()
                         .HasColumnType("text")
