@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
 using Trovesuite.Database.Common.Abstractions;
 using Trovesuite.Database.CorePlatform;
@@ -99,9 +101,8 @@ internal static class Program
     /// deployment idempotent even when the migrations history table was reset or the
     /// tables were seeded by a different tool.
     /// </summary>
-    private static async Task SafeMigrateAsync(DbContext ctx, string historySchema)
+    private static async Task SafeMigrateAsync(DbContext ctx)
     {
-        // Guard: historySchema comes from IModule.SchemaName, a hard-coded constant.
         while (true)
         {
             var pending = (await ctx.Database.GetPendingMigrationsAsync()).ToList();
@@ -124,28 +125,15 @@ internal static class Program
                 var failingId = stillPending[0];
                 Info($"  Reconciling: '{failingId}' already applied outside EF — recording in history.");
 
-                // Ensure the history table exists before inserting.
-#pragma warning disable EF1002
-                await ctx.Database.ExecuteSqlRawAsync($"""
-                    CREATE TABLE IF NOT EXISTS "{historySchema}"."__EFMigrationsHistory" (
-                        "MigrationId" character varying(150) NOT NULL,
-                        "ProductVersion" character varying(32) NOT NULL,
-                        CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
-                    );
-                    """);
-#pragma warning restore EF1002
+                // Let EF generate the history SQL via its own IHistoryRepository so the
+                // table name, schema, columns, and naming convention (snake_case here)
+                // always match what EF itself produced — never hand-write this SQL.
+                var history = ctx.GetService<IHistoryRepository>();
+                var productVersion = typeof(DbContext).Assembly.GetName().Version?.ToString() ?? "10.0.0";
 
-                // ExecuteSqlRawAsync (not ExecuteSqlAsync): the schema is a trusted
-                // hard-coded constant and must be a literal identifier — an identifier
-                // can't be a bound parameter. The two values stay parameterized via the
-                // positional {0}/{1} placeholders. The $$"""...""" form uses {{ }} for
-                // C# interpolation, leaving {0}/{1} as literal text for EF.
 #pragma warning disable EF1002
-                await ctx.Database.ExecuteSqlRawAsync($$"""
-                    INSERT INTO "{{historySchema}}"."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-                    VALUES ({0}, {1})
-                    ON CONFLICT ("MigrationId") DO NOTHING;
-                    """, failingId, "10.0.1");
+                await ctx.Database.ExecuteSqlRawAsync(history.GetCreateIfNotExistsScript());
+                await ctx.Database.ExecuteSqlRawAsync(history.GetInsertScript(new HistoryRow(failingId, productVersion)));
 #pragma warning restore EF1002
             }
         }
@@ -174,7 +162,7 @@ internal static class Program
             await EnsureSchemaAsync(ctx, mod.SchemaName);
 
             Info("  Applying EF Core migrations…");
-            await SafeMigrateAsync(ctx, mod.SchemaName);
+            await SafeMigrateAsync(ctx);
 
             Info("  Running module seed (triggers + reference data)…");
             await mod.SeedAsync(ctx);
