@@ -318,8 +318,24 @@ internal static class Program
     {
         PrintHeader("Rolling Back Deployment");
 
-        Console.WriteLine("This will drop schemas for the following modules:");
-        foreach (var m in selected) Info($"  - {m.ModuleKey} -> schema {m.SchemaName}");
+        // A module's model can span more than one schema — e.g. HumanResource uses
+        // both `human_resource` (hr_*) and `zeloshr` (zhr_*). Dropping only
+        // IModule.SchemaName leaves the extra schema(s) behind, so a later deploy
+        // replays migrations against still-existing objects. Derive every schema
+        // straight from the EF model so rollback drops all of them.
+        // Drop in reverse Order so app schemas go before core_platform.
+        var plan = selected
+            .OrderByDescending(m => m.Order)
+            .Select(m =>
+            {
+                using var ctx = m.CreateContext(cfg.ToConnectionString());
+                return (Module: m, Schemas: GetModelSchemas(ctx, m.SchemaName));
+            })
+            .ToList();
+
+        Console.WriteLine("This will drop the following schemas (CASCADE):");
+        foreach (var (m, schemas) in plan)
+            Info($"  - {m.ModuleKey} -> {string.Join(", ", schemas)}");
 
         Console.Write("Continue? (y/N): ");
         var resp = Console.ReadLine();
@@ -331,14 +347,39 @@ internal static class Program
 
         await using var conn = new NpgsqlConnection(cfg.ToConnectionString());
         await conn.OpenAsync();
-        // Drop in reverse-order so app schemas go before core_platform.
-        foreach (var mod in selected.OrderByDescending(m => m.Order))
+        foreach (var (mod, schemas) in plan)
         {
-            Info($"Dropping schema '{mod.SchemaName}' (module: {mod.ModuleKey})…");
-            await using var cmd = new NpgsqlCommand($"DROP SCHEMA IF EXISTS {mod.SchemaName} CASCADE;", conn);
-            await cmd.ExecuteNonQueryAsync();
+            foreach (var schema in schemas)
+            {
+                // Schema names come from the EF model (hard-coded consts), but
+                // validate before inlining since identifiers can't be parameterized.
+                if (!System.Text.RegularExpressions.Regex.IsMatch(schema, "^[A-Za-z_][A-Za-z0-9_]{0,62}$"))
+                    throw new InvalidOperationException($"Refusing to DROP SCHEMA with unsafe name: '{schema}'");
+
+                Info($"Dropping schema '{schema}' (module: {mod.ModuleKey})…");
+                await using var cmd = new NpgsqlCommand($"DROP SCHEMA IF EXISTS {schema} CASCADE;", conn);
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
         Success("Rollback completed");
+    }
+
+    /// <summary>
+    /// Every distinct schema referenced by a module's EF model — including ones a
+    /// migration places outside the module's primary <paramref name="defaultSchema"/>
+    /// (e.g. HumanResource entities mapped to <c>zeloshr</c>). Reading
+    /// <see cref="DbContext.Model"/> is offline (no DB round-trip).
+    /// </summary>
+    private static List<string> GetModelSchemas(DbContext ctx, string defaultSchema)
+    {
+        var schemas = ctx.Model.GetEntityTypes()
+            .Select(e => e.GetSchema() ?? defaultSchema)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (!schemas.Contains(defaultSchema, StringComparer.Ordinal))
+            schemas.Add(defaultSchema);
+        return schemas;
     }
 
     // --------- prompts / config ---------
