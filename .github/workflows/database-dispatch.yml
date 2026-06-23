@@ -160,7 +160,36 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
     steps:
+      # saas-dev must always run migration code from the dev branch — never the repo
+      # default branch (master/main). Sprint DDL lives on dev; prod deploys use main.
+      - name: Resolve migration source ref
+        id: source
+        run: |
+          set -euo pipefail
+          SCOPE="${{ inputs.scope }}"
+          ENV="${{ inputs.environment }}"
+          if [[ "$SCOPE" == "saas" && "$ENV" == "dev" ]]; then
+            REF="dev"
+          elif [[ "$SCOPE" == "saas" && "$ENV" != "dev" ]]; then
+            REF="main"
+          else
+            REF="${{ github.ref_name }}"
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "Using git ref \`$REF\` for scope=$SCOPE environment=$ENV"
+
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.source.outputs.ref }}
+
+      - name: Block saas-dev deploy from non-dev ref
+        if: inputs.scope == 'saas' && inputs.environment == 'dev' && contains(fromJson('["deploy","rollback"]'), inputs.command)
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.source.outputs.ref }}" != "dev" ]]; then
+            echo "::error::saas-dev deploy/rollback must use the dev branch. Push migration commits to dev and let CI deploy, or dispatch with environment=dev (checkout ref is forced to dev)."
+            exit 1
+          fi
 
       - name: Set up .NET 10
         uses: actions/setup-dotnet@v4

@@ -12,10 +12,16 @@ public class ZhrBranch
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string Name { get; set; } = default!;
+    public string? Address { get; set; }
+    /// <summary>Country name (e.g. Ghana, Nigeria, United Kingdom).</summary>
+    public string? Country { get; set; }
+    public string? Description { get; set; }
     public bool IsArchived { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrDepartment
@@ -24,12 +30,48 @@ public class ZhrDepartment
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string Name { get; set; } = default!;
+    public string? Description { get; set; }
     public Guid? ParentDepartmentId { get; set; }
     public Guid? HeadOfDepartmentId { get; set; }
+    public int? HeadcountCapacity { get; set; }
     public bool IsArchived { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+public class ZhrEmploymentType
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? Description { get; set; }
+    /// <summary>Ghana defaults ship pre-loaded; cannot be renamed or deleted.</summary>
+    public bool IsSystemDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+public class ZhrIdCardType
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? Description { get; set; }
+    /// <summary>Ghana defaults (National ID, Voter's ID, Driver's License, NHIS) cannot be renamed or deleted.</summary>
+    public bool IsSystemDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrEmployee
@@ -74,6 +116,7 @@ public class ZhrEmployee
     public Guid? DepartmentId { get; set; }
     public Guid? BranchId { get; set; }
     public string? EmploymentType { get; set; }
+    public Guid? EmploymentTypeId { get; set; }
     public string? WorkArrangement { get; set; }
     public string? WorkLocation { get; set; }
     public string? PayGrade { get; set; }
@@ -245,13 +288,66 @@ public class ZhrLeaveRequest
     public string OrgId { get; set; } = default!;
     public Guid EmployeeId { get; set; }
     public string EmployeeFullName { get; set; } = default!;
+    public Guid? LeaveTypeId { get; set; }
     public string LeaveType { get; set; } = default!;
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
     public decimal DaysRequested { get; set; }
     public string Status { get; set; } = default!;
+    public string ApprovalStage { get; set; } = "pending_line_manager";
+    public string? LmApproverId { get; set; }
+    public DateTimeOffset? LmDecidedAt { get; set; }
+    public string? HodApproverId { get; set; }
+    public DateTimeOffset? HodDecidedAt { get; set; }
+    public string? ApproverId { get; set; }
     public string? ApproverName { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
+    public string? Notes { get; set; }
     public DateTimeOffset SubmittedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+public class ZhrLeaveType
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? CountryCode { get; set; }
+    public decimal DefaultEntitledDays { get; set; }
+    public bool IsPaid { get; set; } = true;
+    public bool IsActive { get; set; } = true;
+    public string AccrualMethod { get; set; } = "front_loaded";
+    public bool CarryOverAllowed { get; set; }
+    /// <summary>JSON array of employment types; null = all types.</summary>
+    public string? AppliesToEmploymentTypes { get; set; }
+    public int? MinNoticeWorkingDays { get; set; }
+    public int? MaxConsecutiveDays { get; set; }
+    public bool RequiresSupportingDocument { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+public class ZhrPublicHoliday
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string CountryCode { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public DateOnly HolidayDate { get; set; }
+    public bool IsRecurring { get; set; }
+    public Guid? BranchId { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrLeaveBalance
@@ -261,10 +357,15 @@ public class ZhrLeaveBalance
     public string OrgId { get; set; } = default!;
     public Guid EmployeeId { get; set; }
     public string EmployeeFullName { get; set; } = default!;
+    public Guid? LeaveTypeId { get; set; }
     public string LeaveType { get; set; } = default!;
     public decimal EntitledDays { get; set; }
     public decimal UsedDays { get; set; }
     public decimal RemainingDays { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrJobPosting

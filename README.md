@@ -136,6 +136,8 @@ TVS_ENTERPRISE=bgclt  dotnet run --project src/Trovesuite.Database.Runner -- …
 
 Branch push deploy runs **all modules** (including `human_resource` / ZelosHR). Align prod branch name with ZelosHR: use **`main`** ( `master` is still accepted as a legacy alias).
 
+**ZelosHR sprint work — `dev` branch only (both repos).** Commit migrations on **`dev`**; merges to **`dev`** auto-deploy **`saas-dev`**. Do not push DDL to `main`/`master` to fix dev. Manual dispatch against **`saas-dev`** checks out the **`dev`** branch (not the repo default). When triggering dispatch from the CLI, pass **`--ref dev`**: `gh workflow run "Database (EF Core dispatch)" --ref dev …`. See [AGENTS.md](AGENTS.md).
+
 Manual dispatch inputs:
 
 | Input | Example |

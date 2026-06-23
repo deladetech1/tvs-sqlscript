@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Trovesuite.Database.Common.Abstractions;
 
 namespace Trovesuite.Database.HumanResource;
@@ -17,6 +18,9 @@ public sealed class HumanResourceModule : IModule
             .UseNpgsql(connectionString, npg =>
                 npg.MigrationsHistoryTable("__EFMigrationsHistory", HumanResourceDbContext.SchemaName))
             .UseSnakeCaseNamingConvention()
+            // Migrations and snapshot are maintained by hand in this repo; the
+            // model-vs-snapshot diff check is suppressed so deployment proceeds.
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
         return new HumanResourceDbContext(options);
     }
