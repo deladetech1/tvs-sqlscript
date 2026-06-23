@@ -135,11 +135,18 @@ internal static class Program
                     """);
 #pragma warning restore EF1002
 
-                await ctx.Database.ExecuteSqlAsync($"""
-                    INSERT INTO "{historySchema}"."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-                    VALUES ({failingId}, {"10.0.1"})
+                // ExecuteSqlRawAsync (not ExecuteSqlAsync): the schema is a trusted
+                // hard-coded constant and must be a literal identifier — an identifier
+                // can't be a bound parameter. The two values stay parameterized via the
+                // positional {0}/{1} placeholders. The $$"""...""" form uses {{ }} for
+                // C# interpolation, leaving {0}/{1} as literal text for EF.
+#pragma warning disable EF1002
+                await ctx.Database.ExecuteSqlRawAsync($$"""
+                    INSERT INTO "{{historySchema}}"."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+                    VALUES ({0}, {1})
                     ON CONFLICT ("MigrationId") DO NOTHING;
-                    """);
+                    """, failingId, "10.0.1");
+#pragma warning restore EF1002
             }
         }
     }
