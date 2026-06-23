@@ -12,15 +12,15 @@ using Trovesuite.Database.HumanResource;
 namespace Trovesuite.Database.HumanResource.Migrations
 {
     [DbContext(typeof(HumanResourceDbContext))]
-    [Migration("20260623080255_RemoveZhrEmployeeContractTypeEmploymentStatusDefaults")]
-    partial class RemoveZhrEmployeeContractTypeEmploymentStatusDefaults
+    [Migration("20260623203756_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("human_resource")
+                .HasDefaultSchema("zeloshr")
                 .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -806,1215 +806,6 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.Bank", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("SortCode")
-                        .HasColumnType("text")
-                        .HasColumnName("sort_code");
-
-                    b.Property<string>("SwiftCode")
-                        .HasColumnType("text")
-                        .HasColumnName("swift_code");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("ak_banks_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_banks_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_banks_deleted_by_tenant_id");
-
-                    b.HasIndex("TenantId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_banks_tenant_id_name");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_banks_updated_by_tenant_id");
-
-                    b.ToTable("hr_banks", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_banks_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.BankBranch", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("BankId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("bank_id");
-
-                    b.Property<string>("BranchCode")
-                        .HasColumnType("text")
-                        .HasColumnName("branch_code");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_bank_branches");
-
-                    b.HasIndex("BankId", "TenantId")
-                        .HasDatabaseName("ix_hr_bank_branches_bank_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_bank_branches_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_bank_branches_deleted_by_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_bank_branches_updated_by_tenant_id");
-
-                    b.HasIndex("TenantId", "BankId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_bank_branches_tenant_id_bank_id_name");
-
-                    b.ToTable("hr_bank_branches", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_bank_branches_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.Department", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_departments");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_departments_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_departments_deleted_by_tenant_id");
-
-                    b.HasIndex("TenantId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_departments_tenant_id_name");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_departments_updated_by_tenant_id");
-
-                    b.ToTable("hr_departments", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_departments_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.Employee", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("DepartmentId")
-                        .HasColumnType("text")
-                        .HasColumnName("department_id");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("DottedLineManagerId")
-                        .HasColumnType("text")
-                        .HasColumnName("dotted_line_manager_id");
-
-                    b.Property<string>("EmployeeCode")
-                        .HasColumnType("text")
-                        .HasColumnName("employee_code");
-
-                    b.Property<string>("EmploymentStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("ACTIVE")
-                        .HasColumnName("employment_status");
-
-                    b.Property<string>("EmploymentType")
-                        .HasColumnType("text")
-                        .HasColumnName("employment_type");
-
-                    b.Property<string>("GpsDigitalAddress")
-                        .HasColumnType("text")
-                        .HasColumnName("gps_digital_address");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("JobTitle")
-                        .HasColumnType("text")
-                        .HasColumnName("job_title");
-
-                    b.Property<string>("LineManagerId")
-                        .HasColumnType("text")
-                        .HasColumnName("line_manager_id");
-
-                    b.Property<string>("Linkedin")
-                        .HasColumnType("text")
-                        .HasColumnName("linkedin");
-
-                    b.Property<string>("Nationality")
-                        .HasColumnType("text")
-                        .HasColumnName("nationality");
-
-                    b.Property<string>("NationalityIdNumber")
-                        .HasColumnType("text")
-                        .HasColumnName("nationality_id_number");
-
-                    b.Property<string>("NationalityIdType")
-                        .HasColumnType("text")
-                        .HasColumnName("nationality_id_type");
-
-                    b.Property<int?>("NoticePeriodDays")
-                        .HasColumnType("integer")
-                        .HasColumnName("notice_period_days");
-
-                    b.Property<string>("PayGrade")
-                        .HasColumnType("text")
-                        .HasColumnName("pay_grade");
-
-                    b.Property<string>("PersonalEmail")
-                        .HasColumnType("text")
-                        .HasColumnName("personal_email");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("text")
-                        .HasColumnName("phone_number");
-
-                    b.Property<DateOnly?>("ProbationEndDate")
-                        .HasColumnType("date")
-                        .HasColumnName("probation_end_date");
-
-                    b.Property<string>("ResidentialAddress")
-                        .HasColumnType("text")
-                        .HasColumnName("residential_address");
-
-                    b.Property<DateOnly?>("StartDate")
-                        .HasColumnType("date")
-                        .HasColumnName("start_date");
-
-                    b.Property<string>("State")
-                        .HasColumnType("text")
-                        .HasColumnName("state");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
-
-                    b.Property<string>("WorkArrangement")
-                        .HasColumnType("text")
-                        .HasColumnName("work_arrangement");
-
-                    b.Property<string>("WorkEmail")
-                        .HasColumnType("text")
-                        .HasColumnName("work_email");
-
-                    b.Property<string>("WorkLocation")
-                        .HasColumnType("text")
-                        .HasColumnName("work_location");
-
-                    b.Property<decimal?>("WorkingHoursPerWeek")
-                        .HasColumnType("numeric")
-                        .HasColumnName("working_hours_per_week");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_employees");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employees_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employees_deleted_by_tenant_id");
-
-                    b.HasIndex("DepartmentId", "TenantId")
-                        .HasDatabaseName("ix_hr_employees_department_id_tenant_id");
-
-                    b.HasIndex("DottedLineManagerId", "TenantId")
-                        .HasDatabaseName("ix_hr_employees_dotted_line_manager_id_tenant_id");
-
-                    b.HasIndex("LineManagerId", "TenantId")
-                        .HasDatabaseName("ix_hr_employees_line_manager_id_tenant_id");
-
-                    b.HasIndex("TenantId", "EmployeeCode")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_employees_tenant_id_employee_code");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employees_updated_by_tenant_id");
-
-                    b.HasIndex("UserId", "TenantId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_employees_user_id_tenant_id");
-
-                    b.ToTable("hr_employees", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_employees_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-
-                            t.HasCheckConstraint("ck_hr_employees_employment_status", "employment_status IN ('ACTIVE','ON_LEAVE','TERMINATED','SUSPENDED')");
-
-                            t.HasCheckConstraint("ck_hr_employees_employment_type", "employment_type IN ('FULL_TIME','PART_TIME','CONTRACT','INTERN',NULL)");
-
-                            t.HasCheckConstraint("ck_hr_employees_nationality_id_type", "nationality_id_type IN ('PASSPORT','NATIONAL_ID','DRIVERS_LICENSE','OTHER',NULL)");
-
-                            t.HasCheckConstraint("ck_hr_employees_no_self_dotted_manager", "dotted_line_manager_id IS NULL OR dotted_line_manager_id <> id");
-
-                            t.HasCheckConstraint("ck_hr_employees_no_self_manager", "line_manager_id IS NULL OR line_manager_id <> id");
-
-                            t.HasCheckConstraint("ck_hr_employees_work_arrangement", "work_arrangement IN ('ONSITE','REMOTE','HYBRID',NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeDocument", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("DocumentId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("document_id");
-
-                    b.Property<string>("DocumentType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("document_type");
-
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("employee_id");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_employee_documents");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_hr_employee_documents_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_documents_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_documents_deleted_by_tenant_id");
-
-                    b.HasIndex("DocumentId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_documents_document_id_tenant_id");
-
-                    b.HasIndex("EmployeeId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_documents_employee_id_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_documents_updated_by_tenant_id");
-
-                    b.ToTable("hr_employee_documents", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_employee_documents_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-
-                            t.HasCheckConstraint("ck_hr_employee_documents_document_type", "document_type IN ('CONTRACT','NATIONAL_ID','CERTIFICATE','OTHER')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeEmergencyContact", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text")
-                        .HasColumnName("email");
-
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("employee_id");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("full_name");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<bool>("IsPrimary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_primary");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("text")
-                        .HasColumnName("phone_number");
-
-                    b.Property<string>("Relationship")
-                        .HasColumnType("text")
-                        .HasColumnName("relationship");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_employee_emergency_contacts");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_hr_employee_emergency_contacts_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_emergency_contacts_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_emergency_contacts_deleted_by_tenant_id");
-
-                    b.HasIndex("EmployeeId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_emergency_contacts_employee_id_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_emergency_contacts_updated_by_tenant_id");
-
-                    b.ToTable("hr_employee_emergency_contacts", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_employee_emergency_contacts_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-
-                            t.HasCheckConstraint("ck_hr_employee_emergency_contacts_relationship", "relationship IN ('SPOUSE','PARENT','SIBLING','CHILD','FRIEND','OTHER',NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeePaymentMethod", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("AccountName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("account_name");
-
-                    b.Property<string>("AccountNumber")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("account_number");
-
-                    b.Property<string>("BankId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("bank_id");
-
-                    b.Property<string>("BranchId")
-                        .HasColumnType("text")
-                        .HasColumnName("branch_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("employee_id");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<bool>("IsPrimary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_primary");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_employee_payment_methods");
-
-                    b.HasIndex("BankId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_payment_methods_bank_id_tenant_id");
-
-                    b.HasIndex("BranchId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_payment_methods_branch_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_payment_methods_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_payment_methods_deleted_by_tenant_id");
-
-                    b.HasIndex("EmployeeId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_payment_methods_employee_id_tenant_id");
-
-                    b.HasIndex("TenantId", "EmployeeId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_employee_payment_methods_tenant_id_employee_id")
-                        .HasFilter("is_primary = true AND delete_status = 'NOT_DELETED'");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_payment_methods_updated_by_tenant_id");
-
-                    b.ToTable("hr_employee_payment_methods", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_employee_payment_methods_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeSalary", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("CurrencyId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("currency_id");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<DateOnly>("EffectiveFrom")
-                        .HasColumnType("date")
-                        .HasColumnName("effective_from");
-
-                    b.Property<DateOnly?>("EffectiveTo")
-                        .HasColumnType("date")
-                        .HasColumnName("effective_to");
-
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("employee_id");
-
-                    b.Property<decimal>("GrossMonthlySalary")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("gross_monthly_salary");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<bool>("IsCurrent")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_current");
-
-                    b.Property<string>("PayFrequency")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("MONTHLY")
-                        .HasColumnName("pay_frequency");
-
-                    b.Property<string>("PayGrade")
-                        .HasColumnType("text")
-                        .HasColumnName("pay_grade");
-
-                    b.Property<string>("Reason")
-                        .HasColumnType("text")
-                        .HasColumnName("reason");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_employee_salaries");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_salaries_created_by_tenant_id");
-
-                    b.HasIndex("CurrencyId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_salaries_currency_id_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_salaries_deleted_by_tenant_id");
-
-                    b.HasIndex("EmployeeId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_salaries_employee_id_tenant_id");
-
-                    b.HasIndex("TenantId", "EmployeeId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_employee_salaries_tenant_id_employee_id")
-                        .HasFilter("is_current = true AND delete_status = 'NOT_DELETED'");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_salaries_updated_by_tenant_id");
-
-                    b.ToTable("hr_employee_salaries", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_employee_salaries_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-
-                            t.HasCheckConstraint("ck_hr_employee_salaries_pay_frequency", "pay_frequency IN ('MONTHLY','BIWEEKLY','WEEKLY')");
-
-                            t.HasCheckConstraint("ck_hr_employee_salaries_reason", "reason IN ('INITIAL','RAISE','PROMOTION','CORRECTION',NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeStatutory", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("EmployeeId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("employee_id");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("SsnitNumber")
-                        .HasColumnType("text")
-                        .HasColumnName("ssnit_number");
-
-                    b.Property<string>("Tier2ProviderId")
-                        .HasColumnType("text")
-                        .HasColumnName("tier2provider_id");
-
-                    b.Property<string>("Tier3ProviderId")
-                        .HasColumnType("text")
-                        .HasColumnName("tier3provider_id");
-
-                    b.Property<string>("Tin")
-                        .HasColumnType("text")
-                        .HasColumnName("tin");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_hr_employee_statutory");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_statutory_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_statutory_deleted_by_tenant_id");
-
-                    b.HasIndex("EmployeeId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_statutory_employee_id_tenant_id");
-
-                    b.HasIndex("TenantId", "EmployeeId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_employee_statutory_tenant_id_employee_id");
-
-                    b.HasIndex("Tier2ProviderId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_statutory_tier2provider_id_tenant_id");
-
-                    b.HasIndex("Tier3ProviderId", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_statutory_tier3provider_id_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_employee_statutory_updated_by_tenant_id");
-
-                    b.ToTable("hr_employee_statutory", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_employee_statutory_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.HrDocumentPath", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<string>("DocumentPathValue")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("document_path");
-
-                    b.Property<string>("FileName")
-                        .HasColumnType("text")
-                        .HasColumnName("file_name");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("ak_hr_document_paths_id_tenant_id");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_hr_document_paths_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_document_paths_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_document_paths_deleted_by_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_document_paths_updated_by_tenant_id");
-
-                    b.ToTable("hr_document_paths", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_document_paths_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.PensionProvider", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Tier")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("tier");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("ak_pension_providers_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_pension_providers_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_pension_providers_deleted_by_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_hr_pension_providers_updated_by_tenant_id");
-
-                    b.HasIndex("TenantId", "Name", "Tier")
-                        .IsUnique()
-                        .HasDatabaseName("ix_hr_pension_providers_tenant_id_name_tier");
-
-                    b.ToTable("hr_pension_providers", "human_resource", t =>
-                        {
-                            t.HasCheckConstraint("ck_hr_pension_providers_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-
-                            t.HasCheckConstraint("ck_hr_pension_providers_tier", "tier IN ('TIER_2','TIER_3')");
-                        });
-                });
-
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrAttendanceRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2180,11 +971,25 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("address");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("country");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
 
                     b.Property<string>("CustomFieldsData")
                         .IsRequired()
@@ -2192,6 +997,11 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("jsonb")
                         .HasDefaultValue("{}")
                         .HasColumnName("custom_fields_data");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
 
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
@@ -2222,6 +1032,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id")
                         .HasName("pk_zhr_branches");
@@ -2464,6 +1278,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
                     b.Property<string>("CustomFieldsData")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -2471,9 +1289,18 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasDefaultValue("{}")
                         .HasColumnName("custom_fields_data");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
                     b.Property<Guid?>("HeadOfDepartmentId")
                         .HasColumnType("uuid")
                         .HasColumnName("head_of_department_id");
+
+                    b.Property<int?>("HeadcountCapacity")
+                        .HasColumnType("integer")
+                        .HasColumnName("headcount_capacity");
 
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
@@ -2505,6 +1332,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at")
                         .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
 
                     b.HasKey("Id")
                         .HasName("pk_zhr_departments");
@@ -2664,6 +1495,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<string>("EmploymentType")
                         .HasColumnType("text")
                         .HasColumnName("employment_type");
+
+                    b.Property<Guid?>("EmploymentTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employment_type_id");
 
                     b.Property<string>("FirstName")
                         .HasColumnType("text")
@@ -2891,6 +1726,9 @@ namespace Trovesuite.Database.HumanResource.Migrations
 
                     b.HasIndex("DottedLineManagerId")
                         .HasDatabaseName("ix_zhr_employees_dotted_line_manager_id");
+
+                    b.HasIndex("EmploymentTypeId")
+                        .HasDatabaseName("ix_zhr_employees_employment_type_id");
 
                     b.HasIndex("ManagerId")
                         .HasDatabaseName("ix_zhr_employees_manager_id");
@@ -3141,6 +1979,158 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.ToTable("zhr_employee_education", "zeloshr");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmploymentType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_system_default");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_employment_types");
+
+                    b.HasIndex("TenantId", "OrgId", "IsActive")
+                        .HasDatabaseName("ix_zhr_employment_types_tenant_id_org_id_is_active");
+
+                    b.HasIndex("TenantId", "OrgId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_employment_types_tenant_id_org_id_name");
+
+                    b.ToTable("zhr_employment_types", "zeloshr");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrIdCardType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_system_default");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_id_card_types");
+
+                    b.HasIndex("TenantId", "OrgId", "IsActive")
+                        .HasDatabaseName("ix_zhr_id_card_types_tenant_id_org_id_is_active");
+
+                    b.HasIndex("TenantId", "OrgId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_id_card_types_tenant_id_org_id_name");
+
+                    b.ToTable("zhr_id_card_types", "zeloshr");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrJobPosting", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3207,6 +2197,16 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
                     b.Property<string>("EmployeeFullName")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3226,6 +2226,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("leave_type");
 
+                    b.Property<Guid?>("LeaveTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("leave_type_id");
+
                     b.Property<string>("OrgId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3241,6 +2245,16 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tenant_id");
 
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
                     b.Property<decimal>("UsedDays")
                         .HasPrecision(5, 1)
                         .HasColumnType("numeric(5,1)")
@@ -3248,6 +2262,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_zhr_leave_balances");
+
+                    b.HasIndex("TenantId", "OrgId", "EmployeeId", "LeaveTypeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_leave_balances_tenant_id_org_id_employee_id_leave_type_");
 
                     b.ToTable("zhr_leave_balances", "zeloshr");
                 });
@@ -3260,14 +2278,38 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<string>("ApprovalStage")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("approval_stage");
+
+                    b.Property<string>("ApproverId")
+                        .HasColumnType("text")
+                        .HasColumnName("approver_id");
+
                     b.Property<string>("ApproverName")
                         .HasColumnType("text")
                         .HasColumnName("approver_name");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
 
                     b.Property<decimal>("DaysRequested")
                         .HasPrecision(4, 1)
                         .HasColumnType("numeric(4,1)")
                         .HasColumnName("days_requested");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
 
                     b.Property<string>("EmployeeFullName")
                         .IsRequired()
@@ -3282,10 +2324,34 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("date")
                         .HasColumnName("end_date");
 
+                    b.Property<string>("HodApproverId")
+                        .HasColumnType("text")
+                        .HasColumnName("hod_approver_id");
+
+                    b.Property<DateTimeOffset?>("HodDecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("hod_decided_at");
+
                     b.Property<string>("LeaveType")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("leave_type");
+
+                    b.Property<Guid?>("LeaveTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("leave_type_id");
+
+                    b.Property<string>("LmApproverId")
+                        .HasColumnType("text")
+                        .HasColumnName("lm_approver_id");
+
+                    b.Property<DateTimeOffset?>("LmDecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("lm_decided_at");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
 
                     b.Property<string>("OrgId")
                         .IsRequired()
@@ -3310,10 +2376,120 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tenant_id");
 
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
                     b.HasKey("Id")
                         .HasName("pk_zhr_leave_requests");
 
                     b.ToTable("zhr_leave_requests", "zeloshr");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrLeaveType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("AccrualMethod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("front_loaded")
+                        .HasColumnName("accrual_method");
+
+                    b.Property<string>("AppliesToEmploymentTypes")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("applies_to_employment_types");
+
+                    b.Property<bool>("CarryOverAllowed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("carry_over_allowed");
+
+                    b.Property<string>("CountryCode")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<decimal>("DefaultEntitledDays")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("numeric(5,1)")
+                        .HasColumnName("default_entitled_days");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_paid");
+
+                    b.Property<int?>("MaxConsecutiveDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_consecutive_days");
+
+                    b.Property<int?>("MinNoticeWorkingDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("min_notice_working_days");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<bool>("RequiresSupportingDocument")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("requires_supporting_document");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_leave_types");
+
+                    b.HasIndex("TenantId", "OrgId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_leave_types_tenant_id_org_id_name");
+
+                    b.ToTable("zhr_leave_types", "zeloshr");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrLifecycleEvent", b =>
@@ -3510,418 +2686,75 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.ToTable("zhr_performance_reviews", "zeloshr");
                 });
 
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.Bank", b =>
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPublicHoliday", b =>
                 {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<string>("CountryCode")
                         .IsRequired()
-                        .HasConstraintName("fk_hr_banks_cp_tenants_tenant_id");
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_code");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_banks_cp_users_created_by_tenant_id");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_banks_cp_users_deleted_by_tenant_id");
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_banks_cp_users_updated_by_tenant_id");
-                });
+                    b.Property<DateOnly>("HolidayDate")
+                        .HasColumnType("date")
+                        .HasColumnName("holiday_date");
 
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.BankBranch", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_recurring");
+
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .HasConstraintName("fk_hr_bank_branches_cp_tenants_tenant_id");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
 
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Bank", null)
-                        .WithMany()
-                        .HasForeignKey("BankId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.Property<string>("OrgId")
                         .IsRequired()
-                        .HasConstraintName("fk_hr_bank_branches_banks_bank_id_tenant_id");
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_bank_branches_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_bank_branches_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_bank_branches_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.Department", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.Property<string>("TenantId")
                         .IsRequired()
-                        .HasConstraintName("fk_hr_departments_cp_tenants_tenant_id");
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_departments_cp_users_created_by_tenant_id");
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_departments_cp_users_deleted_by_tenant_id");
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_departments_cp_users_updated_by_tenant_id");
-                });
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_public_holidays");
 
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.Employee", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employees_cp_tenants_tenant_id");
+                    b.HasIndex("TenantId", "OrgId", "CountryCode", "HolidayDate", "Name")
+                        .HasDatabaseName("ix_zhr_public_holidays_tenant_id_org_id_country_code_holiday_d");
 
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employees_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employees_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Department", null)
-                        .WithMany()
-                        .HasForeignKey("DepartmentId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employees_hr_departments_department_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("DottedLineManagerId", "TenantId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_hr_employees_hr_employees_dotted_line_manager_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("LineManagerId", "TenantId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_hr_employees_hr_employees_line_manager_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employees_cp_users_updated_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employees_cp_users_user_id_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeDocument", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_documents_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_documents_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_documents_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.HrDocumentPath", null)
-                        .WithMany()
-                        .HasForeignKey("DocumentId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_documents_hr_document_paths_document_id_tenant_");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_documents_hr_employees_employee_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_documents_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeEmergencyContact", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_emergency_contacts_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_emergency_contacts_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_emergency_contacts_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_emergency_contacts_hr_employees_employee_id_ten");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_emergency_contacts_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeePaymentMethod", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_payment_methods_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Bank", null)
-                        .WithMany()
-                        .HasForeignKey("BankId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_payment_methods_hr_banks_bank_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.BankBranch", null)
-                        .WithMany()
-                        .HasForeignKey("BranchId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_payment_methods_hr_bank_branches_branch_id_tena");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_payment_methods_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_payment_methods_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_payment_methods_hr_employees_employee_id_tenant");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_payment_methods_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeSalary", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_salaries_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_salaries_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Currency", null)
-                        .WithMany()
-                        .HasForeignKey("CurrencyId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_salaries_cp_currencies_currency_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_salaries_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_salaries_hr_employees_employee_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_salaries_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.EmployeeStatutory", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_statutory_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_statutory_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_statutory_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_employee_statutory_hr_employees_employee_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.PensionProvider", null)
-                        .WithMany()
-                        .HasForeignKey("Tier2ProviderId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_statutory_pension_providers_tier2provider_id_te");
-
-                    b.HasOne("Trovesuite.Database.HumanResource.Entities.PensionProvider", null)
-                        .WithMany()
-                        .HasForeignKey("Tier3ProviderId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_statutory_pension_providers_tier3provider_id_te");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_employee_statutory_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.HrDocumentPath", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_document_paths_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_hr_document_paths_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_hr_document_paths_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_hr_document_paths_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.PensionProvider", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_hr_pension_providers_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_pension_providers_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_pension_providers_cp_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_hr_pension_providers_cp_users_updated_by_tenant_id");
+                    b.ToTable("zhr_public_holidays", "zeloshr");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrDepartment", b =>
@@ -3952,6 +2785,12 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasForeignKey("DottedLineManagerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_zhr_employees_zhr_employees_dotted_line_manager_id");
+
+                    b.HasOne("Trovesuite.Database.HumanResource.Entities.ZhrEmploymentType", null)
+                        .WithMany()
+                        .HasForeignKey("EmploymentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_zhr_employees_zhr_employment_types_employment_type_id");
 
                     b.HasOne("Trovesuite.Database.HumanResource.Entities.ZhrEmployee", null)
                         .WithMany()

@@ -429,7 +429,7 @@ jobs:
             [CorePlatform]=core_platform
             [LoanDrift]=loandrift
             [MyStoreGuard]=mystoreguard
-            [HumanResource]=human_resource
+            [HumanResource]=zeloshr
           )
 
           DB_HOST="${{ steps.db.outputs.DB_HOST }}"

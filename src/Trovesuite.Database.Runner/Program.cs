@@ -318,12 +318,11 @@ internal static class Program
     {
         PrintHeader("Rolling Back Deployment");
 
-        // A module can own more than one schema — e.g. HumanResource owns both
-        // `human_resource` (hr_*) and `zeloshr` (zhr_*). Dropping only
-        // IModule.SchemaName leaves the extra schema(s) behind, so a later deploy
-        // replays migrations against still-existing objects. Use each module's
-        // declared OwnedSchemas, which lists exactly the schemas it created (and
-        // excludes schemas it only references via FK, like core_platform).
+        // A module can own more than one schema, so dropping only IModule.SchemaName
+        // could leave extra schema(s) behind and a later deploy would replay
+        // migrations against still-existing objects. Use each module's declared
+        // OwnedSchemas, which lists exactly the schemas it created (and excludes
+        // schemas it only references via FK, like core_platform).
         // Drop in reverse Order so app schemas go before core_platform.
         var plan = selected
             .OrderByDescending(m => m.Order)

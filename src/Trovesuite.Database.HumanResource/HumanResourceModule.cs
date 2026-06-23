@@ -1,21 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Trovesuite.Database.Common.Abstractions;
-using Trovesuite.Database.HumanResource.Entities;
 
 namespace Trovesuite.Database.HumanResource;
 
 public sealed class HumanResourceModule : IModule
 {
     public int Order => 4;
-    public string ModuleKey => "human_resource";
+    public string ModuleKey => "zeloshr";
+    // Owns only the zeloshr schema (the legacy human_resource schema was removed),
+    // so the default OwnedSchemas of [SchemaName] is correct.
     public string SchemaName => HumanResourceDbContext.SchemaName;
-
-    // This module's migrations create tables in two schemas: human_resource (hr_*)
-    // and zeloshr (zhr_*). Both must be dropped on rollback. core_platform is only
-    // referenced via FK and is intentionally excluded.
-    public IEnumerable<string> OwnedSchemas =>
-        new[] { HumanResourceDbContext.SchemaName, ZelosHrSchema.Name };
 
     public DbContext CreateContext(string connectionString)
     {
