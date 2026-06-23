@@ -5,7 +5,7 @@ using Trovesuite.Database.CorePlatform.Entities;
 namespace Trovesuite.Database.HumanResource.Seeds;
 
 /// <summary>
-/// Upserts HR + ZelosHR RBAC into <c>core_platform</c> via EF (no embedded SQL).
+/// Upserts ZelosHR RBAC into <c>core_platform</c> via EF (no embedded SQL).
 /// </summary>
 public static class HumanResourceRbacSeeder
 {
@@ -124,7 +124,7 @@ public static class HumanResourceRbacSeeder
     {
         var permissionIds = await context.Set<Permission>()
             .AsNoTracking()
-            .Where(p => p.Id.StartsWith("permission-hr-") || p.Id.StartsWith("permission-zeloshr-"))
+            .Where(p => p.Id.StartsWith("permission-zeloshr-"))
             .Select(p => p.Id)
             .ToListAsync(ct);
 

@@ -16,6 +16,15 @@ public interface IModule
     /// <summary>PG schema this module owns.</summary>
     string SchemaName { get; }
 
+    /// <summary>
+    /// Every PG schema this module owns and may drop on rollback. Defaults to just
+    /// <see cref="SchemaName"/>; a module whose migrations create tables in more than
+    /// one schema (e.g. HumanResource → <c>human_resource</c> + <c>zeloshr</c>)
+    /// overrides this. Must NOT include schemas the module only references via FK
+    /// (e.g. <c>core_platform</c>) — dropping those would destroy another module.
+    /// </summary>
+    IEnumerable<string> OwnedSchemas => new[] { SchemaName };
+
     /// <summary>Construct a DbContext for this module against the given connection string.</summary>
     DbContext CreateContext(string connectionString);
 

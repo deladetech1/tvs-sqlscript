@@ -7,7 +7,9 @@ namespace Trovesuite.Database.HumanResource;
 public sealed class HumanResourceModule : IModule
 {
     public int Order => 4;
-    public string ModuleKey => "human_resource";
+    public string ModuleKey => "zeloshr";
+    // Owns only the zeloshr schema (the legacy human_resource schema was removed),
+    // so the default OwnedSchemas of [SchemaName] is correct.
     public string SchemaName => HumanResourceDbContext.SchemaName;
 
     public DbContext CreateContext(string connectionString)

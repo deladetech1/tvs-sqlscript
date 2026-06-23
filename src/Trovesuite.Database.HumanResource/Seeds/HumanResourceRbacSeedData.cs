@@ -4,7 +4,7 @@ using Trovesuite.Database.CorePlatform.Entities;
 namespace Trovesuite.Database.HumanResource.Seeds;
 
 /// <summary>
-/// HR + ZelosHR RBAC reference data (resource types, permissions, roles).
+/// ZelosHR RBAC reference data (resource types, permissions, roles).
 /// Seeded via EF in <see cref="HumanResourceRbacSeeder"/> — not raw SQL.
 /// </summary>
 public static class HumanResourceRbacSeedData
@@ -15,11 +15,6 @@ public static class HumanResourceRbacSeedData
     public static IReadOnlyList<ResourceType> ResourceTypes { get; } =
     [
         Rt("rt-subscribed-app-hr", "HR APP", "HR Subscribed APP", null),
-        Rt("rt-hr-employees", "HR Employees", "Employees, including identity + employment fields", "rt-subscribed-app-hr"),
-        Rt("rt-hr-departments", "HR Departments", "Department lookup", "rt-subscribed-app-hr"),
-        Rt("rt-hr-banks", "HR Banks", "Bank + bank branch lookup", "rt-subscribed-app-hr"),
-        Rt("rt-hr-pension", "HR Pension", "Pension providers (Tier 2 / Tier 3)", "rt-subscribed-app-hr"),
-        Rt("rt-hr-files", "HR Files", "Documents uploaded against employees", "rt-subscribed-app-hr"),
         Rt("rt-zeloshr-dashboard", "ZelosHR Dashboard", "Executive HR dashboard", "rt-subscribed-app-hr"),
         Rt("rt-zeloshr-employee", "ZelosHR Employee", "Employee directory and profiles", "rt-subscribed-app-hr"),
         Rt("rt-zeloshr-org", "ZelosHR Org Structure", "Org chart and organisation summary", "rt-subscribed-app-hr"),
@@ -86,45 +81,6 @@ public static class HumanResourceRbacSeedData
     static IReadOnlyList<Permission> BuildPermissions()
     {
         var list = new List<Permission>();
-
-        list.AddRange(HrCrud("employees", "HR Employees", "rt-hr-employees",
-            ("create", "Create employees (onboarding mega-endpoint)"),
-            ("get", "View / list / read employees, view statistics"),
-            ("update", "Update non-sensitive employee fields, reporting line, emergency contacts, documents"),
-            ("delete", "Soft / permanent delete + restore employees"),
-            ("admin", "Full employee administration including lifecycle overrides")));
-        list.Add(Perm("permission-hr-employees-reveal-sensitive", "HR Employees Reveal Sensitive", "rt-hr-employees",
-            "View unmasked SSNIT, TIN, national-ID and bank account numbers"));
-        list.Add(Perm("permission-hr-employees-manage-salary", "HR Employees Manage Salary", "rt-hr-employees",
-            "Append / update salary history (raises, promotions, corrections)"));
-
-        list.AddRange(HrCrud("departments", "HR Departments", "rt-hr-departments",
-            ("create", "Create departments"),
-            ("get", "View and list departments"),
-            ("update", "Update departments"),
-            ("delete", "Archive or delete departments"),
-            ("admin", "Full department administration")));
-
-        list.AddRange(HrCrud("banks", "HR Banks", "rt-hr-banks",
-            ("create", "Create banks and bank branches"),
-            ("get", "View and list banks and branches"),
-            ("update", "Update banks and bank branches"),
-            ("delete", "Delete banks and bank branches"),
-            ("admin", "Full bank administration")));
-
-        list.AddRange(HrCrud("pension-providers", "HR Pension Providers", "rt-hr-pension",
-            ("create", "Create Tier 2 and Tier 3 pension providers"),
-            ("get", "View and list pension providers"),
-            ("update", "Update pension providers"),
-            ("delete", "Delete pension providers"),
-            ("admin", "Full pension provider administration")));
-
-        list.AddRange(HrCrud("files", "HR Files", "rt-hr-files",
-            ("create", "Upload employee documents"),
-            ("get", "View and list employee documents"),
-            ("update", "Update employee document metadata"),
-            ("delete", "Delete employee documents"),
-            ("admin", "Full employee file administration")));
 
         list.AddRange(ZelosCrud("dashboard", "Dashboard", "rt-zeloshr-dashboard",
             ("create", "Create dashboard widgets and layouts"),
@@ -242,20 +198,6 @@ public static class HumanResourceRbacSeedData
             "Reveal masked sensitive custom field values"));
 
         return list;
-    }
-
-    static IEnumerable<Permission> HrCrud(string slug, string label, string resourceTypeId,
-        params (string verb, string description)[] verbs)
-    {
-        foreach (var (verb, description) in verbs)
-        {
-            var verbTitle = char.ToUpper(verb[0]) + verb[1..];
-            yield return Perm(
-                $"permission-hr-{slug}-{verb}",
-                $"HR {label} {verbTitle}",
-                resourceTypeId,
-                description);
-        }
     }
 
     static IEnumerable<Permission> ZelosCrud(string slug, string label, string resourceTypeId,
