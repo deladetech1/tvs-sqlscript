@@ -1,31 +1,27 @@
-# Deploy EF Core migrations to the SaaS team DBs (all modules:
-# core_platform → loandrift → mystoreguard → human_resource) — MANUAL.
+# Auto-deploy EF Core migrations to saas-dev when changes merge to the `dev`
+# branch. Deploys ALL modules (core_platform → loandrift → mystoreguard → zeloshr).
 #
-# Run via the Actions "Run workflow" button: pick the branch (its migrations) and
-# the target environment. Database migration is a deliberate, SEPARATE step from
-# application deploys — pushing code never auto-migrates a DB.
+#   dev push → GitHub Environment saas-dev (DATABASE_URL)
 #
-#   environment = saas-dev   → GitHub Environment saas-dev  (DATABASE_URL)
-#   environment = saas-prod  → GitHub Environment saas-prod (DATABASE_URL)
-#
-# Granular ops (rollback, enterprise, migrations-list, single module) live on
-# database-dispatch.yml.
+# This is the ONLY automatic database deploy. Prod and tenants are deliberate:
+# run the manual "Database (EF Core dispatch)" workflow (database-dispatch.yml)
+# and pick scope + environment. Application deploys never migrate a DB.
 
-name: Database deploy (manual)
+name: Database deploy (saas-dev auto)
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: "Target environment (run from the branch whose migrations you want)"
-        type: choice
-        default: saas-dev
-        options:
-          - saas-dev
-          - saas-prod
+  push:
+    branches:
+      - dev
+    paths:
+      - "src/**"
+      - "migrations/**"
+      - "Directory.Build.props"
+      - "Trovesuite.Database.sln"
+      - ".github/workflows/database-deploy-branches.yml"
 
 concurrency:
-  group: tvs-sqlscript-deploy-${{ inputs.environment }}
+  group: tvs-sqlscript-deploy-saas-dev
   cancel-in-progress: false
 
 permissions:
@@ -33,10 +29,10 @@ permissions:
 
 jobs:
   deploy:
-    name: 🚀 deploy → ${{ inputs.environment }}
+    name: 🚀 deploy → saas-dev
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: ${{ inputs.environment }}
+    environment: saas-dev
 
     defaults:
       run:
@@ -66,7 +62,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${DATABASE_URL:-}" ]]; then
-            echo "::error::DATABASE_URL is not set on environment '${{ inputs.environment }}'."
+            echo "::error::DATABASE_URL is not set on environment 'saas-dev'."
             exit 1
           fi
           echo "::add-mask::${DATABASE_URL}"
@@ -99,13 +95,13 @@ jobs:
       - name: 📍 Target summary
         run: |
           {
-            echo "## 🚀 Manual deploy → \`${{ inputs.environment }}\`"
+            echo "## 🚀 Auto deploy → \`saas-dev\`"
             echo ""
             echo "| | |"
             echo "| --- | --- |"
             echo "| **Branch** | \`${{ github.ref_name }}\` |"
             echo "| **Commit** | \`${{ github.sha }}\` |"
-            echo "| **Modules** | all (incl. human_resource / ZelosHR) |"
+            echo "| **Modules** | all (incl. zeloshr / ZelosHR) |"
             echo "| **DB host** | \`${{ steps.db.outputs.DB_HOST }}\` |"
             echo "| **DB name** | \`${{ steps.db.outputs.DB_NAME }}\` |"
             echo ""
@@ -125,4 +121,4 @@ jobs:
                 --project src/Trovesuite.Database.Runner -- \
                 "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" deploy
           echo "::endgroup::"
-          echo "::notice title=✅ deploy succeeded::${{ github.ref_name }} → ${{ inputs.environment }}"
+          echo "::notice title=✅ deploy succeeded::${{ github.ref_name }} → saas-dev"
