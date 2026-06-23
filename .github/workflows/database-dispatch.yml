@@ -8,7 +8,7 @@
 #     • enterprise-<slug>   = a specific customer (also runs migrations/enterprise/<slug>/*)
 #
 #   environment ───────► WHICH DB of theirs
-#     • dev / stage / prod
+#     • dev / prod
 #
 # GitHub Environment name = `<scope>-<environment>`:
 #
@@ -16,16 +16,13 @@
 #   │ GitHub Environment               │ Secret         │ Suggested protection   │
 #   ├──────────────────────────────────┼────────────────┼────────────────────────┤
 #   │ saas-dev                         │ DATABASE_URL   │ none                   │
-#   │ saas-stage                       │ DATABASE_URL   │ wait-timer             │
 #   │ saas-prod                        │ DATABASE_URL   │ Required reviewers     │
-#   │ enterprise-bgclt-dev    (opt.)   │ DATABASE_URL   │                        │
-#   │ enterprise-bgclt-stage  (opt.)   │ DATABASE_URL   │                        │
 #   │ enterprise-bgclt-prod            │ DATABASE_URL   │ Required reviewers     │
 #   │ enterprise-acme-prod             │ DATABASE_URL   │ Required reviewers     │
 #   └──────────────────────────────────┴────────────────┴────────────────────────┘
 #
-# Each row that actually exists is a real GitHub Environment. Enterprises that
-# only run production just don't create the dev/stage entries.
+# Each row that actually exists is a real GitHub Environment. Tenants are
+# typically prod-only (just don't create their dev entry).
 #
 # DATABASE_URL format (libpq URL):
 #   postgresql://user:password@host.example.com:5432/dbname?sslmode=require
@@ -65,12 +62,11 @@ on:
           # Runner uses to find migrations/enterprise/<slug>/*.sql.
           - enterprise-bgclt
       environment:
-        description: 'WHICH DB of theirs: dev / stage / prod'
+        description: 'WHICH DB of theirs: dev / prod'
         required: true
         type: choice
         options:
           - dev
-          - stage
           - prod
       command:
         description: What to do
@@ -93,7 +89,7 @@ on:
           - core_platform
           - loandrift
           - mystoreguard
-          - human_resource
+          - zeloshr
       destructive_ack:
         description: 'For rollback only: type exactly YESDestructive'
         type: string
@@ -136,8 +132,8 @@ jobs:
       contents: read
 
     # Bind the job to the chosen GitHub Environment. Naming convention:
-    # `<scope>-<environment>` — e.g. saas-dev, saas-stage, saas-prod,
-    # enterprise-bgclt-prod, enterprise-acme-stage.
+    # `<scope>-<environment>` — e.g. saas-dev, saas-prod,
+    # enterprise-bgclt-prod, enterprise-acme-prod.
     # This is what unlocks:
     #   - env-scoped secrets (DATABASE_URL),
     #   - required reviewers / wait-timer protection rules,
@@ -261,7 +257,7 @@ jobs:
             core_platform)  PROJ="src/Trovesuite.Database.CorePlatform";  PICK=1 ;;
             loandrift)      PROJ="src/Trovesuite.Database.LoanDrift";     PICK=2 ;;
             mystoreguard)   PROJ="src/Trovesuite.Database.MyStoreGuard";  PICK=3 ;;
-            human_resource) PROJ="src/Trovesuite.Database.HumanResource"; PICK=4 ;;
+            zeloshr)        PROJ="src/Trovesuite.Database.HumanResource"; PICK=4 ;;
             all)            PROJ="";                                       PICK=0 ;;
           esac
           echo "proj=$PROJ" >> "$GITHUB_OUTPUT"
@@ -346,12 +342,12 @@ jobs:
           DB_USER: ${{ steps.db.outputs.DB_USER }}
           PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
           DB_NAME: ${{ steps.db.outputs.DB_NAME }}
-          # Empty for dev/stage/prod under scope=saas; set for enterprise-<slug>.
+          # Empty for dev/prod under scope=saas; set for enterprise-<slug>.
           # The Runner uses this to pick migrations/enterprise/<slug>/.
           TVS_ENTERPRISE: ${{ steps.enterprise.outputs.slug }}
         run: |
           echo "::group::Starting ${{ inputs.command }} on ${{ inputs.scope }}-${{ inputs.environment }}"
-          echo "Module pick: ${{ steps.map.outputs.pick }} (0=ALL, 1=core_platform, 2=loandrift, 3=mystoreguard, 4=human_resource)"
+          echo "Module pick: ${{ steps.map.outputs.pick }} (0=ALL, 1=core_platform, 2=loandrift, 3=mystoreguard, 4=zeloshr)"
           [[ -n "$TVS_ENTERPRISE" ]] \
             && echo "TVS_ENTERPRISE=$TVS_ENTERPRISE → migrations/enterprise/$TVS_ENTERPRISE/*.sql will also run" \
             || echo "TVS_ENTERPRISE=(unset) → migrations/enterprise/ skipped"
@@ -409,7 +405,7 @@ jobs:
               core_platform)  MODULES="CorePlatform" ;;
               loandrift)      MODULES="LoanDrift" ;;
               mystoreguard)   MODULES="MyStoreGuard" ;;
-              human_resource) MODULES="HumanResource" ;;
+              zeloshr)        MODULES="HumanResource" ;;
             esac
           fi
 
