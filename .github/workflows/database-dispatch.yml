@@ -132,8 +132,8 @@ jobs:
       contents: read
 
     # Bind the job to the chosen GitHub Environment. Naming convention:
-    # `<scope>-<environment>` — e.g. saas-dev, saas-stage, saas-prod,
-    # enterprise-bgclt-prod, enterprise-acme-stage.
+    # `<scope>-<environment>` — e.g. saas-dev, saas-prod,
+    # enterprise-bgclt-prod, enterprise-acme-prod.
     # This is what unlocks:
     #   - env-scoped secrets (DATABASE_URL),
     #   - required reviewers / wait-timer protection rules,
@@ -342,7 +342,7 @@ jobs:
           DB_USER: ${{ steps.db.outputs.DB_USER }}
           PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
           DB_NAME: ${{ steps.db.outputs.DB_NAME }}
-          # Empty for dev/stage/prod under scope=saas; set for enterprise-<slug>.
+          # Empty for dev/prod under scope=saas; set for enterprise-<slug>.
           # The Runner uses this to pick migrations/enterprise/<slug>/.
           TVS_ENTERPRISE: ${{ steps.enterprise.outputs.slug }}
         run: |
