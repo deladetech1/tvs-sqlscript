@@ -195,9 +195,12 @@ jobs:
       - name: Build solution
         run: dotnet build Trovesuite.Database.sln -c Release --nologo
 
-      - name: Install dotnet-ef tool
+      - name: Restore dotnet-ef tool
         if: startsWith(github.event.inputs.command, 'migrations-')
-        run: dotnet tool install --global dotnet-ef --version 10.0.1
+        # The repo pins dotnet-ef as a LOCAL tool (dotnet-tools.json), so `dotnet ef`
+        # resolves to the manifest and ignores any --global install. Restore from the
+        # manifest so the pinned version is available.
+        run: dotnet tool restore
 
       - name: Parse DATABASE_URL into env vars
         id: db
