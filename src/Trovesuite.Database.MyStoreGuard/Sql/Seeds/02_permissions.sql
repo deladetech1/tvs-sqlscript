@@ -67,6 +67,7 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-products-get', 'Mystoreguard Products Get', 'rt-product', 'Can view, list, read products, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-products-update', 'Mystoreguard Products Update', 'rt-product', 'Can update products, restore soft-deleted products, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-products-delete', 'Mystoreguard Products Delete', 'rt-product', 'Can delete products', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-products-split', 'Mystoreguard Products Split', 'rt-product', 'Can split (break-bulk) products into smaller units and reverse splits', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 --
 ('permission-msg-product-metadata-create', 'Mystoreguard Product Metadata Create', 'rt-product-metadata', 'Can create new product metadata', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-product-metadata-get', 'Mystoreguard Product Metadata Get', 'rt-product-metadata', 'Can view, list, read product metadata, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
