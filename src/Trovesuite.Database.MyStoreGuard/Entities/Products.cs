@@ -313,6 +313,10 @@ public class StockTakeItem
     public int CountedQty { get; set; }
     public int SystemQty { get; set; }
     public int VarianceQty { get; set; }
+    // Unit price supplied by the caller at count time (price is not stored on the
+    // product itself — it lives per delivery). Snapshotted here so the variance can
+    // be valued; variance value = variance_qty * unit_price.
+    public decimal? UnitPrice { get; set; }
     public string MatchStatus { get; set; } = "MATCH";        // MATCH | OVER | SHORT
     public string ResolutionStatus { get; set; } = "PENDING"; // PENDING | INVESTIGATING | RESOLVED
     public string? Note { get; set; }

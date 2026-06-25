@@ -479,6 +479,7 @@ public sealed class StockTakeItemConfiguration : IEntityTypeConfiguration<StockT
         b.Property(x => x.MatchStatus).HasDefaultValue("MATCH");
         b.Property(x => x.ResolutionStatus).HasDefaultValue("PENDING");
         b.Property(x => x.AdjustmentQty).HasDefaultValue(0);
+        b.Property(x => x.UnitPrice).HasColumnType("numeric(18,2)");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
         b.Property(x => x.ResolvedDatetime).HasColumnType("timestamptz");
         b.HasInCheck("match_status", "MATCH", "OVER", "SHORT");

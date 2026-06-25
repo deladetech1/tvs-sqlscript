@@ -39,6 +39,7 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-product-movement', 'Product Movement', 'Product Movement management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-stock-takes', 'Stock Takes', 'Manual stock taking (count, investigate, resolve) for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-appointments', 'Appointments', 'Appointments management for Mystoreguard', 'rt-subscribed-app-msg'),
+('rt-tasks', 'Tasks', 'Tasks and multi-step workflow management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-store-transfers', 'Store Transfers', 'Store Transfers management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-warehouse-transfers', 'Warehouse Transfers', 'Warehouse Transfers management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-store-sales', 'Store Sales', 'Store Sales management for Mystoreguard', 'rt-subscribed-app-msg'),

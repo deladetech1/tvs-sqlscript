@@ -67,6 +67,17 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<Meeting> Meetings => Set<Meeting>();
     public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
 
+    public DbSet<MsgWorkflowTemplate> WorkflowTemplates => Set<MsgWorkflowTemplate>();
+    public DbSet<MsgWorkflowTemplateStep> WorkflowTemplateSteps => Set<MsgWorkflowTemplateStep>();
+    public DbSet<MsgWorkflowTemplateStepDep> WorkflowTemplateStepDeps => Set<MsgWorkflowTemplateStepDep>();
+    public DbSet<MsgWorkflowTemplateStepTarget> WorkflowTemplateStepTargets => Set<MsgWorkflowTemplateStepTarget>();
+    public DbSet<MsgTask> Tasks => Set<MsgTask>();
+    public DbSet<MsgTaskStep> TaskSteps => Set<MsgTaskStep>();
+    public DbSet<MsgTaskStepDep> TaskStepDeps => Set<MsgTaskStepDep>();
+    public DbSet<MsgTaskStepTarget> TaskStepTargets => Set<MsgTaskStepTarget>();
+    public DbSet<MsgTaskNotificationSetting> TaskNotificationSettings => Set<MsgTaskNotificationSetting>();
+    public DbSet<MsgTaskNotification> TaskNotifications => Set<MsgTaskNotification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);

@@ -265,7 +265,7 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-update'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-approve'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-create'),
-('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-view'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-get'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-resolve')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -286,7 +286,7 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-update'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-delete'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-create'),
-('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-view'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-get'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-resolve')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -307,3 +307,23 @@ WHERE id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-
 
 DELETE FROM core_platform.cp_resource_types
 WHERE id IN ('rt-creditors', 'rt-depositors', 'rt-returns');
+
+-- =============================================
+-- RENAME: permission-msg-stock-takes-view -> permission-msg-stock-takes-get
+-- The permission id changed, so the upsert in 02_permissions.sql inserts the new
+-- row but cannot rename the old one on already-seeded databases. Carry any existing
+-- role grants over to the new id (preserves access for custom/tenant roles), then
+-- drop the obsolete permission and its grants. Idempotent; no-op on a clean database.
+-- Deleted child-first: cp_role_permissions (FK -> cp_permissions, RESTRICT) before cp_permissions.
+-- =============================================
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
+SELECT tenant_id, role_id, 'permission-msg-stock-takes-get'
+FROM core_platform.cp_role_permissions
+WHERE permission_id = 'permission-msg-stock-takes-view'
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+DELETE FROM core_platform.cp_role_permissions
+WHERE permission_id = 'permission-msg-stock-takes-view';
+
+DELETE FROM core_platform.cp_permissions
+WHERE id = 'permission-msg-stock-takes-view';
