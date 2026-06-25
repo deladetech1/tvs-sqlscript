@@ -317,6 +317,12 @@ public class StockTakeItem
     // product itself — it lives per delivery). Snapshotted here so the variance can
     // be valued; variance value = variance_qty * unit_price.
     public decimal? UnitPrice { get; set; }
+    // Currency snapshotted per line (plain text, not an FK): different products in
+    // one count may be priced in different currencies, and a completed take must
+    // stay frozen even if the currency record changes later.
+    public string? CurrencyId { get; set; }
+    public string? CurrencyName { get; set; }
+    public string? CurrencySymbol { get; set; }
     public string MatchStatus { get; set; } = "MATCH";        // MATCH | OVER | SHORT
     public string ResolutionStatus { get; set; } = "PENDING"; // PENDING | INVESTIGATING | RESOLVED
     public string? Note { get; set; }
