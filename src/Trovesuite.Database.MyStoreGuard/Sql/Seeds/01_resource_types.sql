@@ -36,6 +36,7 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-purchase-orders', 'Purchase Orders', 'Purchase Orders management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-purchase-receipts', 'Purchase Receipts', 'Purchase Receipts management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-product-batch', 'Product Batch', 'Product Batch management for Mystoreguard', 'rt-subscribed-app-msg'),
+('rt-product-split', 'Product Split', 'Product split (break-bulk) management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-product-movement', 'Product Movement', 'Product Movement management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-stock-takes', 'Stock Takes', 'Manual stock taking (count, investigate, resolve) for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-appointments', 'Appointments', 'Appointments management for Mystoreguard', 'rt-subscribed-app-msg'),
