@@ -171,7 +171,12 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-deliveries-create', 'Mystoreguard Deliveries Create', 'rt-deliveries', 'Can create new deliveries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-deliveries-get', 'Mystoreguard Deliveries Get', 'rt-deliveries', 'Can view, list, read deliveries, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-deliveries-update', 'Mystoreguard Deliveries Update', 'rt-deliveries', 'Can update deliveries, restore soft-deleted deliveries, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-deliveries-delete', 'Mystoreguard Deliveries Delete', 'rt-deliveries', 'Can delete deliveries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-msg-deliveries-delete', 'Mystoreguard Deliveries Delete', 'rt-deliveries', 'Can delete deliveries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Stock takes permissions
+('permission-msg-stock-takes-create', 'Mystoreguard Stock Takes Create', 'rt-stock-takes', 'Can create stock takes (count products) and complete/lock them', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-stock-takes-view', 'Mystoreguard Stock Takes View', 'rt-stock-takes', 'Can view and list stock takes and their variance reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-stock-takes-resolve', 'Mystoreguard Stock Takes Resolve', 'rt-stock-takes', 'Can investigate and resolve stock take variances, including applying optional stock corrections', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,

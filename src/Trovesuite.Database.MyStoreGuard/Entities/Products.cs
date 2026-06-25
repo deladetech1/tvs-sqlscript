@@ -265,6 +265,67 @@ public class ProductTransferApproval
     public string? Ctime { get; set; }
 }
 
+// A manual stock-taking session at a single location. Captures one physical
+// count of on-hand stock for a store or warehouse so discrepancies between the
+// shelf and the system can be detected and investigated. The counted lines live
+// in msg_stock_take_items. Status moves DRAFT -> COMPLETED (counting finished)
+// or DRAFT -> CANCELLED. Completing does NOT change stock on its own.
+public class StockTake
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string LocId { get; set; } = default!;
+    public string LocationType { get; set; } = default!;   // STORE | WAREHOUSE
+    public string StockTakeNumber { get; set; } = default!;
+    public string Status { get; set; } = "DRAFT";          // DRAFT | COMPLETED | CANCELLED
+    public string? Description { get; set; }
+    public string DeleteStatus { get; set; } = "NOT_DELETED";
+    public DateTimeOffset? CompletedDatetime { get; set; }
+    public string? CompletedBy { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    public string? DeletedBy { get; set; }
+}
+
+// One counted product line within a stock take. system_qty is snapshotted from
+// the location's on-hand qty (msg_store_products / msg_warehouse_products) at the
+// time the line is recorded; variance_qty = counted_qty - system_qty and
+// match_status summarises the comparison (MATCH | OVER | SHORT). A mismatch is
+// worked through resolution_status (PENDING -> INVESTIGATING -> RESOLVED).
+//
+// Correcting stock is OPTIONAL and explicit: at resolution adjustment_qty may be
+// set (signed: positive adds stock, negative reduces it). When non-zero, the
+// service applies it to current_qty and writes a matching msg_product_movements
+// row whose id is kept in adjustment_movement_id. Counting alone never moves stock.
+public class StockTakeItem
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string StockTakeId { get; set; } = default!;
+    public string ProductId { get; set; } = default!;
+    public int CountedQty { get; set; }
+    public int SystemQty { get; set; }
+    public int VarianceQty { get; set; }
+    public string MatchStatus { get; set; } = "MATCH";        // MATCH | OVER | SHORT
+    public string ResolutionStatus { get; set; } = "PENDING"; // PENDING | INVESTIGATING | RESOLVED
+    public string? Note { get; set; }
+    public string? ResolutionNote { get; set; }
+    public int AdjustmentQty { get; set; }                    // signed correction applied at resolution; 0 = none
+    public string? AdjustmentMovementId { get; set; }         // FK-ish link to the msg_product_movements row created
+    public string? ResolvedBy { get; set; }
+    public DateTimeOffset? ResolvedDatetime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+}
+
 public class ProductDocumentId : TenantScopedEntity
 {
     public string Id { get; set; } = default!;

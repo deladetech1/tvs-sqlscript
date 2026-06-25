@@ -263,7 +263,10 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-create'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-get'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-update'),
-('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-approve')
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-approve'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-create'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-view'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-resolve')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Warehouse Admin role (rt-warehouse) to all warehouse-domain permissions.
@@ -281,7 +284,10 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-approve'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-get'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-update'),
-('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-delete')
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-delete'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-create'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-view'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-resolve')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- =============================================

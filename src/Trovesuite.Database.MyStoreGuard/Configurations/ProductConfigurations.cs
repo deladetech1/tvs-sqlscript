@@ -443,6 +443,62 @@ public sealed class ProductTransferApprovalConfiguration : IEntityTypeConfigurat
     }
 }
 
+public sealed class StockTakeConfiguration : IEntityTypeConfiguration<StockTake>
+{
+    public void Configure(EntityTypeBuilder<StockTake> b)
+    {
+        b.ToTable("msg_stock_takes");
+        // Pin the PK name: msg_stock_take_items references this key, which would
+        // otherwise make the convention drop/recreate the PK in the migration.
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id }).HasName("pk_msg_stock_takes");
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Status).HasDefaultValue("DRAFT");
+        b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+        b.Property(x => x.CompletedDatetime).HasColumnType("timestamptz");
+        // one stock-take number per location
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.StockTakeNumber }).IsUnique();
+        b.HasInCheck("location_type", "STORE", "WAREHOUSE");
+        b.HasInCheck("status", "DRAFT", "COMPLETED", "CANCELLED");
+        b.HasDeleteStatusCheck();
+        b.WithTenantOrgBusLocFks();
+        // completed_by → core_platform.cp_users(id, tenant_id)
+        b.HasOne<User>().WithMany().HasForeignKey("CompletedBy", "TenantId")
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
+        b.WithCrossSchemaAuditUserFks();
+    }
+}
+
+public sealed class StockTakeItemConfiguration : IEntityTypeConfiguration<StockTakeItem>
+{
+    public void Configure(EntityTypeBuilder<StockTakeItem> b)
+    {
+        b.ToTable("msg_stock_take_items");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.MatchStatus).HasDefaultValue("MATCH");
+        b.Property(x => x.ResolutionStatus).HasDefaultValue("PENDING");
+        b.Property(x => x.AdjustmentQty).HasDefaultValue(0);
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+        b.Property(x => x.ResolvedDatetime).HasColumnType("timestamptz");
+        b.HasInCheck("match_status", "MATCH", "OVER", "SHORT");
+        b.HasInCheck("resolution_status", "PENDING", "INVESTIGATING", "RESOLVED");
+        // one line per product per stock take
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.StockTakeId, x.ProductId }).IsUnique();
+        b.WithTenantFk();
+        // (tenant_id, org_id, bus_id, stock_take_id) → msg_stock_takes, deleting the
+        // header removes its lines
+        b.HasOne<StockTake>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "StockTakeId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.WithProductFk(DeleteBehavior.Restrict);
+        // resolved_by → core_platform.cp_users(id, tenant_id)
+        b.HasOne<User>().WithMany().HasForeignKey("ResolvedBy", "TenantId")
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
 public sealed class ProductDocumentIdConfiguration : IEntityTypeConfiguration<ProductDocumentId>
 {
     public void Configure(EntityTypeBuilder<ProductDocumentId> b)

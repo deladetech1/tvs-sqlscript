@@ -26,6 +26,8 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<ProductTransfer> ProductTransfers => Set<ProductTransfer>();
     public DbSet<ProductTransferItem> ProductTransferItems => Set<ProductTransferItem>();
     public DbSet<ProductTransferApproval> ProductTransferApprovals => Set<ProductTransferApproval>();
+    public DbSet<StockTake> StockTakes => Set<StockTake>();
+    public DbSet<StockTakeItem> StockTakeItems => Set<StockTakeItem>();
     public DbSet<ProductDocumentId> ProductDocumentIds => Set<ProductDocumentId>();
     public DbSet<AssignMetadataToProduct> AssignMetadataToProducts => Set<AssignMetadataToProduct>();
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
