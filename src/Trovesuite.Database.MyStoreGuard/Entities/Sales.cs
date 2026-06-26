@@ -161,7 +161,8 @@ public class MsgActivityLog
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string BusId { get; set; } = default!;
-    public string LocId { get; set; } = default!;
+    // Nullable: business-scoped resources (e.g. tasks / workflow templates) have no location.
+    public string? LocId { get; set; }
     public string? Action { get; set; }
     public string? ResourceType { get; set; }
     public JsonDocument? OldData { get; set; }
