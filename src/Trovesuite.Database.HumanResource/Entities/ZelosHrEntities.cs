@@ -74,6 +74,46 @@ public class ZhrIdCardType
     public string? UpdatedBy { get; set; }
 }
 
+public class ZhrCompanyProfile
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string LegalName { get; set; } = default!;
+    public string? TradingName { get; set; }
+    public string? Industry { get; set; }
+    public string? CompanySize { get; set; }
+    public string? BusinessRegistrationNumber { get; set; }
+    public string? Tin { get; set; }
+    public string? PrimaryWorkCountry { get; set; }
+    public string? CompanyEmail { get; set; }
+    public string? Website { get; set; }
+    /// <summary>File Management registry id (human_resource.hr_document_paths.id) — not a direct URL.</summary>
+    public string? LogoDocumentId { get; set; }
+    public string? BannerDocumentId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+public class ZhrCompanyOffice
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? Country { get; set; }
+    public string? City { get; set; }
+    public string? Phone { get; set; }
+    /// <summary>Client-managed flag — uniqueness across an org's offices is not enforced.</summary>
+    public bool IsHeadOffice { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ZhrEmployee
 {
     public Guid Id { get; set; }

@@ -100,6 +100,57 @@ public sealed class ZhrIdCardTypeConfiguration : IEntityTypeConfiguration<ZhrIdC
     }
 }
 
+public sealed class ZhrCompanyProfileConfiguration : IEntityTypeConfiguration<ZhrCompanyProfile>
+{
+    public void Configure(EntityTypeBuilder<ZhrCompanyProfile> b)
+    {
+        b.ToZelosHrTable("zhr_company_profile");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.LegalName).HasMaxLength(200);
+        b.Property(x => x.TradingName).HasMaxLength(200);
+        b.Property(x => x.Industry).HasMaxLength(150);
+        b.Property(x => x.CompanySize).HasMaxLength(50);
+        b.Property(x => x.BusinessRegistrationNumber).HasMaxLength(100);
+        b.Property(x => x.Tin).HasMaxLength(100);
+        b.Property(x => x.PrimaryWorkCountry).HasMaxLength(100);
+        b.Property(x => x.CompanyEmail).HasMaxLength(200);
+        b.Property(x => x.Website).HasMaxLength(300);
+        b.Property(x => x.LogoDocumentId).HasMaxLength(200);
+        b.Property(x => x.BannerDocumentId).HasMaxLength(200);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId }).IsUnique();
+    }
+}
+
+public sealed class ZhrCompanyOfficeConfiguration : IEntityTypeConfiguration<ZhrCompanyOffice>
+{
+    public void Configure(EntityTypeBuilder<ZhrCompanyOffice> b)
+    {
+        b.ToZelosHrTable("zhr_company_offices");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Name).HasMaxLength(150);
+        b.Property(x => x.Country).HasMaxLength(100);
+        b.Property(x => x.City).HasMaxLength(100);
+        b.Property(x => x.Phone).HasMaxLength(50);
+        b.Property(x => x.IsHeadOffice).HasDefaultValue(false);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId });
+    }
+}
+
 public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmployee>
 {
     public void Configure(EntityTypeBuilder<ZhrEmployee> b)
