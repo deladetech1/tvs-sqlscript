@@ -36,6 +36,8 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-msg-return-policies-admin', 'system-tenant-id', 'Mystoreguard Return Policies Admin', 'Administrator for return policies management', 'rt-return-policies', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-store-returns-admin', 'system-tenant-id', 'Mystoreguard Store Returns Admin', 'Administrator for store returns management with full access including approve and process', 'rt-store-returns', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-reports-admin', 'system-tenant-id', 'Mystoreguard Reports Admin', 'Administrator for reports and analytics management', 'rt-reports', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Tasks Admin Role (resource type rt-tasks): the auto-assign trigger grants all permission-msg-tasks-* on insert
+('role-msg-tasks-admin', 'system-tenant-id', 'Mystoreguard Tasks Admin', 'Administrator for tasks and multi-step workflow management', 'rt-tasks', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Viewer Admin Role (read-only access to all Mystoreguard resources)
 ('role-msg-viewer-admin', 'system-tenant-id', 'Mystoreguard Viewer Admin', 'Viewer Admin for Mystoreguard - can view all Mystoreguard resources with GET permissions only', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
