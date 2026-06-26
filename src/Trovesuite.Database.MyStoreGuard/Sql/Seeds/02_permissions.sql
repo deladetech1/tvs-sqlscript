@@ -67,6 +67,7 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-products-get', 'Mystoreguard Products Get', 'rt-product', 'Can view, list, read products, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-products-update', 'Mystoreguard Products Update', 'rt-product', 'Can update products, restore soft-deleted products, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-products-delete', 'Mystoreguard Products Delete', 'rt-product', 'Can delete products', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-products-split', 'Mystoreguard Products Split', 'rt-product', 'Can split (break-bulk) products into smaller units and reverse splits', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 --
 ('permission-msg-product-metadata-create', 'Mystoreguard Product Metadata Create', 'rt-product-metadata', 'Can create new product metadata', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-product-metadata-get', 'Mystoreguard Product Metadata Get', 'rt-product-metadata', 'Can view, list, read product metadata, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
@@ -118,6 +119,12 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-appointments-get', 'Mystoreguard Appointments Get', 'rt-appointments', 'Can view, list, read appointments, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-appointments-update', 'Mystoreguard Appointments Update', 'rt-appointments', 'Can update appointments, restore soft-deleted appointments, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-appointments-delete', 'Mystoreguard Appointments Delete', 'rt-appointments', 'Can delete appointments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-tasks-get', 'Mystoreguard Tasks Get', 'rt-tasks', 'Can view and list tasks/jobs, their steps and workflow templates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-tasks-create', 'Mystoreguard Tasks Create', 'rt-tasks', 'Can create tasks/jobs and act on steps (claim, start, mark done)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-tasks-update', 'Mystoreguard Tasks Update', 'rt-tasks', 'Can update tasks and claim/start/complete steps', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-tasks-delete', 'Mystoreguard Tasks Delete', 'rt-tasks', 'Can cancel/delete tasks', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-tasks-approve', 'Mystoreguard Tasks Approve', 'rt-tasks', 'Eligible to approve/reject DONE steps and close them as COMPLETED', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-tasks-manage-templates', 'Mystoreguard Tasks Manage Templates', 'rt-tasks', 'Can create, edit and delete workflow templates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Store Sales permissions
 ('permission-msg-store-sales-create', 'Mystoreguard Store Sales Create', 'rt-store-sales', 'Can create new sales', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
@@ -171,7 +178,12 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-deliveries-create', 'Mystoreguard Deliveries Create', 'rt-deliveries', 'Can create new deliveries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-deliveries-get', 'Mystoreguard Deliveries Get', 'rt-deliveries', 'Can view, list, read deliveries, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-deliveries-update', 'Mystoreguard Deliveries Update', 'rt-deliveries', 'Can update deliveries, restore soft-deleted deliveries, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-deliveries-delete', 'Mystoreguard Deliveries Delete', 'rt-deliveries', 'Can delete deliveries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-msg-deliveries-delete', 'Mystoreguard Deliveries Delete', 'rt-deliveries', 'Can delete deliveries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Stock takes permissions
+('permission-msg-stock-takes-create', 'Mystoreguard Stock Takes Create', 'rt-stock-takes', 'Can create stock takes (count products) and complete/lock them', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-stock-takes-get', 'Mystoreguard Stock Takes Get', 'rt-stock-takes', 'Can view and list stock takes and their variance reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-stock-takes-resolve', 'Mystoreguard Stock Takes Resolve', 'rt-stock-takes', 'Can investigate and resolve stock take variances, including applying optional stock corrections', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,

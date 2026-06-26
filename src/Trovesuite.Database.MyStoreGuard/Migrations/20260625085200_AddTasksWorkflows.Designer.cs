@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260625085200_AddTasksWorkflows")]
+    partial class AddTasksWorkflows
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -7077,18 +7080,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnType("text")
                         .HasColumnName("ctime");
 
-                    b.Property<string>("CurrencyId")
-                        .HasColumnType("text")
-                        .HasColumnName("currency_id");
-
-                    b.Property<string>("CurrencyName")
-                        .HasColumnType("text")
-                        .HasColumnName("currency_name");
-
-                    b.Property<string>("CurrencySymbol")
-                        .HasColumnType("text")
-                        .HasColumnName("currency_symbol");
-
                     b.Property<string>("MatchStatus")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -7132,10 +7123,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.Property<int>("SystemQty")
                         .HasColumnType("integer")
                         .HasColumnName("system_qty");
-
-                    b.Property<decimal?>("UnitPrice")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("unit_price");
 
                     b.Property<int>("VarianceQty")
                         .HasColumnType("integer")

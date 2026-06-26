@@ -26,6 +26,8 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<ProductTransfer> ProductTransfers => Set<ProductTransfer>();
     public DbSet<ProductTransferItem> ProductTransferItems => Set<ProductTransferItem>();
     public DbSet<ProductTransferApproval> ProductTransferApprovals => Set<ProductTransferApproval>();
+    public DbSet<StockTake> StockTakes => Set<StockTake>();
+    public DbSet<StockTakeItem> StockTakeItems => Set<StockTakeItem>();
     public DbSet<ProductDocumentId> ProductDocumentIds => Set<ProductDocumentId>();
     public DbSet<AssignMetadataToProduct> AssignMetadataToProducts => Set<AssignMetadataToProduct>();
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
@@ -64,6 +66,17 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<MsgMessageRecipient> MessageRecipients => Set<MsgMessageRecipient>();
     public DbSet<Meeting> Meetings => Set<Meeting>();
     public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
+
+    public DbSet<MsgWorkflowTemplate> WorkflowTemplates => Set<MsgWorkflowTemplate>();
+    public DbSet<MsgWorkflowTemplateStep> WorkflowTemplateSteps => Set<MsgWorkflowTemplateStep>();
+    public DbSet<MsgWorkflowTemplateStepDep> WorkflowTemplateStepDeps => Set<MsgWorkflowTemplateStepDep>();
+    public DbSet<MsgWorkflowTemplateStepTarget> WorkflowTemplateStepTargets => Set<MsgWorkflowTemplateStepTarget>();
+    public DbSet<MsgTask> Tasks => Set<MsgTask>();
+    public DbSet<MsgTaskStep> TaskSteps => Set<MsgTaskStep>();
+    public DbSet<MsgTaskStepDep> TaskStepDeps => Set<MsgTaskStepDep>();
+    public DbSet<MsgTaskStepTarget> TaskStepTargets => Set<MsgTaskStepTarget>();
+    public DbSet<MsgTaskNotificationSetting> TaskNotificationSettings => Set<MsgTaskNotificationSetting>();
+    public DbSet<MsgTaskNotification> TaskNotifications => Set<MsgTaskNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
