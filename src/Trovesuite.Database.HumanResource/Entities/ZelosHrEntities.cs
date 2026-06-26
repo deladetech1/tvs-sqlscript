@@ -114,6 +114,26 @@ public class ZhrCompanyOffice
     public string? UpdatedBy { get; set; }
 }
 
+public class ZhrCompanyLocalization
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    /// <summary>IANA time zone id (e.g. "Africa/Accra").</summary>
+    public string TimeZone { get; set; } = default!;
+    /// <summary>FK to core_platform.cp_currencies (seeded per tenant).</summary>
+    public string CurrencyId { get; set; } = default!;
+    public string DateFormat { get; set; } = default!;
+    public string NumberFormat { get; set; } = default!;
+    public string FirstDayOfWeek { get; set; } = default!;
+    public string YearStartMonth { get; set; } = default!;
+    public int YearStartDay { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ZhrEmployee
 {
     public Guid Id { get; set; }
