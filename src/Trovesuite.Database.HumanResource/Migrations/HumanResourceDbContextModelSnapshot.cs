@@ -1813,6 +1813,60 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.ToTable("zhr_employee_certifications", "zeloshr");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeIdentification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<Guid>("IdCardTypeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id_card_type_id");
+
+                    b.Property<DateOnly?>("IdExpiryDate")
+                        .HasColumnType("date")
+                        .HasColumnName("id_expiry_date");
+
+                    b.Property<DateOnly?>("IdIssueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("id_issue_date");
+
+                    b.Property<string>("IdNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("id_number");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_employee_identifications");
+
+                    b.HasIndex("EmployeeId")
+                        .HasDatabaseName("ix_zhr_employee_identifications_employee_id");
+
+                    b.HasIndex("EmployeeId", "IdCardTypeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_employee_identifications_employee_id_id_card_type_id");
+
+                    b.ToTable("zhr_employee_identifications", "zeloshr");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeDocument", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2816,6 +2870,23 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_zhr_employee_certifications_zhr_employees_employee_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeIdentification", b =>
+                {
+                    b.HasOne("Trovesuite.Database.HumanResource.Entities.ZhrEmployee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_zhr_employee_identifications_zhr_employees_employee_id");
+
+                    b.HasOne("Trovesuite.Database.HumanResource.Entities.ZhrIdCardType", null)
+                        .WithMany()
+                        .HasForeignKey("IdCardTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_zhr_employee_identifications_zhr_id_card_types_id_card_type_id");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeDocument", b =>
