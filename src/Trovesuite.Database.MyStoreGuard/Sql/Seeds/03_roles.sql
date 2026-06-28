@@ -38,6 +38,9 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-msg-reports-admin', 'system-tenant-id', 'Mystoreguard Reports Admin', 'Administrator for reports and analytics management', 'rt-reports', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- Tasks Admin Role (resource type rt-tasks): the auto-assign trigger grants all permission-msg-tasks-* on insert
 ('role-msg-tasks-admin', 'system-tenant-id', 'Mystoreguard Tasks Admin', 'Administrator for tasks and multi-step workflow management', 'rt-tasks', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Estimator Admin Roles: the auto-assign trigger grants all matching permission-msg-estimate(-templates)-* on insert
+('role-msg-estimate-template-admin', 'system-tenant-id', 'Mystoreguard Estimate Template Admin', 'Administrator for estimate template (per-domain blueprint) management', 'rt-estimate-template', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-msg-estimate-admin', 'system-tenant-id', 'Mystoreguard Estimate Admin', 'Administrator for estimate management', 'rt-estimate', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Viewer Admin Role (read-only access to all Mystoreguard resources)
 ('role-msg-viewer-admin', 'system-tenant-id', 'Mystoreguard Viewer Admin', 'Viewer Admin for Mystoreguard - can view all Mystoreguard resources with GET permissions only', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)

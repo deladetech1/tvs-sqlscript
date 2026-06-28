@@ -183,7 +183,19 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 -- Stock takes permissions
 ('permission-msg-stock-takes-create', 'Mystoreguard Stock Takes Create', 'rt-stock-takes', 'Can create stock takes (count products) and complete/lock them', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-stock-takes-get', 'Mystoreguard Stock Takes Get', 'rt-stock-takes', 'Can view and list stock takes and their variance reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-stock-takes-resolve', 'Mystoreguard Stock Takes Resolve', 'rt-stock-takes', 'Can investigate and resolve stock take variances, including applying optional stock corrections', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-msg-stock-takes-resolve', 'Mystoreguard Stock Takes Resolve', 'rt-stock-takes', 'Can investigate and resolve stock take variances, including applying optional stock corrections', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Estimate template permissions (the per-domain blueprint)
+('permission-msg-estimate-templates-create', 'Mystoreguard Estimate Templates Create', 'rt-estimate-template', 'Can create new estimate templates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-estimate-templates-get', 'Mystoreguard Estimate Templates Get', 'rt-estimate-template', 'Can view, list, read estimate templates and view statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-estimate-templates-update', 'Mystoreguard Estimate Templates Update', 'rt-estimate-template', 'Can update estimate templates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-estimate-templates-delete', 'Mystoreguard Estimate Templates Delete', 'rt-estimate-template', 'Can delete estimate templates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Estimate permissions (the priced quote created from a template)
+('permission-msg-estimates-create', 'Mystoreguard Estimates Create', 'rt-estimate', 'Can create new estimates from a template', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-estimates-get', 'Mystoreguard Estimates Get', 'rt-estimate', 'Can view, list, read estimates and view statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-estimates-update', 'Mystoreguard Estimates Update', 'rt-estimate', 'Can update/re-price estimates and change their status', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-estimates-delete', 'Mystoreguard Estimates Delete', 'rt-estimate', 'Can delete estimates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
