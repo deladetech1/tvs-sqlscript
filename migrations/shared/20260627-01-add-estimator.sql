@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS mystoreguard.msg_estimates (
     discount_amount     numeric(18,2) NOT NULL DEFAULT 0,
     tax_amount          numeric(18,2) NOT NULL DEFAULT 0,
     grand_total         numeric(18,2) NOT NULL DEFAULT 0,
+    quantity_totals     jsonb       NOT NULL DEFAULT '[]'::jsonb,   -- non-money rollups, e.g. total yards
     valid_until         date,
 
     delete_status       text        NOT NULL DEFAULT 'NOT_DELETED',
@@ -106,8 +107,9 @@ CREATE TABLE IF NOT EXISTS mystoreguard.msg_estimate_items (
     label               text,                                    -- per-line label, e.g. 'Living room window'
     quantity            numeric(18,4) NOT NULL DEFAULT 1,
     field_values        jsonb       NOT NULL DEFAULT '{}'::jsonb,
-    unit_amount         numeric(18,2) NOT NULL DEFAULT 0,        -- price of one unit (formula result)
+    unit_amount         numeric(18,2) NOT NULL DEFAULT 0,        -- sum of money computations (per unit)
     computed_amount     numeric(18,2) NOT NULL DEFAULT 0,        -- unit_amount * quantity
+    computed_values     jsonb       NOT NULL DEFAULT '[]'::jsonb, -- per-line breakdown (yards, material, labour...)
 
     cdate               text,
     ctime               text,
@@ -117,3 +119,13 @@ CREATE TABLE IF NOT EXISTS mystoreguard.msg_estimate_items (
 
 CREATE INDEX IF NOT EXISTS idx_msg_estimate_items_estimate
     ON mystoreguard.msg_estimate_items (estimate_id, tenant_id);
+
+-- ---------------------------------------------------------------------
+-- Forward-compatible column adds (idempotent): ensure the computations /
+-- quantity-rollup columns exist even on a DB created from an earlier version
+-- of this migration, where CREATE TABLE IF NOT EXISTS would have skipped them.
+-- ---------------------------------------------------------------------
+ALTER TABLE mystoreguard.msg_estimates
+    ADD COLUMN IF NOT EXISTS quantity_totals jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE mystoreguard.msg_estimate_items
+    ADD COLUMN IF NOT EXISTS computed_values jsonb NOT NULL DEFAULT '[]'::jsonb;
