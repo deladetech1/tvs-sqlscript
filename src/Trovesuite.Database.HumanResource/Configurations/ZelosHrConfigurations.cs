@@ -252,6 +252,22 @@ public sealed class ZhrEmployeeCertificationConfiguration : IEntityTypeConfigura
     }
 }
 
+public sealed class ZhrEmployeeIdentificationConfiguration : IEntityTypeConfiguration<ZhrEmployeeIdentification>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeIdentification> b)
+    {
+        b.ToZelosHrTable("zhr_employee_identifications");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<ZhrIdCardType>().WithMany().HasForeignKey(x => x.IdCardTypeId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.EmployeeId);
+        b.HasIndex(x => new { x.EmployeeId, x.IdCardTypeId }).IsUnique();
+    }
+}
+
 public sealed class ZhrAuditLogConfiguration : IEntityTypeConfiguration<ZhrAuditLog>
 {
     public void Configure(EntityTypeBuilder<ZhrAuditLog> b)

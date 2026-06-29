@@ -149,6 +149,7 @@ public sealed class MsgActivityLogConfiguration : IEntityTypeConfiguration<MsgAc
         b.ToTable("msg_activity_logs");
         b.HasKey(x => new { x.Id, x.TenantId });
         b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.LocId).IsRequired(false);
         b.Property(x => x.OldData).HasColumnType("jsonb");
         b.Property(x => x.NewData).HasColumnType("jsonb");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");

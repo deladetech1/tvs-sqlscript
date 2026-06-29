@@ -50,7 +50,9 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-deliveries', 'Deliveries', 'Deliveries management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-return-policies', 'Return Policies', 'Return Policies management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-store-returns', 'Store Returns', 'Store Returns management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-reports', 'Mystoreguard Reports', 'Centralized reporting and analytics module for Mystoreguard', 'rt-subscribed-app-msg')
+('rt-reports', 'Mystoreguard Reports', 'Centralized reporting and analytics module for Mystoreguard', 'rt-subscribed-app-msg'),
+('rt-estimate-template', 'Estimate Template', 'Estimate template (per-domain blueprint) management for Mystoreguard', 'rt-subscribed-app-msg'),
+('rt-estimate', 'Estimate', 'Estimate management for Mystoreguard', 'rt-subscribed-app-msg')
 
 ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
