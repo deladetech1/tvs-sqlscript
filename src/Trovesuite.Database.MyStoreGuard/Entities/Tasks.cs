@@ -197,7 +197,8 @@ public class MsgTaskComment
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string BusId { get; set; } = default!;
-    public string TaskId { get; set; } = default!;
+    public string StepId { get; set; } = default!;   // the step (jira-style ticket) the comment lives on
+    public string TaskId { get; set; } = default!;    // denormalized parent task, for scoping/notifications
     public string Body { get; set; } = default!;
     public DateTimeOffset? EditedAt { get; set; }       // set when the author edits the comment
     public string? Cdate { get; set; }
@@ -215,6 +216,7 @@ public class MsgTaskCommentMention
     public string OrgId { get; set; } = default!;
     public string BusId { get; set; } = default!;
     public string CommentId { get; set; } = default!;
+    public string StepId { get; set; } = default!;
     public string TaskId { get; set; } = default!;
     public string MentionedUserId { get; set; } = default!;   // cp_users.id (cross-schema)
     public DateTimeOffset? Cdatetime { get; set; }
@@ -227,8 +229,9 @@ public class MsgTaskAttachment
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string BusId { get; set; } = default!;
-    public string TaskId { get; set; } = default!;
-    public string? CommentId { get; set; }            // null => task-level attachment; set => comment-level
+    public string StepId { get; set; } = default!;    // the step the file is attached to
+    public string TaskId { get; set; } = default!;    // denormalized parent task, for scoping
+    public string? CommentId { get; set; }            // null => step-level attachment; set => comment-level
     public string DocumentId { get; set; } = default!; // msg_document_paths.id
     public bool IsActive { get; set; } = true;
     public string DeleteStatus { get; set; } = "NOT_DELETED";

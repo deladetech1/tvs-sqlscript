@@ -255,8 +255,12 @@ public sealed class MsgTaskCommentConfiguration : IEntityTypeConfiguration<MsgTa
         b.Property(x => x.Body).HasColumnType("text");
         b.Property(x => x.EditedAt).HasColumnType("timestamptz");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.TaskId });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.StepId });
         b.WithTenantOrgBusFks();
+        b.HasOne<MsgTaskStep>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
         b.HasOne<MsgTask>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
@@ -277,6 +281,10 @@ public sealed class MsgTaskCommentMentionConfiguration : IEntityTypeConfiguratio
         b.WithTenantOrgBusFks();
         b.HasOne<MsgTaskComment>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "CommentId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<MsgTaskStep>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
             .OnDelete(DeleteBehavior.Cascade);
         b.HasOne<MsgTask>().WithMany()
@@ -300,9 +308,13 @@ public sealed class MsgTaskAttachmentConfiguration : IEntityTypeConfiguration<Ms
         b.Property(x => x.IsActive).HasDefaultValue(true);
         b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.TaskId });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.StepId });
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusFks();
+        b.HasOne<MsgTaskStep>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
         b.HasOne<MsgTask>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
