@@ -34,6 +34,16 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                 nullable: false,
                 defaultValue: "");
 
+            // Collaboration is now anchored on a step (step_id is required). Rows that
+            // existed before this migration got the placeholder step_id = '' from the
+            // default above, which references no real step and would fail the foreign
+            // keys below. These tables are new, so any such rows are pre-feature data
+            // that cannot be re-anchored to a step. Clear them (children first) before
+            // the FKs are added. On a fresh/empty database these are harmless no-ops.
+            migrationBuilder.Sql("DELETE FROM mystoreguard.msg_task_comment_mentions;");
+            migrationBuilder.Sql("DELETE FROM mystoreguard.msg_task_attachments;");
+            migrationBuilder.Sql("DELETE FROM mystoreguard.msg_task_comments;");
+
             migrationBuilder.CreateIndex(
                 name: "ix_msg_task_comments_tenant_id_org_id_bus_id_step_id",
                 schema: "mystoreguard",
