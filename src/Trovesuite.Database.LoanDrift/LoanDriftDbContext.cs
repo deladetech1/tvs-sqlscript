@@ -31,6 +31,19 @@ public class LoanDriftDbContext : DbContext
     public DbSet<Repayment> Repayments => Set<Repayment>();
     public DbSet<ClientDocumentPath> ClientDocumentsPaths => Set<ClientDocumentPath>();
 
+    // Savings & Investments
+    public DbSet<SavingsProduct> SavingsProducts => Set<SavingsProduct>();
+    public DbSet<SavingsAccount> SavingsAccounts => Set<SavingsAccount>();
+    public DbSet<SavingsTransaction> SavingsTransactions => Set<SavingsTransaction>();
+    public DbSet<InvestmentProduct> InvestmentProducts => Set<InvestmentProduct>();
+    public DbSet<Investment> Investments => Set<Investment>();
+    public DbSet<InvestmentTransaction> InvestmentTransactions => Set<InvestmentTransaction>();
+
+    // Credit scoring
+    public DbSet<CreditScoreSettings> CreditScoreSettings => Set<CreditScoreSettings>();
+    public DbSet<CreditScoreSettingsHistory> CreditScoreSettingsHistories => Set<CreditScoreSettingsHistory>();
+    public DbSet<CreditScore> CreditScores => Set<CreditScore>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);

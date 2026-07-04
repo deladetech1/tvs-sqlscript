@@ -33,3 +33,23 @@ ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
     description        = EXCLUDED.description,
     parent_resource_id = EXCLUDED.parent_resource_id;
+-- =====================================================
+-- Savings & Investment resource types
+-- =====================================================
+INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
+('rt-savings', 'Savings', 'Savings account management for Loandrift', 'rt-subscribed-app-loandrift'),
+('rt-investment', 'Investment', 'Investment management for Loandrift', 'rt-subscribed-app-loandrift')
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;
+
+-- =====================================================
+-- Credit scoring resource type
+-- =====================================================
+INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
+('rt-credit-score', 'Credit Score', 'Credit scoring and score settings for Loandrift', 'rt-subscribed-app-loandrift')
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;

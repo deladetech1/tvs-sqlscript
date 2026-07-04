@@ -190,7 +190,7 @@ public sealed class ExpenseHistoryConfiguration : IEntityTypeConfiguration<Expen
             .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<Location>().WithMany().HasForeignKey(x => new { x.LocId, x.TenantId })
             .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Restrict);
-        b.HasInCheck("source", "ALLOCATED", "CONTIGENCY", "FIXED", "REIMBURSABLE");
+        b.HasInCheck("source", "ALLOCATED", "CONTIGENCY", "FIXED", "REIMBURSABLE", "SALARY", "OTHERS");
         b.HasDeleteStatusCheck();
         b.WithAuditUserFks();
     }

@@ -87,3 +87,48 @@ ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
     resource_type_id = EXCLUDED.resource_type_id,
     description      = EXCLUDED.description;
+-- =====================================================
+-- Savings permissions
+-- =====================================================
+INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES
+('permission-loandrift-savings-create', 'Loandrift Savings Create', 'rt-savings', 'Can register savings accounts', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-savings-update', 'Loandrift Savings Update', 'rt-savings', 'Can update, activate, freeze and unfreeze savings accounts', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-savings-get', 'Loandrift Savings Get', 'rt-savings', 'Can view, list, read savings accounts and transactions, access activity logs and statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-savings-transact', 'Loandrift Savings Transact', 'rt-savings', 'Can record deposits, withdrawals and interest credits on savings accounts', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-savings-close', 'Loandrift Savings Close', 'rt-savings', 'Can close savings accounts', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-savings-delete', 'Loandrift Savings Delete', 'rt-savings', 'Can permanently delete savings accounts', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-savings-get-statistics', 'Loandrift Savings Get Statistics', 'rt-savings', 'Can view savings statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    permission_name  = EXCLUDED.permission_name,
+    resource_type_id = EXCLUDED.resource_type_id,
+    description      = EXCLUDED.description;
+
+-- =====================================================
+-- Investment permissions
+-- =====================================================
+INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES
+('permission-loandrift-investment-create', 'Loandrift Investment Create', 'rt-investment', 'Can register investments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-investment-update', 'Loandrift Investment Update', 'rt-investment', 'Can update, fund and activate investments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-investment-get', 'Loandrift Investment Get', 'rt-investment', 'Can view, list, read investments and transactions, access activity logs and statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-investment-complete', 'Loandrift Investment Complete', 'rt-investment', 'Can process investment maturity payouts and periodic payouts', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-investment-terminate', 'Loandrift Investment Terminate', 'rt-investment', 'Can terminate investments early', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-investment-delete', 'Loandrift Investment Delete', 'rt-investment', 'Can permanently delete investments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-investment-get-statistics', 'Loandrift Investment Get Statistics', 'rt-investment', 'Can view investment statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    permission_name  = EXCLUDED.permission_name,
+    resource_type_id = EXCLUDED.resource_type_id,
+    description      = EXCLUDED.description;
+
+-- =====================================================
+-- Credit scoring permissions
+-- =====================================================
+INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES
+('permission-loandrift-credit-score-calculate', 'Loandrift Credit Score Calculate', 'rt-credit-score', 'Can calculate and recalculate credit scores', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-credit-score-get', 'Loandrift Credit Score Get', 'rt-credit-score', 'Can view, list and access credit score history and reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-credit-score-adjust', 'Loandrift Credit Score Adjust', 'rt-credit-score', 'Can apply manual credit score adjustments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-credit-score-settings-get', 'Loandrift Credit Score Settings Get', 'rt-credit-score', 'Can view credit score engine settings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-credit-score-settings-update', 'Loandrift Credit Score Settings Update', 'rt-credit-score', 'Can update and reset credit score engine settings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    permission_name  = EXCLUDED.permission_name,
+    resource_type_id = EXCLUDED.resource_type_id,
+    description      = EXCLUDED.description;

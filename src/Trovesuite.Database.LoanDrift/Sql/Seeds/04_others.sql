@@ -188,3 +188,77 @@ ON CONFLICT (id) DO UPDATE SET
     description        = EXCLUDED.description,
     is_active          = EXCLUDED.is_active,
     is_system          = EXCLUDED.is_system;
+
+-- =============================================
+-- Core platform navigation permissions for Savings & Investment admin roles
+-- =============================================
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-loandrift-savings-admin', 'permission-app-get'),
+('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-get'),
+('system-tenant-id', 'role-loandrift-savings-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-loandrift-savings-admin', 'permission-user-get-locations'),
+
+('system-tenant-id', 'role-loandrift-investment-admin', 'permission-app-get'),
+('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-get'),
+('system-tenant-id', 'role-loandrift-investment-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-loandrift-investment-admin', 'permission-user-get-locations')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- =============================================
+-- SAVINGS PRODUCTS (system defaults)
+-- =============================================
+INSERT INTO ld_savings_products (id, tenant_id, product_name, product_type, description, default_interest_rate, default_interest_period, minimum_balance, dormancy_days, is_active, is_system)
+VALUES
+    ('sp-regular', 'system-tenant-id', 'Regular Savings', 'REGULAR_SAVINGS', 'Standard open-access savings', 12.00, 'MONTHLY', 0, 180, true, true),
+    ('sp-fixed', 'system-tenant-id', 'Fixed Savings', 'FIXED_SAVINGS', 'Locked for a set period, higher interest', 15.00, 'MONTHLY', 0, 365, true, true),
+    ('sp-target', 'system-tenant-id', 'Target Savings', 'TARGET_SAVINGS', 'Saving toward a specific goal amount', 12.00, 'MONTHLY', 0, 180, true, true),
+    ('sp-daily', 'system-tenant-id', 'Daily Savings', 'DAILY_SAVINGS', 'Susu-style daily contributions', 10.00, 'DAILY', 0, 90, true, true),
+    ('sp-group', 'system-tenant-id', 'Group Savings', 'GROUP_SAVINGS', 'Shared account across multiple members', 12.00, 'MONTHLY', 0, 180, true, true)
+ON CONFLICT (id) DO UPDATE SET
+    product_name            = EXCLUDED.product_name,
+    product_type            = EXCLUDED.product_type,
+    description             = EXCLUDED.description,
+    default_interest_rate   = EXCLUDED.default_interest_rate,
+    default_interest_period = EXCLUDED.default_interest_period,
+    is_active               = EXCLUDED.is_active,
+    is_system               = EXCLUDED.is_system;
+
+-- =============================================
+-- INVESTMENT PRODUCTS (system defaults)
+-- =============================================
+INSERT INTO ld_investment_products (id, tenant_id, product_name, product_type, description, default_interest_rate, default_interest_period, default_term_months, early_termination_penalty_rate, is_active, is_system)
+VALUES
+    ('ip-fixed-deposit', 'system-tenant-id', 'Fixed Deposit', 'FIXED_DEPOSIT', 'Standard fixed term deposit', 20.00, 'AT_MATURITY', 12, 5.00, true, true),
+    ('ip-treasury-bill', 'system-tenant-id', 'Treasury Bill', 'TREASURY_BILL', 'Government-backed short-term instrument', 18.00, 'AT_MATURITY', 3, 5.00, true, true),
+    ('ip-money-market', 'system-tenant-id', 'Money Market', 'MONEY_MARKET', 'Pooled short-term instruments', 15.00, 'MONTHLY', 3, 3.00, true, true),
+    ('ip-bond', 'system-tenant-id', 'Bond', 'BOND', 'Medium-to-long-term fixed return', 25.00, 'QUARTERLY', 24, 7.00, true, true),
+    ('ip-susu', 'system-tenant-id', 'Susu Investment', 'SUSU_INVESTMENT', 'Informal group investment pool', 18.00, 'AT_MATURITY', 6, 5.00, true, true)
+ON CONFLICT (id) DO UPDATE SET
+    product_name                   = EXCLUDED.product_name,
+    product_type                   = EXCLUDED.product_type,
+    description                    = EXCLUDED.description,
+    default_interest_rate          = EXCLUDED.default_interest_rate,
+    default_interest_period        = EXCLUDED.default_interest_period,
+    default_term_months            = EXCLUDED.default_term_months,
+    early_termination_penalty_rate = EXCLUDED.early_termination_penalty_rate,
+    is_active                      = EXCLUDED.is_active,
+    is_system                      = EXCLUDED.is_system;
+
+-- =============================================
+-- Core platform navigation permissions for Credit Score admin role
+-- =============================================
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-app-get'),
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-get'),
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-user-get-locations')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
