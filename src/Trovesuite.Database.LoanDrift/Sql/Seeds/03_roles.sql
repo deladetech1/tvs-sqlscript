@@ -23,6 +23,7 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-loandrift-savings-admin', 'system-tenant-id', 'Loandrift Savings Admin', 'Administrator for Savings', 'rt-savings', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-investment-admin', 'system-tenant-id', 'Loandrift Investment Admin', 'Administrator for Investment', 'rt-investment', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-credit-score-admin', 'system-tenant-id', 'Loandrift Credit Score Admin', 'Administrator for Credit Scoring', 'rt-credit-score', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-penalty-admin', 'system-tenant-id', 'Loandrift Penalty Admin', 'Administrator for Loan Penalties', 'rt-penalty', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Viewer Admin Role (read-only access to all Loandrift resources)
 ('role-loandrift-viewer-admin', 'system-tenant-id', 'Loandrift Viewer Admin', 'Viewer Admin for Loandrift - can view all Loandrift resources with GET permissions only', 'rt-subscribed-app-loandrift', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)

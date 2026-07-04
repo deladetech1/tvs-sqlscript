@@ -131,7 +131,9 @@ public sealed class LoanTypeConfiguration : IEntityTypeConfiguration<LoanType>
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.IsSystem).HasDefaultValue(true);
+        b.Property(x => x.PenaltyMode).HasDefaultValue("OPTIONAL");
         b.ApplyAuditDefaults();
+        b.HasInCheck("penalty_mode", "NONE", "OPTIONAL", "COMPULSORY");
         b.HasDeleteStatusCheck();
         b.WithTenantFk();
         b.WithCrossSchemaAuditUserFks();
@@ -166,7 +168,12 @@ public sealed class LoanDetailConfiguration : IEntityTypeConfiguration<LoanDetai
         b.Property(x => x.IsReadyForApproval).HasDefaultValue(false);
         b.Property(x => x.RequestedAmount).HasColumnType("numeric(15,2)");
         b.Property(x => x.RegistrationDatetime).HasColumnType("timestamptz");
+        b.Property(x => x.PenaltyMode).HasDefaultValue("OPTIONAL");
+        b.Property(x => x.PenaltyEnabled).HasDefaultValue(false);
+        foreach (var col in new[] { "PenaltiesOutstanding", "TotalPenaltiesApplied", "TotalPenaltiesWaived" })
+            b.Property(col).HasColumnType("numeric(20,6)").HasDefaultValue(0m);
         b.ApplyAuditDefaults();
+        b.HasInCheck("penalty_mode", "NONE", "OPTIONAL", "COMPULSORY");
         b.HasInCheck("payment_type", "DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", null!);
         b.HasInCheck("status", "REGISTERED", "CAPTURED", "APPROVED", "REJECTED", "DISBURSED",
                               "CLOSED", "DEFAULTED", "WRITTEN_OFF", "ACTIVE", "COMPLETED");
@@ -383,8 +390,11 @@ public sealed class RepaymentConfiguration : IEntityTypeConfiguration<Repayment>
         b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Id });
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.IsCompleted).HasDefaultValue(false);
+        b.Property(x => x.IsReversed).HasDefaultValue(false);
         b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
-        foreach (var col in new[] { "AmountGiven", "PaidAmount", "Balance" })
+        foreach (var col in new[] { "AmountGiven", "PaidAmount", "Balance",
+                                    "PenaltyPaid", "PrincipalPaid", "InterestPaid",
+                                    "PenaltiesBefore", "PenaltiesAfter" })
             b.Property(col).HasColumnType("numeric(20,6)").HasDefaultValue(0m);
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
         b.HasInCheck("payment_method", "CASH", "CHEQUE", "MOMO", "BANK_TRANSFER", "OTHERS", null!);

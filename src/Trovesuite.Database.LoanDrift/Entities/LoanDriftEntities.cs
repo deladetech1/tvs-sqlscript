@@ -75,6 +75,9 @@ public class LoanType : TenantScopedEntity
     public string? BusId { get; set; }
     public string TypeName { get; set; } = default!;
     public bool IsSystem { get; set; } = true;
+
+    // Penalty eligibility for loans of this product/type: NONE | OPTIONAL | COMPULSORY.
+    public string PenaltyMode { get; set; } = "OPTIONAL";
 }
 
 public class InterestType : TenantScopedEntity
@@ -108,6 +111,13 @@ public class LoanDetail : TenantScopedEntity
     public string? CurrencyId { get; set; }
 
     public DateTimeOffset? RegistrationDatetime { get; set; }
+
+    // Penalty snapshot + running totals (copied/maintained from the loan product & ledger).
+    public string PenaltyMode { get; set; } = "OPTIONAL";
+    public bool PenaltyEnabled { get; set; }
+    public decimal PenaltiesOutstanding { get; set; }
+    public decimal TotalPenaltiesApplied { get; set; }
+    public decimal TotalPenaltiesWaived { get; set; }
 }
 
 public class LoanCalculation
@@ -355,6 +365,14 @@ public class Repayment
     public decimal AmountGiven { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal Balance { get; set; }
+
+    // Penalty-aware repayment allocation (penalty → interest → principal).
+    public decimal PenaltyPaid { get; set; }
+    public decimal PrincipalPaid { get; set; }
+    public decimal InterestPaid { get; set; }
+    public decimal PenaltiesBefore { get; set; }
+    public decimal PenaltiesAfter { get; set; }
+    public bool IsReversed { get; set; }
 
     public string DeleteStatus { get; set; } = "NOT_DELETED";
     public string? Description { get; set; }
