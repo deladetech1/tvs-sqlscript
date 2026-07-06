@@ -53,3 +53,13 @@ ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
     description        = EXCLUDED.description,
     parent_resource_id = EXCLUDED.parent_resource_id;
+
+-- =====================================================
+-- Loan penalty resource type
+-- =====================================================
+INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
+('rt-penalty', 'Penalty', 'Loan penalty ledger, waivers and penalty settings for Loandrift', 'rt-subscribed-app-loandrift')
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;

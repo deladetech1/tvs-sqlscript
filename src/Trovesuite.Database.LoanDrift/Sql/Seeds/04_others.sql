@@ -260,5 +260,13 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-get'),
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-get-locations'),
-('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-user-get-locations')
+('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-user-get-locations'),
+
+('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-app-get'),
+('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-get'),
+('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-user-get-locations')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;

@@ -132,3 +132,17 @@ ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
     resource_type_id = EXCLUDED.resource_type_id,
     description      = EXCLUDED.description;
+
+-- =====================================================
+-- Loan penalty permissions
+-- =====================================================
+INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES
+('permission-loandrift-penalty-get', 'Loandrift Penalty Get', 'rt-penalty', 'Can view, list and access penalties, waivers and penalty summaries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-penalty-create', 'Loandrift Penalty Create', 'rt-penalty', 'Can manually add penalties and request penalty waivers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-penalty-waive', 'Loandrift Penalty Waive', 'rt-penalty', 'Can approve or reject penalty waiver requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-penalty-settings-get', 'Loandrift Penalty Settings Get', 'rt-penalty', 'Can view penalty engine settings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-penalty-settings-update', 'Loandrift Penalty Settings Update', 'rt-penalty', 'Can update and reset penalty engine settings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    permission_name  = EXCLUDED.permission_name,
+    resource_type_id = EXCLUDED.resource_type_id,
+    description      = EXCLUDED.description;

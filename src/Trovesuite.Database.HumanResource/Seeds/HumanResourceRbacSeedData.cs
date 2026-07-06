@@ -10,33 +10,33 @@ namespace Trovesuite.Database.HumanResource.Seeds;
 public static class HumanResourceRbacSeedData
 {
     public const string SystemTenantId = "system-tenant-id";
-    public const string HrAdminRoleId = "role-subscribed-app-hr-admin";
+    public const string HrAdminRoleId = "role-subscribed-app-zeloshr-admin";
 
     public static IReadOnlyList<ResourceType> ResourceTypes { get; } =
     [
-        Rt("rt-subscribed-app-hr", "HR APP", "HR Subscribed APP", null),
-        Rt("rt-zeloshr-dashboard", "ZelosHR Dashboard", "Executive HR dashboard", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-employee", "ZelosHR Employee", "Employee directory and profiles", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-org", "ZelosHR Org Structure", "Org chart and organisation summary", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-departments", "ZelosHR Departments", "Department management", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-branches", "ZelosHR Branches", "Branch management", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-lifecycle", "ZelosHR Lifecycle", "Lifecycle events and workflows", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-audit", "ZelosHR Audit", "Audit logs", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-attendance", "ZelosHR Attendance", "Attendance records", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-leave", "ZelosHR Leave", "Leave requests and balances", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-recruitment", "ZelosHR Recruitment", "Job postings", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-onboarding", "ZelosHR Onboarding", "Onboarding tasks", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-performance", "ZelosHR Performance", "Performance reviews", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-disciplinary", "ZelosHR Disciplinary", "Disciplinary cases", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-documents", "ZelosHR Documents", "Employee document metadata", "rt-subscribed-app-hr"),
-        Rt("rt-zeloshr-custom-fields", "ZelosHR Custom Fields", "Tenant-defined fields and values", "rt-subscribed-app-hr"),
+        Rt("rt-subscribed-app-zeloshr", "HR APP", "HR Subscribed APP", null),
+        Rt("rt-zeloshr-dashboard", "ZelosHR Dashboard", "Executive HR dashboard", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-employee", "ZelosHR Employee", "Employee directory and profiles", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-org", "ZelosHR Org Structure", "Org chart and organisation summary", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-departments", "ZelosHR Departments", "Department management", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-branches", "ZelosHR Branches", "Branch management", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-lifecycle", "ZelosHR Lifecycle", "Lifecycle events and workflows", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-audit", "ZelosHR Audit", "Audit logs", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-attendance", "ZelosHR Attendance", "Attendance records", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-leave", "ZelosHR Leave", "Leave requests and balances", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-recruitment", "ZelosHR Recruitment", "Job postings", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-onboarding", "ZelosHR Onboarding", "Onboarding tasks", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-performance", "ZelosHR Performance", "Performance reviews", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-disciplinary", "ZelosHR Disciplinary", "Disciplinary cases", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-documents", "ZelosHR Documents", "Employee document metadata", "rt-subscribed-app-zeloshr"),
+        Rt("rt-zeloshr-custom-fields", "ZelosHR Custom Fields", "Tenant-defined fields and values", "rt-subscribed-app-zeloshr"),
     ];
 
     public static IReadOnlyList<Permission> Permissions { get; } = BuildPermissions();
 
     public static IReadOnlyList<Role> Roles { get; } =
     [
-        Role("role-subscribed-app-hr-admin", "HR Admin", "Administrator of the Human Resources system", "rt-subscribed-app-hr"),
+        Role("role-subscribed-app-zeloshr-admin", "HR Admin", "Administrator of the Human Resources system", "rt-subscribed-app-zeloshr"),
         Role("role-zeloshr-dashboard-admin", "ZelosHR Dashboard Admin", "Administrator for HR dashboard", "rt-zeloshr-dashboard"),
         Role("role-zeloshr-employee-admin", "ZelosHR Employee Admin", "Administrator for employee management", "rt-zeloshr-employee"),
         Role("role-zeloshr-org-admin", "ZelosHR Org Admin", "Administrator for org chart and summary", "rt-zeloshr-org"),

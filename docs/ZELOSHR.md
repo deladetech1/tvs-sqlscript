@@ -19,7 +19,7 @@ DDL is EF Core only (`dotnet ef migrations add`). Do not hand-edit generated mig
 | Source | When applied |
 |--------|----------------|
 | `Seeds/HumanResourceRbacSeedData.cs` + `HumanResourceRbacSeeder.cs` (RBAC resource types, permissions, roles, HR Admin bindings) | Every deploy via `HumanResourceModule.SeedAsync` (EF upsert into `core_platform`) |
-| CorePlatform `Sql/Seeds/*` (apps incl. `app-hr`, tiers, etc.) | Every deploy via `CorePlatformModule.SeedAsync` |
+| CorePlatform `Sql/Seeds/*` (apps incl. `app-zeloshr`, tiers, etc.) | Every deploy via `CorePlatformModule.SeedAsync` |
 
 **No demo tenant / employee rows** are shipped from this repo. Production and shared environments already have `core_platform` and `zeloshr` data. For local API testing, insert matching `cp_*` context and `zhr_*` rows yourself (pgAdmin/SQL) and align ZelosHR `LocalDevelopment` / Trove headers with those ids.
 
