@@ -134,24 +134,40 @@ public static class HumanResourceRbacSeeder
 
         foreach (var permissionId in permissionIds)
         {
-            var exists = await set.AnyAsync(
-                rp => rp.TenantId == tenantId && rp.RoleId == roleId && rp.PermissionId == permissionId,
-                ct);
-            if (exists)
-                continue;
+            var id = $"rp-hr-admin-{permissionId}";
 
-            set.Add(new RolePermission
+            // Look up by the row's deterministic id, NOT by (tenant, role, permission).
+            // The id is independent of the role, so after a role rename
+            // (e.g. app-hr -> app-zeloshr) the pre-existing row is invisible to a
+            // role-scoped check and re-inserting it would hit a duplicate-key on the
+            // primary key. Re-point the existing row at the current role instead.
+            var existing = await set.FirstOrDefaultAsync(
+                rp => rp.Id == id && rp.TenantId == tenantId,
+                ct);
+
+            if (existing is null)
             {
-                Id = $"rp-hr-admin-{permissionId}",
-                TenantId = tenantId,
-                RoleId = roleId,
-                PermissionId = permissionId,
-                IsActive = true,
-                DeleteStatus = DeleteStatuses.NotDeleted,
-                Cdate = cdate,
-                Ctime = ctime,
-                Cdatetime = cdatetime,
-            });
+                set.Add(new RolePermission
+                {
+                    Id = id,
+                    TenantId = tenantId,
+                    RoleId = roleId,
+                    PermissionId = permissionId,
+                    IsActive = true,
+                    DeleteStatus = DeleteStatuses.NotDeleted,
+                    Cdate = cdate,
+                    Ctime = ctime,
+                    Cdatetime = cdatetime,
+                });
+            }
+            else
+            {
+                // Self-heal a stale/soft-deleted row from a prior role id.
+                existing.RoleId = roleId;
+                existing.PermissionId = permissionId;
+                existing.IsActive = true;
+                existing.DeleteStatus = DeleteStatuses.NotDeleted;
+            }
         }
 
         await context.SaveChangesAsync(ct);
