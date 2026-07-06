@@ -44,12 +44,6 @@ public class LoanDriftDbContext : DbContext
     public DbSet<CreditScoreSettingsHistory> CreditScoreSettingsHistories => Set<CreditScoreSettingsHistory>();
     public DbSet<CreditScore> CreditScores => Set<CreditScore>();
 
-    // Penalties
-    public DbSet<PenaltySettings> PenaltySettings => Set<PenaltySettings>();
-    public DbSet<PenaltySettingsHistory> PenaltySettingsHistories => Set<PenaltySettingsHistory>();
-    public DbSet<Penalty> Penalties => Set<Penalty>();
-    public DbSet<PenaltyWaiver> PenaltyWaivers => Set<PenaltyWaiver>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);
