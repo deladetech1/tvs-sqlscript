@@ -9,7 +9,7 @@
 SET search_path TO core_platform;
 
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
-('role-subscribed-app-zeloshr-admin', 'system-tenant-id', 'HR Admin', 'Administrator of the Human Resources system', 'rt-subscribed-app-zeloshr', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-subscribed-app-zeloshr-admin', 'system-tenant-id', 'ZelosHR Admin', 'Administrator of the Human Resources system', 'rt-subscribed-app-zeloshr', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-zeloshr-dashboard-admin', 'system-tenant-id', 'ZelosHR Dashboard Admin', 'Administrator for HR dashboard', 'rt-zeloshr-dashboard', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-zeloshr-employee-admin', 'system-tenant-id', 'ZelosHR Employee Admin', 'Administrator for employee management', 'rt-zeloshr-employee', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-zeloshr-org-admin', 'system-tenant-id', 'ZelosHR Org Admin', 'Administrator for org chart and summary', 'rt-zeloshr-org', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
