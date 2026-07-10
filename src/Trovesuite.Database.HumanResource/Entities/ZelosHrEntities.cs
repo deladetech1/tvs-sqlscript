@@ -619,6 +619,27 @@ public class ZhrDisciplinaryCase
     public string? Description { get; set; }
 }
 
+public class ZhrEmployeeChangeRequest
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    /// <summary>Dot path matching employee update JSON (e.g. identity.full_name, education).</summary>
+    public string FieldPath { get; set; } = default!;
+    public string? OldValueJson { get; set; }
+    public string NewValueJson { get; set; } = default!;
+    /// <summary>pending | approved | rejected | superseded</summary>
+    public string Status { get; set; } = default!;
+    public string RequestedBy { get; set; } = default!;
+    public string? ReviewedBy { get; set; }
+    public string? ReviewNote { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ZhrEmployeeDocument
 {
     public Guid Id { get; set; }
