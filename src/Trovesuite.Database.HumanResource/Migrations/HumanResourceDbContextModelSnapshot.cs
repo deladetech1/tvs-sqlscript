@@ -1867,6 +1867,100 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.ToTable("zhr_employee_identifications", "zeloshr");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeChangeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<string>("FieldPath")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("field_path");
+
+                    b.Property<string>("NewValueJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("new_value_json");
+
+                    b.Property<string>("OldValueJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("old_value_json");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("RequestedBy")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("requested_by");
+
+                    b.Property<string>("ReviewNote")
+                        .HasColumnType("text")
+                        .HasColumnName("review_note");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_employee_change_requests");
+
+                    b.HasIndex("EmployeeId", "FieldPath", "Status")
+                        .HasDatabaseName("ix_zhr_employee_change_requests_employee_id_field_path_status")
+                        .HasFilter("status = 'pending'");
+
+                    b.HasIndex("TenantId", "OrgId", "EmployeeId", "Status")
+                        .HasDatabaseName("ix_zhr_employee_change_requests_tenant_id_org_id_employee_id_status");
+
+                    b.HasIndex("TenantId", "OrgId", "Status", "CreatedAt")
+                        .HasDatabaseName("ix_zhr_employee_change_requests_tenant_id_org_id_status_created_at");
+
+                    b.ToTable("zhr_employee_change_requests", "zeloshr");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeDocument", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2887,6 +2981,16 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_zhr_employee_identifications_zhr_id_card_types_id_card_type_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeChangeRequest", b =>
+                {
+                    b.HasOne("Trovesuite.Database.HumanResource.Entities.ZhrEmployee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_zhr_employee_change_requests_zhr_employees_employee_id");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrEmployeeDocument", b =>
