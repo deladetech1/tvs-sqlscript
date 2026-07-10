@@ -205,6 +205,12 @@ public class ZhrEmployee
     public string? PaymentMethod { get; set; }
     public string? BankAccountNumber { get; set; }
     public string? MobileMoneyNumber { get; set; }
+    public decimal? NetSalary { get; set; }
+
+    public string? MaritalStatus { get; set; }
+    public string? NextOfKinName { get; set; }
+    public string? NextOfKinPhone { get; set; }
+    public string? RelationshipToNextOfKin { get; set; }
 
     public bool IsDeleted { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
@@ -293,6 +299,122 @@ public class ZhrEmployeeIdentification
     public string IdNumber { get; set; } = default!;
     public DateOnly? IdIssueDate { get; set; }
     public DateOnly? IdExpiryDate { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeEmergencyContact
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string EmergencyContactName { get; set; } = default!;
+    public string? EmergencyContactPhone { get; set; }
+    public string? Relationship { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeePaymentMethod
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string PaymentMode { get; set; } = default!;
+    public string? BankName { get; set; }
+    public string? AccountName { get; set; }
+    public string? AccountNumber { get; set; }
+    public string? BranchName { get; set; }
+    public bool IsPrimary { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeMedicalProfile
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string? BloodGroup { get; set; }
+    public bool HasMedicalCondition { get; set; }
+    public bool TakesRegularMedication { get; set; }
+    public string? DisabilityStatus { get; set; }
+    public bool RequiresAccommodation { get; set; }
+    public string? AccommodationDetails { get; set; }
+    public string? EmergencyMedicalNotes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeMedicalCondition
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Condition { get; set; } = default!;
+    public string? Severity { get; set; }
+    public string? Notes { get; set; }
+    public DateOnly? DiagnosedDate { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeAllergy
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Allergen { get; set; } = default!;
+    public string? Reaction { get; set; }
+    public string? Severity { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeMedication
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public string? Dosage { get; set; }
+    public string? Frequency { get; set; }
+    public string? Notes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeSkill
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public string? Proficiency { get; set; }
+    public int? YearsOfExperience { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeExperience
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Company { get; set; } = default!;
+    public string? JobTitle { get; set; }
+    public string? EmploymentType { get; set; }
+    public string? Location { get; set; }
+    public DateOnly? StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    public bool IsCurrent { get; set; }
+    public string? Description { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeReferral
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public string? JobTitle { get; set; }
+    public string? Company { get; set; }
+    public string? Relationship { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
