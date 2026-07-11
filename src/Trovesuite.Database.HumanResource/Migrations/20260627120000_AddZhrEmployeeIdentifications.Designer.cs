@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.HumanResource;
@@ -11,9 +12,10 @@ using Trovesuite.Database.HumanResource;
 namespace Trovesuite.Database.HumanResource.Migrations
 {
     [DbContext(typeof(HumanResourceDbContext))]
-    partial class HumanResourceDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260627120000_AddZhrEmployeeIdentifications")]
+    partial class AddZhrEmployeeIdentifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1586,26 +1588,6 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("mobile_money_number");
 
-                    b.Property<string>("MaritalStatus")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("marital_status");
-
-                    b.Property<decimal?>("NetSalary")
-                        .HasPrecision(18, 4)
-                        .HasColumnType("numeric(18,4)")
-                        .HasColumnName("net_salary");
-
-                    b.Property<string>("NextOfKinName")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("next_of_kin_name");
-
-                    b.Property<string>("NextOfKinPhone")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("next_of_kin_phone");
-
                     b.Property<string>("Nationality")
                         .HasColumnType("text")
                         .HasColumnName("nationality");
@@ -1658,11 +1640,6 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<Guid?>("ReportsToId")
                         .HasColumnType("uuid")
                         .HasColumnName("reports_to_id");
-
-                    b.Property<string>("RelationshipToNextOfKin")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("relationship_to_next_of_kin");
 
                     b.Property<string>("ResidentialAddress")
                         .HasColumnType("text")

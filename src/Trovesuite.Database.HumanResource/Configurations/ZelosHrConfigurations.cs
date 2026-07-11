@@ -189,6 +189,11 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.Property(x => x.Tier3PensionProvider).HasColumnName("tier3pension_provider");
         b.Property(x => x.GrossSalary).HasPrecision(18, 4);
         b.Property(x => x.AnnualizedCost).HasPrecision(18, 4);
+        b.Property(x => x.NetSalary).HasPrecision(18, 4);
+        b.Property(x => x.MaritalStatus).HasMaxLength(50);
+        b.Property(x => x.NextOfKinName).HasMaxLength(200);
+        b.Property(x => x.NextOfKinPhone).HasMaxLength(50);
+        b.Property(x => x.RelationshipToNextOfKin).HasMaxLength(100);
         b.Property(x => x.CurrencyId).HasColumnName("currency_id");
         b.Property(x => x.DocumentIds)
             .HasColumnName("document_ids")
@@ -265,6 +270,168 @@ public sealed class ZhrEmployeeIdentificationConfiguration : IEntityTypeConfigur
         b.HasOne<ZhrIdCardType>().WithMany().HasForeignKey(x => x.IdCardTypeId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => x.EmployeeId);
         b.HasIndex(x => new { x.EmployeeId, x.IdCardTypeId }).IsUnique();
+    }
+}
+
+public sealed class ZhrEmployeeEmergencyContactConfiguration : IEntityTypeConfiguration<ZhrEmployeeEmergencyContact>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeEmergencyContact> b)
+    {
+        b.ToZelosHrTable("zhr_employee_emergency_contacts");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.EmergencyContactName).HasMaxLength(200);
+        b.Property(x => x.EmergencyContactPhone).HasMaxLength(50);
+        b.Property(x => x.Relationship).HasMaxLength(100);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeePaymentMethodConfiguration : IEntityTypeConfiguration<ZhrEmployeePaymentMethod>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeePaymentMethod> b)
+    {
+        b.ToZelosHrTable("zhr_employee_payment_methods");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.PaymentMode).HasMaxLength(50);
+        b.Property(x => x.BankName).HasMaxLength(150);
+        b.Property(x => x.AccountName).HasMaxLength(200);
+        b.Property(x => x.AccountNumber).HasMaxLength(100);
+        b.Property(x => x.BranchName).HasMaxLength(150);
+        b.Property(x => x.IsPrimary).HasDefaultValue(false);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeeMedicalProfileConfiguration : IEntityTypeConfiguration<ZhrEmployeeMedicalProfile>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeMedicalProfile> b)
+    {
+        b.ToZelosHrTable("zhr_employee_medical_profiles");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.BloodGroup).HasMaxLength(10);
+        b.Property(x => x.DisabilityStatus).HasMaxLength(100);
+        b.Property(x => x.AccommodationDetails).HasMaxLength(1000);
+        b.Property(x => x.EmergencyMedicalNotes).HasMaxLength(1000);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId).IsUnique();
+    }
+}
+
+public sealed class ZhrEmployeeMedicalConditionConfiguration : IEntityTypeConfiguration<ZhrEmployeeMedicalCondition>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeMedicalCondition> b)
+    {
+        b.ToZelosHrTable("zhr_employee_medical_conditions");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Condition).HasMaxLength(200);
+        b.Property(x => x.Severity).HasMaxLength(50);
+        b.Property(x => x.Notes).HasMaxLength(1000);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeeAllergyConfiguration : IEntityTypeConfiguration<ZhrEmployeeAllergy>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeAllergy> b)
+    {
+        b.ToZelosHrTable("zhr_employee_allergies");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Allergen).HasMaxLength(200);
+        b.Property(x => x.Reaction).HasMaxLength(200);
+        b.Property(x => x.Severity).HasMaxLength(50);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeeMedicationConfiguration : IEntityTypeConfiguration<ZhrEmployeeMedication>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeMedication> b)
+    {
+        b.ToZelosHrTable("zhr_employee_medications");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Name).HasMaxLength(200);
+        b.Property(x => x.Dosage).HasMaxLength(100);
+        b.Property(x => x.Frequency).HasMaxLength(100);
+        b.Property(x => x.Notes).HasMaxLength(1000);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeeSkillConfiguration : IEntityTypeConfiguration<ZhrEmployeeSkill>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeSkill> b)
+    {
+        b.ToZelosHrTable("zhr_employee_skills");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Name).HasMaxLength(150);
+        b.Property(x => x.Proficiency).HasMaxLength(50);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeeExperienceConfiguration : IEntityTypeConfiguration<ZhrEmployeeExperience>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeExperience> b)
+    {
+        b.ToZelosHrTable("zhr_employee_experiences");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Company).HasMaxLength(200);
+        b.Property(x => x.JobTitle).HasMaxLength(150);
+        b.Property(x => x.EmploymentType).HasMaxLength(50);
+        b.Property(x => x.Location).HasMaxLength(200);
+        b.Property(x => x.Description).HasMaxLength(2000);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
+    }
+}
+
+public sealed class ZhrEmployeeReferralConfiguration : IEntityTypeConfiguration<ZhrEmployeeReferral>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeReferral> b)
+    {
+        b.ToZelosHrTable("zhr_employee_referrals");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.Name).HasMaxLength(200);
+        b.Property(x => x.JobTitle).HasMaxLength(150);
+        b.Property(x => x.Company).HasMaxLength(200);
+        b.Property(x => x.Relationship).HasMaxLength(100);
+        b.Property(x => x.Email).HasMaxLength(200);
+        b.Property(x => x.Phone).HasMaxLength(50);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => x.EmployeeId);
     }
 }
 
