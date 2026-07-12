@@ -238,7 +238,8 @@ public sealed class PurchaseOrderConfiguration : IEntityTypeConfiguration<Purcha
         b.Property(x => x.Id).AsTextUuidDefault();
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.PoNumber }).IsUnique();
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.HasInCheck("status", "DRAFT", "APPROVED", "PARTIALLY_RECEIVED", "CANCELLED", "COMPLETED");
+        // RECEIVED = all items in but supplier not yet fully paid; COMPLETED = received AND paid.
+        b.HasInCheck("status", "DRAFT", "APPROVED", "PARTIALLY_RECEIVED", "RECEIVED", "CANCELLED", "COMPLETED");
         b.WithTenantFk();
         // (tenant_id, org_id, bus_id, supplier_id) → msg_suppliers
         b.HasOne<Supplier>().WithMany()
