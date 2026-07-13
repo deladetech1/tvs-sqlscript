@@ -599,6 +599,34 @@ public sealed class ZhrEmployeeDocumentConfiguration : IEntityTypeConfiguration<
     }
 }
 
+public sealed class ZhrEmployeeChangeRequestConfiguration : IEntityTypeConfiguration<ZhrEmployeeChangeRequest>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeChangeRequest> b)
+    {
+        b.ToZelosHrTable("zhr_employee_change_requests");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.FieldPath).HasMaxLength(256);
+        b.Property(x => x.OldValueJson).HasColumnType("jsonb");
+        b.Property(x => x.NewValueJson).HasColumnType("jsonb");
+        b.Property(x => x.Status).HasMaxLength(32);
+        b.Property(x => x.RequestedBy).HasColumnType("text");
+        b.Property(x => x.ReviewedBy).HasColumnType("text");
+        b.Property(x => x.ReviewNote).HasColumnType("text");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasOne<ZhrEmployee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.Status });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Status, x.CreatedAt });
+        b.HasIndex(x => new { x.EmployeeId, x.FieldPath, x.Status })
+            .HasFilter("status = 'pending'");
+    }
+}
+
 public sealed class ZhrCustomFieldDefinitionConfiguration : IEntityTypeConfiguration<ZhrCustomFieldDefinition>
 {
     public void Configure(EntityTypeBuilder<ZhrCustomFieldDefinition> b)
