@@ -18,3 +18,10 @@ ALTER TABLE mystoreguard.msg_sales_payments
     ADD CONSTRAINT ck_msg_sales_payments_payment_method
     CHECK (payment_method IN ('CASH', 'CARD', 'BANK_TRANSFER', 'MOBILE_MONEY',
         'CHEQUE', 'BITCOIN', 'GIFT_CARD', 'LOYALTY_POINTS', 'OTHERS'));
+
+-- Track the loyalty redemption on the sale itself (mirrors gift_card_amount_used),
+-- so a sale shows how many points were burned and their currency value.
+ALTER TABLE mystoreguard.msg_sales
+    ADD COLUMN IF NOT EXISTS loyalty_points_used numeric(18, 2) NOT NULL DEFAULT 0;
+ALTER TABLE mystoreguard.msg_sales
+    ADD COLUMN IF NOT EXISTS loyalty_amount_used numeric(18, 2) NOT NULL DEFAULT 0;

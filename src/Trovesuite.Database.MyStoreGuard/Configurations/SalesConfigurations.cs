@@ -289,6 +289,8 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         b.Property(x => x.PaidAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.BalanceAmount).HasColumnType("numeric(18,2)");
         b.Property(x => x.GiftCardAmountUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
+        b.Property(x => x.LoyaltyPointsUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
+        b.Property(x => x.LoyaltyAmountUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.PromoDiscountAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.TaxesApplied).HasColumnType("jsonb");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
