@@ -372,7 +372,7 @@ public sealed class SalePaymentConfiguration : IEntityTypeConfiguration<SalePaym
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.PaidAmount).HasColumnType("numeric(18,2)");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.HasInCheck("payment_method", "CASH", "CARD", "BANK_TRANSFER", "MOBILE_MONEY", "CHEQUE", "BITCOIN", "GIFT_CARD", "OTHERS");
+        b.HasInCheck("payment_method", "CASH", "CARD", "BANK_TRANSFER", "MOBILE_MONEY", "CHEQUE", "BITCOIN", "GIFT_CARD", "LOYALTY_POINTS", "OTHERS");
         b.HasInCheck("payment_status", "SUCCESS", "FAILED", "PENDING", "REFUNDED");
         b.WithTenantFk();
         b.WithSaleFk();
