@@ -124,6 +124,7 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-business-app-get'),
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-user-get-locations'),
 
 ('system-tenant-id', 'role-loandrift-reports-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-reports-admin', 'permission-business-get'),
