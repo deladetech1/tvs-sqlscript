@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717100043_AddSalesLoyaltyColumnsAndPaymentMethods")]
+    partial class AddSalesLoyaltyColumnsAndPaymentMethods
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -8652,13 +8655,13 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_affiliate_referrals_customers_tenant_id_org_id_bus_id_c");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Sale", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "SaleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_affiliate_referrals_sales_tenant_id_org_id_bus_id_loc_i");
                 });
 
@@ -9140,7 +9143,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Affiliate", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "AffiliateId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_invoices_msg_affiliates_tenant_id_org_id_bus_id_affilia");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
@@ -9153,7 +9156,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "PromoCodeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_invoices_promo_codes_tenant_id_org_id_bus_id_promo_code");
                 });
 
@@ -9514,7 +9517,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_tasks_msg_customers_tenant_id_org_id_bus_id_customer_id");
                 });
 
@@ -10647,7 +10650,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_promo_code_usage_msg_customers_tenant_id_org_id_bus_id_");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", null)
@@ -10994,7 +10997,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Affiliate", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "AffiliateId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_sales_msg_affiliates_tenant_id_org_id_bus_id_affiliate_");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
@@ -11006,7 +11009,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "PromoCodeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_msg_sales_msg_promo_codes_tenant_id_org_id_bus_id_promo_cod");
                 });
 

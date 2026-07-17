@@ -113,7 +113,9 @@ public sealed class MsgTaskConfiguration : IEntityTypeConfiguration<MsgTask>
         b.HasInCheck("status", "ACTIVE", "COMPLETED", "CANCELLED");
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusFks();
-        b.WithCustomerFk(DeleteBehavior.SetNull);
+        // Restrict (not SetNull): the customer FK spans TenantId/OrgId/BusId,
+        // which are part of the task PK and NOT NULL — SetNull would fail.
+        b.WithCustomerFk(DeleteBehavior.Restrict);
         b.WithCompositeFk<MsgTask, MsgWorkflowTemplate>("TemplateId", DeleteBehavior.Restrict);
         b.WithCompositeFk<MsgTask, Location>("OriginLocationId", DeleteBehavior.Restrict);
         b.WithCrossSchemaAuditUserFks();
