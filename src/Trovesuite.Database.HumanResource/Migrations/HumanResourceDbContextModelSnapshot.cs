@@ -1475,7 +1475,6 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnName("industry");
 
                     b.Property<string>("LegalName")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("legal_name");
