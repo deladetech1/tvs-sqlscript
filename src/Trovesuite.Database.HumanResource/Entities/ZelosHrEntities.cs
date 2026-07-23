@@ -114,6 +114,23 @@ public class ZhrCompanyOffice
     public string? UpdatedBy { get; set; }
 }
 
+public class ZhrEmployeeIdFormat
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Prefix { get; set; } = default!;
+    public int DigitCount { get; set; }
+    public int StartingNumber { get; set; }
+    /// <summary>hyphen · none · underscore · slash</summary>
+    public string Separator { get; set; } = default!;
+    public bool AutoGenerate { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ZhrCompanyLocalization
 {
     public Guid Id { get; set; }
