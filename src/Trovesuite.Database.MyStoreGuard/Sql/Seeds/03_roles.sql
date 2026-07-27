@@ -41,6 +41,8 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 -- Estimator Admin Roles: the auto-assign trigger grants all matching permission-msg-estimate(-templates)-* on insert
 ('role-msg-estimate-template-admin', 'system-tenant-id', 'Mystoreguard Estimate Template Admin', 'Administrator for estimate template (per-domain blueprint) management', 'rt-estimate-template', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-estimate-admin', 'system-tenant-id', 'Mystoreguard Estimate Admin', 'Administrator for estimate management', 'rt-estimate', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Stock Takes Admin Role (resource type rt-stock-takes): the auto-assign trigger grants all permission-msg-stock-takes-* on insert
+('role-msg-stock-takes-admin', 'system-tenant-id', 'Mystoreguard Stock Takes Admin', 'Administrator for stock takes management (count, investigate, and resolve variances)', 'rt-stock-takes', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Viewer Admin Role (read-only access to all Mystoreguard resources)
 ('role-msg-viewer-admin', 'system-tenant-id', 'Mystoreguard Viewer Admin', 'Viewer Admin for Mystoreguard - can view all Mystoreguard resources with GET permissions only', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)

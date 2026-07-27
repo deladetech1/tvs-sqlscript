@@ -230,6 +230,14 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-estimate-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-estimate-admin', 'permission-user-get-locations'),
 
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-app-get'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-get'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-user-get-locations'),
+
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-organization-get'),
