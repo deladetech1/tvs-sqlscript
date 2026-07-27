@@ -151,6 +151,27 @@ public sealed class ZhrCompanyOfficeConfiguration : IEntityTypeConfiguration<Zhr
     }
 }
 
+public sealed class ZhrEmployeePortalSubdomainConfiguration : IEntityTypeConfiguration<ZhrEmployeePortalSubdomain>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeePortalSubdomain> b)
+    {
+        b.ToZelosHrTable("zhr_employee_portal_subdomain");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.BusId).HasMaxLength(128);
+        b.Property(x => x.LocId).HasMaxLength(128);
+        b.Property(x => x.Subdomain).HasMaxLength(63);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId }).IsUnique();
+        b.HasIndex(x => x.Subdomain).IsUnique();
+    }
+}
+
 public sealed class ZhrEmployeeIdFormatConfiguration : IEntityTypeConfiguration<ZhrEmployeeIdFormat>
 {
     public void Configure(EntityTypeBuilder<ZhrEmployeeIdFormat> b)

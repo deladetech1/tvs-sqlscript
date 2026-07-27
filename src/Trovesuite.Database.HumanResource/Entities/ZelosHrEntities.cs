@@ -114,6 +114,22 @@ public class ZhrCompanyOffice
     public string? UpdatedBy { get; set; }
 }
 
+/// <summary>Employee portal hostname slug — one row per org; globally unique subdomain.</summary>
+public class ZhrEmployeePortalSubdomain
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string LocId { get; set; } = default!;
+    /// <summary>Lowercase DNS label (e.g. btl) — maps to btl.zeloshr.com.</summary>
+    public string Subdomain { get; set; } = default!;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ZhrEmployeeIdFormat
 {
     public Guid Id { get; set; }
