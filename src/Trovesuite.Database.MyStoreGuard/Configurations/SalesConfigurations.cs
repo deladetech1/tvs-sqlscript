@@ -289,6 +289,8 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         b.Property(x => x.PaidAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.BalanceAmount).HasColumnType("numeric(18,2)");
         b.Property(x => x.GiftCardAmountUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
+        b.Property(x => x.LoyaltyPointsUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
+        b.Property(x => x.LoyaltyAmountUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.PromoDiscountAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.TaxesApplied).HasColumnType("jsonb");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
@@ -298,8 +300,10 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         b.HasInCheck("fulfillment_status", "PENDING", "PARTIALLY_FULFILLED", "FULFILLED");
         b.WithTenantOrgBusLocFks();
         b.WithCustomerFk(DeleteBehavior.Restrict);
-        b.WithPromoCodeFk();
-        b.WithAffiliateFk();
+        // Restrict (not SetNull): these FKs span TenantId/OrgId/BusId, which are
+        // part of the sales PK and NOT NULL — SetNull would fail.
+        b.WithPromoCodeFk(DeleteBehavior.Restrict);
+        b.WithAffiliateFk(DeleteBehavior.Restrict);
         b.WithCrossSchemaAuditUserFks();
     }
 }
@@ -372,7 +376,7 @@ public sealed class SalePaymentConfiguration : IEntityTypeConfiguration<SalePaym
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.PaidAmount).HasColumnType("numeric(18,2)");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.HasInCheck("payment_method", "CASH", "CARD", "BANK_TRANSFER", "MOBILE_MONEY", "CHEQUE", "BITCOIN", "GIFT_CARD", "OTHERS");
+        b.HasInCheck("payment_method", "CASH", "CARD", "BANK_TRANSFER", "MOBILE_MONEY", "CHEQUE", "BITCOIN", "GIFT_CARD", "LOYALTY_POINTS", "OTHERS");
         b.HasInCheck("payment_status", "SUCCESS", "FAILED", "PENDING", "REFUNDED");
         b.WithTenantFk();
         b.WithSaleFk();
@@ -478,8 +482,10 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         b.HasInCheck("sale_mode", "INSTANT", "DEPOSIT", "CREDIT");
         b.WithTenantOrgBusLocFks();
         b.WithCustomerFk(DeleteBehavior.Restrict);
-        b.WithPromoCodeFk();
-        b.WithAffiliateFk();
+        // Restrict (not SetNull): these FKs span TenantId/OrgId/BusId, which are
+        // part of the invoice PK and NOT NULL — SetNull would fail.
+        b.WithPromoCodeFk(DeleteBehavior.Restrict);
+        b.WithAffiliateFk(DeleteBehavior.Restrict);
         b.WithCrossSchemaAuditUserFks();
     }
 }
@@ -646,7 +652,9 @@ public sealed class PromoCodeUsageConfiguration : IEntityTypeConfiguration<Promo
         b.WithTenantOrgBusLocFks();
         b.WithPromoCodeFk(DeleteBehavior.Restrict);
         b.WithSaleFk();
-        b.WithCustomerFk();
+        // Restrict (not SetNull): the customer FK spans TenantId/OrgId/BusId,
+        // which are part of this table's PK and NOT NULL — SetNull would fail.
+        b.WithCustomerFk(DeleteBehavior.Restrict);
         // created_by → cp_users RESTRICT
         b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
@@ -669,8 +677,12 @@ public sealed class AffiliateReferralConfiguration : IEntityTypeConfiguration<Af
         b.HasInCheck("conversion_status", "PENDING", "CONVERTED", "FAILED", "CANCELLED");
         b.WithTenantOrgBusLocFks();
         b.WithAffiliateFk(DeleteBehavior.Restrict);
-        b.WithCustomerFk();
-        b.WithSaleFk(DeleteBehavior.SetNull);
+        // Restrict (not SetNull): the customer FK spans TenantId/OrgId/BusId,
+        // which are part of this table's PK and NOT NULL — SetNull would fail.
+        b.WithCustomerFk(DeleteBehavior.Restrict);
+        // Cascade (not SetNull): the sale FK spans the referral's NOT NULL PK
+        // columns, so SetNull would fail; a referral is a child of its sale.
+        b.WithSaleFk(DeleteBehavior.Cascade);
         b.WithCrossSchemaCreateUpdateUserFks();
     }
 }

@@ -3406,7 +3406,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnName("updated_by");
 
                     b.HasKey("TenantId", "OrgId", "BusId", "Id")
-                        .HasName("pk_msg_tasks");
+                        .HasName("ak_tasks_tenant_id_org_id_bus_id_id");
 
                     b.HasIndex("BusId", "TenantId")
                         .HasDatabaseName("ix_msg_tasks_bus_id_tenant_id");
@@ -3440,6 +3440,283 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                             t.HasCheckConstraint("ck_msg_tasks_task_type", "task_type IN ('SALES','SERVICE','DELIVERY','INSTALLATION','CONSULTATION','OTHERS')");
                         });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskAttachment", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CommentId")
+                        .HasColumnType("text")
+                        .HasColumnName("comment_id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("DocumentId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("document_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("StepId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("step_id");
+
+                    b.Property<string>("TaskId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("task_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
+                        .HasName("pk_msg_task_attachments");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_msg_task_attachments_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_task_attachments_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_task_attachments_deleted_by_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_msg_task_attachments_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_task_attachments_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CommentId")
+                        .HasDatabaseName("ix_msg_task_attachments_tenant_id_org_id_bus_id_comment_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "DocumentId")
+                        .HasDatabaseName("ix_msg_task_attachments_tenant_id_org_id_bus_id_document_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "StepId")
+                        .HasDatabaseName("ix_msg_task_attachments_tenant_id_org_id_bus_id_step_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "TaskId")
+                        .HasDatabaseName("ix_msg_task_attachments_tenant_id_org_id_bus_id_task_id");
+
+                    b.ToTable("msg_task_attachments", "mystoreguard", t =>
+                        {
+                            t.HasCheckConstraint("ck_msg_task_attachments_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskComment", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<DateTimeOffset?>("EditedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("edited_at");
+
+                    b.Property<string>("StepId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("step_id");
+
+                    b.Property<string>("TaskId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("task_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
+                        .HasName("ak_task_comments_tenant_id_org_id_bus_id_id");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comments_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comments_created_by_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comments_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comments_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "StepId")
+                        .HasDatabaseName("ix_msg_task_comments_tenant_id_org_id_bus_id_step_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "TaskId")
+                        .HasDatabaseName("ix_msg_task_comments_tenant_id_org_id_bus_id_task_id");
+
+                    b.ToTable("msg_task_comments", "mystoreguard");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskCommentMention", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CommentId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("comment_id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("MentionedUserId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("mentioned_user_id");
+
+                    b.Property<string>("StepId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("step_id");
+
+                    b.Property<string>("TaskId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("task_id");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
+                        .HasName("pk_msg_task_comment_mentions");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comment_mentions_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comment_mentions_created_by_tenant_id");
+
+                    b.HasIndex("MentionedUserId", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comment_mentions_mentioned_user_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_msg_task_comment_mentions_org_id_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "StepId")
+                        .HasDatabaseName("ix_msg_task_comment_mentions_tenant_id_org_id_bus_id_step_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "TaskId")
+                        .HasDatabaseName("ix_msg_task_comment_mentions_tenant_id_org_id_bus_id_task_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CommentId", "MentionedUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_msg_task_comment_mentions_tenant_id_org_id_bus_id_comment_i");
+
+                    b.ToTable("msg_task_comment_mentions", "mystoreguard");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskNotification", b =>
@@ -3540,7 +3817,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_task_notifications", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_task_notifications_kind", "kind IN ('ASSIGNED','READY','DONE_NEEDS_APPROVAL','REMINDER')");
+                            t.HasCheckConstraint("ck_msg_task_notifications_kind", "kind IN ('ASSIGNED','READY','DONE_NEEDS_APPROVAL','REMINDER','MENTIONED')");
 
                             t.HasCheckConstraint("ck_msg_task_notifications_status", "status IN ('PENDING','SENT','FAILED')");
                         });
@@ -5812,7 +6089,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_purchase_orders", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_purchase_orders_status", "status IN ('DRAFT','APPROVED','PARTIALLY_RECEIVED','CANCELLED','COMPLETED')");
+                            t.HasCheckConstraint("ck_msg_purchase_orders_status", "status IN ('DRAFT','APPROVED','PARTIALLY_RECEIVED','RECEIVED','CANCELLED','COMPLETED')");
                         });
                 });
 
@@ -6559,6 +6836,18 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasDefaultValue(0m)
                         .HasColumnName("gift_card_amount_used");
 
+                    b.Property<decimal>("LoyaltyAmountUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("loyalty_amount_used");
+
+                    b.Property<decimal>("LoyaltyPointsUsed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("loyalty_points_used");
+
                     b.Property<decimal>("PaidAmount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(18,2)")
@@ -6897,7 +7186,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_sales_payments", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_sales_payments_payment_method", "payment_method IN ('CASH','CARD','BANK_TRANSFER','MOBILE_MONEY','CHEQUE','BITCOIN','GIFT_CARD','OTHERS')");
+                            t.HasCheckConstraint("ck_msg_sales_payments_payment_method", "payment_method IN ('CASH','CARD','BANK_TRANSFER','MOBILE_MONEY','CHEQUE','BITCOIN','GIFT_CARD','LOYALTY_POINTS','OTHERS')");
 
                             t.HasCheckConstraint("ck_msg_sales_payments_payment_status", "payment_status IN ('SUCCESS','FAILED','PENDING','REFUNDED')");
                         });
@@ -8363,13 +8652,13 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_affiliate_referrals_customers_tenant_id_org_id_bus_id_c");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Sale", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "SaleId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_msg_affiliate_referrals_sales_tenant_id_org_id_bus_id_loc_i");
                 });
 
@@ -8851,7 +9140,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Affiliate", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "AffiliateId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_invoices_msg_affiliates_tenant_id_org_id_bus_id_affilia");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
@@ -8864,7 +9153,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "PromoCodeId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_invoices_promo_codes_tenant_id_org_id_bus_id_promo_code");
                 });
 
@@ -9225,8 +9514,185 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_tasks_msg_customers_tenant_id_org_id_bus_id_customer_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskAttachment", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_attachments_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_attachments_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_task_attachments_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_task_attachments_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_attachments_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_task_attachments_cp_users_updated_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskComment", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_msg_task_attachments_task_comments_tenant_id_org_id_bus_id_");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgDocumentPath", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_attachments_msg_document_paths_tenant_id_org_id_bu");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskStep", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_attachments_task_steps_tenant_id_org_id_bus_id_ste");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTask", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_attachments_tasks_tenant_id_org_id_bus_id_task_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskComment", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comments_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comments_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_task_comments_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comments_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_task_comments_cp_users_updated_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskStep", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comments_task_steps_tenant_id_org_id_bus_id_step_id");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTask", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comments_tasks_tenant_id_org_id_bus_id_task_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskCommentMention", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comment_mentions_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comment_mentions_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_task_comment_mentions_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("MentionedUserId", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comment_mentions_cp_users_mentioned_user_id_tenant");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comment_mentions_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskComment", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comment_mentions_msg_task_comments_tenant_id_org_i");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskStep", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comment_mentions_task_steps_tenant_id_org_id_bus_i");
+
+                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.MsgTask", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_task_comment_mentions_tasks_tenant_id_org_id_bus_id_tas");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.MsgTaskNotification", b =>
@@ -10181,7 +10647,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_promo_code_usage_msg_customers_tenant_id_org_id_bus_id_");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", null)
@@ -10528,7 +10994,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Affiliate", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "AffiliateId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_sales_msg_affiliates_tenant_id_org_id_bus_id_affiliate_");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
@@ -10540,7 +11006,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", null)
                         .WithMany()
                         .HasForeignKey("TenantId", "OrgId", "BusId", "PromoCodeId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_sales_msg_promo_codes_tenant_id_org_id_bus_id_promo_cod");
                 });
 

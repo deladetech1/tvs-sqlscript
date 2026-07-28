@@ -331,6 +331,55 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.Permission", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("PermissionName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("permission_name");
+
+                    b.Property<string>("ResourceTypeId")
+                        .HasColumnType("text")
+                        .HasColumnName("resource_type_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cp_permissions");
+
+                    b.ToTable("cp_permissions", "core_platform", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.ResourceType", b =>
                 {
                     b.Property<string>("Id")
@@ -380,6 +429,144 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.Role", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_system");
+
+                    b.Property<string>("ResourceTypeId")
+                        .HasColumnType("text")
+                        .HasColumnName("resource_type_id");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("role_name");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cp_roles");
+
+                    b.ToTable("cp_roles", "core_platform", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.RolePermission", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("PermissionId")
+                        .HasColumnType("text")
+                        .HasColumnName("permission_id");
+
+                    b.Property<string>("RoleId")
+                        .HasColumnType("text")
+                        .HasColumnName("role_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id", "TenantId")
+                        .HasName("pk_cp_role_permissions");
+
+                    b.HasIndex("TenantId", "RoleId", "PermissionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_cp_role_permissions_tenant_id_role_id_permission_id");
+
+                    b.ToTable("cp_role_permissions", "core_platform", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.Tenant", b =>
                 {
                     b.Property<string>("Id")
@@ -407,6 +594,22 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<string>("FreeTrialConsumedAppSubscriptionId")
+                        .HasColumnType("text")
+                        .HasColumnName("free_trial_consumed_app_subscription_id");
+
+                    b.Property<DateTimeOffset?>("FreeTrialEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("free_trial_ends_at");
+
+                    b.Property<DateTimeOffset?>("FreeTrialStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("free_trial_started_at");
+
+                    b.Property<bool>("FreeTrialUsed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("free_trial_used");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
@@ -418,6 +621,10 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.Property<bool>("IsVerified")
                         .HasColumnType("boolean")
                         .HasColumnName("is_verified");
+
+                    b.Property<DateTimeOffset?>("LastTrialReminderSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_trial_reminder_sent_at");
 
                     b.HasKey("Id")
                         .HasName("pk_cp_tenants");
@@ -1286,6 +1493,390 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.ToTable("ld_client_financial_info", "loandrift");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.CreditScore", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<int>("AccountAgeMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("account_age_months");
+
+                    b.Property<string>("Band")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("VERY_POOR")
+                        .HasColumnName("band");
+
+                    b.Property<JsonDocument>("Breakdown")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("breakdown");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<decimal>("CollateralCoverageRatio")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(8,4)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("collateral_coverage_ratio");
+
+                    b.Property<int>("CollateralScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("collateral_score");
+
+                    b.Property<int>("CompletedLoans")
+                        .HasColumnType("integer")
+                        .HasColumnName("completed_loans");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<int>("CreditUtilizationScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("credit_utilization_score");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<int>("DebtToIncomeScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("debt_to_income_score");
+
+                    b.Property<int>("DefaultCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("default_count");
+
+                    b.Property<decimal>("DtiRatio")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(8,4)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("dti_ratio");
+
+                    b.Property<int>("FinancialCapacityScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("financial_capacity_score");
+
+                    b.Property<int>("LoanHistoryScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("loan_history_score");
+
+                    b.Property<string>("LoanId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("loan_id");
+
+                    b.Property<int>("ManualAdjustment")
+                        .HasColumnType("integer")
+                        .HasColumnName("manual_adjustment");
+
+                    b.Property<string>("ManualAdjustmentReason")
+                        .HasColumnType("text")
+                        .HasColumnName("manual_adjustment_reason");
+
+                    b.Property<bool>("ManualOverride")
+                        .HasColumnType("boolean")
+                        .HasColumnName("manual_override");
+
+                    b.Property<int>("MaxDaysInDefault")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_days_in_default");
+
+                    b.Property<decimal>("NetWorth")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("net_worth");
+
+                    b.Property<decimal>("OnTimePaymentRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(8,4)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("on_time_payment_rate");
+
+                    b.Property<string>("Recommendation")
+                        .HasColumnType("text")
+                        .HasColumnName("recommendation");
+
+                    b.Property<int>("RepaymentHistoryScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("repayment_history_score");
+
+                    b.Property<string>("SettingsVersionId")
+                        .HasColumnType("text")
+                        .HasColumnName("settings_version_id");
+
+                    b.Property<decimal>("TotalArrears")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("total_arrears");
+
+                    b.Property<int>("TotalLoans")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_loans");
+
+                    b.Property<int>("TotalScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_score");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("CAPTURE")
+                        .HasColumnName("trigger");
+
+                    b.Property<decimal>("UtilizationRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(8,4)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("utilization_rate");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_credit_scores");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_scores_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_scores_created_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_scores_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_scores_org_id_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasDatabaseName("ix_ld_credit_scores_tenant_id_org_id_bus_id_loc_id_client_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
+                        .HasDatabaseName("ix_ld_credit_scores_tenant_id_org_id_bus_id_loc_id_loan_id");
+
+                    b.ToTable("ld_credit_scores", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_credit_scores_band", "band IN ('EXCELLENT','GOOD','FAIR','POOR','VERY_POOR')");
+
+                            t.HasCheckConstraint("ck_ld_credit_scores_trigger", "trigger IN ('CAPTURE','REPAYMENT','DEFAULT','COMPLETION','MANUAL','SCHEDULED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.CreditScoreSettings", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<JsonDocument>("Config")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("config");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("VersionId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("version_id");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_credit_score_settings");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_deleted_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ld_credit_score_settings_tenant_id_org_id_bus_id_loc_id");
+
+                    b.ToTable("ld_credit_score_settings", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_credit_score_settings_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.CreditScoreSettingsHistory", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ChangeSummary")
+                        .HasColumnType("text")
+                        .HasColumnName("change_summary");
+
+                    b.Property<DateTimeOffset?>("ChangedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("changed_at");
+
+                    b.Property<string>("ChangedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("changed_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<JsonDocument>("NewSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("new_settings");
+
+                    b.Property<JsonDocument>("PreviousSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("previous_settings");
+
+                    b.Property<string>("SettingsVersionId")
+                        .HasColumnType("text")
+                        .HasColumnName("settings_version_id");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_credit_score_settings_history");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_history_bus_id_tenant_id");
+
+                    b.HasIndex("ChangedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_history_changed_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_history_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_credit_score_settings_history_org_id_tenant_id");
+
+                    b.ToTable("ld_credit_score_settings_history", "loandrift");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Guarantor", b =>
                 {
                     b.Property<string>("TenantId")
@@ -1575,6 +2166,464 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.ToTable("ld_interest_types", "loandrift", t =>
                         {
                             t.HasCheckConstraint("ck_ld_interest_types_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Investment", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("AccountNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("account_number");
+
+                    b.Property<string>("ActivatedDate")
+                        .HasColumnType("text")
+                        .HasColumnName("activated_date");
+
+                    b.Property<decimal>("ActualReturn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("actual_return");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("CompletedDate")
+                        .HasColumnType("text")
+                        .HasColumnName("completed_date");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("CurrencyId")
+                        .HasColumnType("text")
+                        .HasColumnName("currency_id");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<decimal>("EarlyTerminationPenaltyRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("early_termination_penalty_rate");
+
+                    b.Property<decimal>("ExpectedInterest")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("expected_interest");
+
+                    b.Property<decimal>("ExpectedTotalPayable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("expected_total_payable");
+
+                    b.Property<string>("FundedDate")
+                        .HasColumnType("text")
+                        .HasColumnName("funded_date");
+
+                    b.Property<string>("InterestPeriod")
+                        .HasColumnType("text")
+                        .HasColumnName("interest_period");
+
+                    b.Property<decimal>("InterestRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("interest_rate");
+
+                    b.Property<string>("InvestmentProductId")
+                        .HasColumnType("text")
+                        .HasColumnName("investment_product_id");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("MaturedDate")
+                        .HasColumnType("text")
+                        .HasColumnName("matured_date");
+
+                    b.Property<string>("MaturityDate")
+                        .HasColumnType("text")
+                        .HasColumnName("maturity_date");
+
+                    b.Property<decimal>("PenaltyAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("penalty_amount");
+
+                    b.Property<decimal>("PeriodicReturn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("periodic_return");
+
+                    b.Property<decimal>("PrincipalAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("principal_amount");
+
+                    b.Property<bool>("RolloverOnMaturity")
+                        .HasColumnType("boolean")
+                        .HasColumnName("rollover_on_maturity");
+
+                    b.Property<string>("StartDate")
+                        .HasColumnType("text")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("REGISTERED")
+                        .HasColumnName("status");
+
+                    b.Property<int>("TermMonths")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("term_months");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_investments");
+
+                    b.HasIndex("InvestmentProductId")
+                        .HasDatabaseName("ix_ld_investments_investment_product_id");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_investments_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_investments_created_by_tenant_id");
+
+                    b.HasIndex("CurrencyId", "TenantId")
+                        .HasDatabaseName("ix_ld_investments_currency_id_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_investments_deleted_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_investments_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_investments_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_investments_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "AccountNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ld_investments_tenant_id_org_id_bus_id_loc_id_account_number");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasDatabaseName("ix_ld_investments_tenant_id_org_id_bus_id_loc_id_client_id");
+
+                    b.ToTable("ld_investments", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_investments_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+
+                            t.HasCheckConstraint("ck_ld_investments_interest_period", "interest_period IN ('MONTHLY','QUARTERLY','ANNUALLY','AT_MATURITY',NULL)");
+
+                            t.HasCheckConstraint("ck_ld_investments_status", "status IN ('REGISTERED','FUNDED','ACTIVE','MATURED','COMPLETED','TERMINATED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.InvestmentProduct", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DefaultInterestPeriod")
+                        .HasColumnType("text")
+                        .HasColumnName("default_interest_period");
+
+                    b.Property<decimal>("DefaultInterestRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("default_interest_rate");
+
+                    b.Property<int?>("DefaultTermMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("default_term_months");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<decimal>("EarlyTerminationPenaltyRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("early_termination_penalty_rate");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_system");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("product_name");
+
+                    b.Property<string>("ProductType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("FIXED_DEPOSIT")
+                        .HasColumnName("product_type");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ld_investment_products");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_ld_investment_products_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_investment_products_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_investment_products_deleted_by_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_investment_products_updated_by_tenant_id");
+
+                    b.ToTable("ld_investment_products", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_investment_products_default_interest_period", "default_interest_period IN ('MONTHLY','QUARTERLY','ANNUALLY','AT_MATURITY',NULL)");
+
+                            t.HasCheckConstraint("ck_ld_investment_products_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+
+                            t.HasCheckConstraint("ck_ld_investment_products_product_type", "product_type IN ('FIXED_DEPOSIT','TREASURY_BILL','MONEY_MARKET','BOND','SUSU_INVESTMENT')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.InvestmentTransaction", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<decimal>("Amount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("amount");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("InvestmentId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("investment_id");
+
+                    b.Property<DateTimeOffset?>("OccurredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("text")
+                        .HasColumnName("payment_method");
+
+                    b.Property<decimal>("PenaltyAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("penalty_amount");
+
+                    b.Property<string>("Reference")
+                        .HasColumnType("text")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("FUNDING")
+                        .HasColumnName("transaction_type");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_investment_transactions");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_investment_transactions_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_investment_transactions_created_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_investment_transactions_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_investment_transactions_org_id_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasDatabaseName("ix_ld_investment_transactions_tenant_id_org_id_bus_id_loc_id_c");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "InvestmentId")
+                        .HasDatabaseName("ix_ld_investment_transactions_tenant_id_org_id_bus_id_loc_id_i");
+
+                    b.ToTable("ld_investment_transactions", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_investment_transactions_payment_method", "payment_method IN ('CASH','MOMO','CHEQUE','BANK_TRANSFER','OTHERS',NULL)");
+
+                            t.HasCheckConstraint("ck_ld_investment_transactions_transaction_type", "transaction_type IN ('FUNDING','PAYOUT_PERIOD','COMPLETION','TERMINATION')");
                         });
                 });
 
@@ -1954,6 +3003,27 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("payment_type");
 
+                    b.Property<bool>("PenaltyEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("penalty_enabled");
+
+                    b.Property<string>("PenaltyMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NONE")
+                        .HasColumnName("penalty_mode");
+
+                    b.Property<string>("PenaltySettingsVersionId")
+                        .HasColumnType("text")
+                        .HasColumnName("penalty_settings_version_id");
+
+                    b.Property<JsonDocument>("PenaltyTerms")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("penalty_terms");
+
                     b.Property<DateTimeOffset?>("RegistrationDatetime")
                         .HasColumnType("timestamptz")
                         .HasColumnName("registration_datetime");
@@ -2022,6 +3092,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                             t.HasCheckConstraint("ck_ld_loan_details_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 
                             t.HasCheckConstraint("ck_ld_loan_details_payment_type", "payment_type IN ('DAILY','WEEKLY','BI_WEEKLY','MONTHLY','QUARTERLY','YEARLY',NULL)");
+
+                            t.HasCheckConstraint("ck_ld_loan_details_penalty_mode", "penalty_mode IN ('NONE','OPTIONAL','COMPULSORY')");
 
                             t.HasCheckConstraint("ck_ld_loan_details_status", "status IN ('REGISTERED','CAPTURED','APPROVED','REJECTED','DISBURSED','CLOSED','DEFAULTED','WRITTEN_OFF','ACTIVE','COMPLETED')");
                         });
@@ -2479,6 +3551,13 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("org_id");
 
+                    b.Property<string>("PenaltyMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NONE")
+                        .HasColumnName("penalty_mode");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2511,6 +3590,523 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.ToTable("ld_loan_types", "loandrift", t =>
                         {
                             t.HasCheckConstraint("ck_ld_loan_types_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+
+                            t.HasCheckConstraint("ck_ld_loan_types_penalty_mode", "penalty_mode IN ('NONE','OPTIONAL','COMPULSORY')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Penalty", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<decimal>("AppliedRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("applied_rate");
+
+                    b.Property<JsonDocument>("Breakdown")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("breakdown");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<int>("DaysOverdue")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_overdue");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DueDate")
+                        .HasColumnType("text")
+                        .HasColumnName("due_date");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LoanId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("loan_id");
+
+                    b.Property<decimal>("OutstandingAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("outstanding_amount");
+
+                    b.Property<decimal>("PaidAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("paid_amount");
+
+                    b.Property<decimal>("PenaltyAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("penalty_amount");
+
+                    b.Property<string>("PenaltyType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("LATE_PAYMENT")
+                        .HasColumnName("penalty_type");
+
+                    b.Property<string>("SettingsVersionId")
+                        .HasColumnType("text")
+                        .HasColumnName("settings_version_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("OUTSTANDING")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("BATCH_JOB")
+                        .HasColumnName("trigger");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<decimal>("WaivedAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("waived_amount");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_penalties");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalties_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalties_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalties_deleted_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalties_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalties_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalties_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasDatabaseName("ix_ld_penalties_tenant_id_org_id_bus_id_loc_id_client_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
+                        .HasDatabaseName("ix_ld_penalties_tenant_id_org_id_bus_id_loc_id_loan_id");
+
+                    b.ToTable("ld_penalties", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_penalties_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+
+                            t.HasCheckConstraint("ck_ld_penalties_penalty_type", "penalty_type IN ('LATE_PAYMENT','MISSED_PAYMENT','DEFAULT','EARLY_REPAYMENT','BOUNCED_PAYMENT')");
+
+                            t.HasCheckConstraint("ck_ld_penalties_status", "status IN ('OUTSTANDING','PARTIALLY_PAID','CLEARED','WAIVED')");
+
+                            t.HasCheckConstraint("ck_ld_penalties_trigger", "trigger IN ('BATCH_JOB','MANUAL','STATUS_CHANGE')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.PenaltySettings", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<JsonDocument>("Config")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("config");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("VersionId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("version_id");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_penalty_settings");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_deleted_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ld_penalty_settings_tenant_id_org_id_bus_id_loc_id");
+
+                    b.ToTable("ld_penalty_settings", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_penalty_settings_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.PenaltySettingsHistory", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ChangeSummary")
+                        .HasColumnType("text")
+                        .HasColumnName("change_summary");
+
+                    b.Property<DateTimeOffset?>("ChangedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("changed_at");
+
+                    b.Property<string>("ChangedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("changed_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<JsonDocument>("NewSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("new_settings");
+
+                    b.Property<JsonDocument>("PreviousSettings")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("previous_settings");
+
+                    b.Property<string>("SettingsVersionId")
+                        .HasColumnType("text")
+                        .HasColumnName("settings_version_id");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_penalty_settings_history");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_history_bus_id_tenant_id");
+
+                    b.HasIndex("ChangedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_history_changed_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_history_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_settings_history_org_id_tenant_id");
+
+                    b.ToTable("ld_penalty_settings_history", "loandrift");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.PenaltyWaiver", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LoanId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("loan_id");
+
+                    b.Property<string>("PenaltyId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("penalty_id");
+
+                    b.Property<string>("RequestedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("requested_by");
+
+                    b.Property<string>("ReviewNote")
+                        .HasColumnType("text")
+                        .HasColumnName("review_note");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING")
+                        .HasColumnName("status");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<decimal>("WaiverAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("waiver_amount");
+
+                    b.Property<string>("WaiverReason")
+                        .HasColumnType("text")
+                        .HasColumnName("waiver_reason");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_penalty_waivers");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_deleted_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_tenant_id_org_id_bus_id_loc_id_client_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_tenant_id_org_id_bus_id_loc_id_loan_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "PenaltyId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_tenant_id_org_id_bus_id_loc_id_penalty_id");
+
+                    b.ToTable("ld_penalty_waivers", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_penalty_waivers_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+
+                            t.HasCheckConstraint("ck_ld_penalty_waivers_status", "status IN ('PENDING','APPROVED','REJECTED')");
                         });
                 });
 
@@ -2611,6 +4207,12 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("payment_method");
 
+                    b.Property<decimal>("PenaltyPaid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("penalty_paid");
+
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text")
                         .HasColumnName("updated_by");
@@ -2647,6 +4249,477 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                             t.HasCheckConstraint("ck_ld_repayments_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 
                             t.HasCheckConstraint("ck_ld_repayments_payment_method", "payment_method IN ('CASH','CHEQUE','MOMO','BANK_TRANSFER','OTHERS',NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.SavingsAccount", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_name");
+
+                    b.Property<string>("AccountNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("account_number");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("ClosedDate")
+                        .HasColumnType("text")
+                        .HasColumnName("closed_date");
+
+                    b.Property<string>("ClosureReason")
+                        .HasColumnType("text")
+                        .HasColumnName("closure_reason");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("CurrencyId")
+                        .HasColumnType("text")
+                        .HasColumnName("currency_id");
+
+                    b.Property<decimal>("CurrentBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("current_balance");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("InterestPeriod")
+                        .HasColumnType("text")
+                        .HasColumnName("interest_period");
+
+                    b.Property<decimal>("InterestRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("interest_rate");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LastTransactionDate")
+                        .HasColumnType("text")
+                        .HasColumnName("last_transaction_date");
+
+                    b.Property<string>("MaturityDate")
+                        .HasColumnType("text")
+                        .HasColumnName("maturity_date");
+
+                    b.Property<decimal>("MinimumBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("minimum_balance");
+
+                    b.Property<string>("OpenedDate")
+                        .HasColumnType("text")
+                        .HasColumnName("opened_date");
+
+                    b.Property<string>("PayoutMethod")
+                        .HasColumnType("text")
+                        .HasColumnName("payout_method");
+
+                    b.Property<string>("SavingsProductId")
+                        .HasColumnType("text")
+                        .HasColumnName("savings_product_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING")
+                        .HasColumnName("status");
+
+                    b.Property<decimal?>("TargetAmount")
+                        .HasColumnType("numeric(20,6)")
+                        .HasColumnName("target_amount");
+
+                    b.Property<decimal>("TotalDeposits")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("total_deposits");
+
+                    b.Property<decimal>("TotalInterestEarned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("total_interest_earned");
+
+                    b.Property<decimal>("TotalWithdrawals")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("total_withdrawals");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_savings_accounts");
+
+                    b.HasIndex("SavingsProductId")
+                        .HasDatabaseName("ix_ld_savings_accounts_savings_product_id");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_accounts_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_accounts_created_by_tenant_id");
+
+                    b.HasIndex("CurrencyId", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_accounts_currency_id_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_accounts_deleted_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_accounts_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_accounts_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_accounts_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "AccountNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ld_savings_accounts_tenant_id_org_id_bus_id_loc_id_account_");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasDatabaseName("ix_ld_savings_accounts_tenant_id_org_id_bus_id_loc_id_client_id");
+
+                    b.ToTable("ld_savings_accounts", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_savings_accounts_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+
+                            t.HasCheckConstraint("ck_ld_savings_accounts_interest_period", "interest_period IN ('DAILY','MONTHLY','QUARTERLY','ANNUALLY',NULL)");
+
+                            t.HasCheckConstraint("ck_ld_savings_accounts_status", "status IN ('PENDING','ACTIVE','DORMANT','FROZEN','CLOSED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.SavingsProduct", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DefaultInterestPeriod")
+                        .HasColumnType("text")
+                        .HasColumnName("default_interest_period");
+
+                    b.Property<decimal>("DefaultInterestRate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("default_interest_rate");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int>("DormancyDays")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(180)
+                        .HasColumnName("dormancy_days");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsSystem")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_system");
+
+                    b.Property<decimal>("MinimumBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("minimum_balance");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("product_name");
+
+                    b.Property<string>("ProductType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("REGULAR_SAVINGS")
+                        .HasColumnName("product_type");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ld_savings_products");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_ld_savings_products_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_products_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_products_deleted_by_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_products_updated_by_tenant_id");
+
+                    b.ToTable("ld_savings_products", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_savings_products_default_interest_period", "default_interest_period IN ('DAILY','MONTHLY','QUARTERLY','ANNUALLY',NULL)");
+
+                            t.HasCheckConstraint("ck_ld_savings_products_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
+
+                            t.HasCheckConstraint("ck_ld_savings_products_product_type", "product_type IN ('REGULAR_SAVINGS','FIXED_SAVINGS','TARGET_SAVINGS','DAILY_SAVINGS','GROUP_SAVINGS')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.SavingsTransaction", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("LocId")
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<decimal>("Amount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("amount");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("balance_after");
+
+                    b.Property<decimal>("BalanceBefore")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(20,6)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("balance_before");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool>("IsEarlyWithdrawal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_early_withdrawal");
+
+                    b.Property<string>("NextContributionDate")
+                        .HasColumnType("text")
+                        .HasColumnName("next_contribution_date");
+
+                    b.Property<DateTimeOffset?>("OccurredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasColumnType("text")
+                        .HasColumnName("payment_method");
+
+                    b.Property<string>("PeriodFrom")
+                        .HasColumnType("text")
+                        .HasColumnName("period_from");
+
+                    b.Property<string>("PeriodTo")
+                        .HasColumnType("text")
+                        .HasColumnName("period_to");
+
+                    b.Property<string>("Reference")
+                        .HasColumnType("text")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("SavingsId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("savings_id");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DEPOSIT")
+                        .HasColumnName("transaction_type");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+                        .HasName("pk_ld_savings_transactions");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_transactions_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_transactions_created_by_tenant_id");
+
+                    b.HasIndex("LocId", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_transactions_loc_id_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_ld_savings_transactions_org_id_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasDatabaseName("ix_ld_savings_transactions_tenant_id_org_id_bus_id_loc_id_clie");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "SavingsId")
+                        .HasDatabaseName("ix_ld_savings_transactions_tenant_id_org_id_bus_id_loc_id_savi");
+
+                    b.ToTable("ld_savings_transactions", "loandrift", t =>
+                        {
+                            t.HasCheckConstraint("ck_ld_savings_transactions_payment_method", "payment_method IN ('CASH','MOMO','CHEQUE','BANK_TRANSFER','OTHERS',NULL)");
+
+                            t.HasCheckConstraint("ck_ld_savings_transactions_transaction_type", "transaction_type IN ('DEPOSIT','WITHDRAWAL','INTEREST')");
                         });
                 });
 
@@ -3010,6 +5083,143 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasConstraintName("fk_ld_client_financial_info_loan_details_tenant_id_org_id_bus_");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.CreditScore", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_scores_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_scores_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_credit_scores_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_scores_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_scores_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_scores_ld_clients_tenant_id_org_id_bus_id_loc_id_");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_scores_loan_details_tenant_id_org_id_bus_id_loc_i");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.CreditScoreSettings", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_credit_score_settings_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_credit_score_settings_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_credit_score_settings_cp_users_updated_by_tenant_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.CreditScoreSettingsHistory", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_history_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_history_cp_businesses_bus_id_tenan");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ChangedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_credit_score_settings_history_cp_users_changed_by_tenant");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_history_cp_locations_loc_id_tenant");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_credit_score_settings_history_cp_organizations_org_id_te");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Guarantor", b =>
                 {
                     b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
@@ -3099,6 +5309,153 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasForeignKey("UpdatedBy", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_ld_interest_types_cp_users_updated_by_tenant_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Investment", b =>
+                {
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.InvestmentProduct", null)
+                        .WithMany()
+                        .HasForeignKey("InvestmentProductId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_ld_investments_investment_products_investment_product_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investments_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investments_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_investments_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Currency", null)
+                        .WithMany()
+                        .HasForeignKey("CurrencyId", "TenantId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_ld_investments_cp_currencies_currency_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_investments_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investments_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investments_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_investments_cp_users_updated_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investments_ld_clients_tenant_id_org_id_bus_id_loc_id_cl");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.InvestmentProduct", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investment_products_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_investment_products_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_investment_products_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_investment_products_cp_users_updated_by_tenant_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.InvestmentTransaction", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investment_transactions_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investment_transactions_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_investment_transactions_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investment_transactions_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investment_transactions_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investment_transactions_ld_clients_tenant_id_org_id_bus_");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Investment", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "InvestmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_investment_transactions_ld_investments_tenant_id_org_id_");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.LoanApproval", b =>
@@ -3466,6 +5823,225 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasConstraintName("fk_ld_loan_types_cp_users_updated_by_tenant_id");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Penalty", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalties_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalties_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalties_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalties_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalties_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalties_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalties_cp_users_updated_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalties_ld_clients_tenant_id_org_id_bus_id_loc_id_clie");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalties_ld_loan_details_tenant_id_org_id_bus_id_loc_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.PenaltySettings", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalty_settings_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalty_settings_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalty_settings_cp_users_updated_by_tenant_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.PenaltySettingsHistory", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_history_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_history_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ChangedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalty_settings_history_cp_users_changed_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_history_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_settings_history_cp_organizations_org_id_tenant_");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.PenaltyWaiver", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_waivers_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_waivers_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalty_waivers_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalty_waivers_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_waivers_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_waivers_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_penalty_waivers_cp_users_updated_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_waivers_ld_clients_tenant_id_org_id_bus_id_loc_i");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_waivers_ld_loan_details_tenant_id_org_id_bus_id_");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Penalty", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "PenaltyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_penalty_waivers_ld_penalties_tenant_id_org_id_bus_id_loc");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Repayment", b =>
                 {
                     b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
@@ -3527,6 +6103,153 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_ld_repayments_ld_loan_details_tenant_id_org_id_bus_id_loc_i");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.SavingsAccount", b =>
+                {
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.SavingsProduct", null)
+                        .WithMany()
+                        .HasForeignKey("SavingsProductId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_ld_savings_accounts_savings_products_savings_product_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_accounts_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_accounts_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_savings_accounts_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Currency", null)
+                        .WithMany()
+                        .HasForeignKey("CurrencyId", "TenantId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_ld_savings_accounts_cp_currencies_currency_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_savings_accounts_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_accounts_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_accounts_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_savings_accounts_cp_users_updated_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_accounts_ld_clients_tenant_id_org_id_bus_id_loc_");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.SavingsProduct", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_products_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_savings_products_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_savings_products_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_savings_products_cp_users_updated_by_tenant_id");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.SavingsTransaction", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_transactions_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_transactions_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ld_savings_transactions_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_transactions_cp_locations_loc_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_transactions_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_transactions_ld_clients_tenant_id_org_id_bus_id_");
+
+                    b.HasOne("Trovesuite.Database.LoanDrift.Entities.SavingsAccount", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "SavingsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ld_savings_transactions_ld_savings_accounts_tenant_id_org_i");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.Sector", b =>

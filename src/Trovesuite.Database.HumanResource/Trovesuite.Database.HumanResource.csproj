@@ -9,4 +9,8 @@
     <ProjectReference Include="..\Trovesuite.Database.CorePlatform\Trovesuite.Database.CorePlatform.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Sql\**\*.sql" />
+  </ItemGroup>
+
 </Project>

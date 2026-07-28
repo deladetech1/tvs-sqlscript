@@ -113,7 +113,9 @@ public sealed class MsgTaskConfiguration : IEntityTypeConfiguration<MsgTask>
         b.HasInCheck("status", "ACTIVE", "COMPLETED", "CANCELLED");
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusFks();
-        b.WithCustomerFk(DeleteBehavior.SetNull);
+        // Restrict (not SetNull): the customer FK spans TenantId/OrgId/BusId,
+        // which are part of the task PK and NOT NULL — SetNull would fail.
+        b.WithCustomerFk(DeleteBehavior.Restrict);
         b.WithCompositeFk<MsgTask, MsgWorkflowTemplate>("TemplateId", DeleteBehavior.Restrict);
         b.WithCompositeFk<MsgTask, Location>("OriginLocationId", DeleteBehavior.Restrict);
         b.WithCrossSchemaAuditUserFks();
@@ -222,7 +224,7 @@ public sealed class MsgTaskNotificationConfiguration : IEntityTypeConfiguration<
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.Status).HasDefaultValue("PENDING");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.HasInCheck("kind", "ASSIGNED", "READY", "DONE_NEEDS_APPROVAL", "REMINDER");
+        b.HasInCheck("kind", "ASSIGNED", "READY", "DONE_NEEDS_APPROVAL", "REMINDER", "MENTIONED");
         b.HasInCheck("status", "PENDING", "SENT", "FAILED");
         b.HasIndex(x => new { x.Status, x.PickedUpAt });
         b.WithTenantOrgBusFks();
@@ -238,5 +240,95 @@ public sealed class MsgTaskNotificationConfiguration : IEntityTypeConfiguration<
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+// =====================================================
+// COMMENTS / ATTACHMENTS / MENTIONS
+// =====================================================
+
+public sealed class MsgTaskCommentConfiguration : IEntityTypeConfiguration<MsgTaskComment>
+{
+    public void Configure(EntityTypeBuilder<MsgTaskComment> b)
+    {
+        b.ToTable("msg_task_comments");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Body).HasColumnType("text");
+        b.Property(x => x.EditedAt).HasColumnType("timestamptz");
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.StepId });
+        b.WithTenantOrgBusFks();
+        b.HasOne<MsgTaskStep>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<MsgTask>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.WithCrossSchemaCreateUpdateUserFks();
+    }
+}
+
+public sealed class MsgTaskCommentMentionConfiguration : IEntityTypeConfiguration<MsgTaskCommentMention>
+{
+    public void Configure(EntityTypeBuilder<MsgTaskCommentMention> b)
+    {
+        b.ToTable("msg_task_comment_mentions");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.CommentId, x.MentionedUserId }).IsUnique();
+        b.WithTenantOrgBusFks();
+        b.HasOne<MsgTaskComment>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "CommentId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<MsgTaskStep>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<MsgTask>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<User>().WithMany().HasForeignKey("MentionedUserId", "TenantId")
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class MsgTaskAttachmentConfiguration : IEntityTypeConfiguration<MsgTaskAttachment>
+{
+    public void Configure(EntityTypeBuilder<MsgTaskAttachment> b)
+    {
+        b.ToTable("msg_task_attachments");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.StepId });
+        b.HasDeleteStatusCheck();
+        b.WithTenantOrgBusFks();
+        b.HasOne<MsgTaskStep>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "StepId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<MsgTask>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<MsgTaskComment>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "CommentId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<MsgDocumentPath>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "DocumentId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        b.WithCrossSchemaAuditUserFks();
     }
 }

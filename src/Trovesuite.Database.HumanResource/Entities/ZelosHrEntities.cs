@@ -79,7 +79,7 @@ public class ZhrCompanyProfile
     public Guid Id { get; set; }
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
-    public string LegalName { get; set; } = default!;
+    public string? LegalName { get; set; }
     public string? TradingName { get; set; }
     public string? Industry { get; set; }
     public string? CompanySize { get; set; }
@@ -108,6 +108,39 @@ public class ZhrCompanyOffice
     public string? Phone { get; set; }
     /// <summary>Client-managed flag — uniqueness across an org's offices is not enforced.</summary>
     public bool IsHeadOffice { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>Employee portal hostname slug — one row per org; globally unique subdomain.</summary>
+public class ZhrEmployeePortalSubdomain
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string LocId { get; set; } = default!;
+    /// <summary>Lowercase DNS label (e.g. btl) — maps to btl.zeloshr.com.</summary>
+    public string Subdomain { get; set; } = default!;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+public class ZhrEmployeeIdFormat
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Prefix { get; set; } = default!;
+    public int DigitCount { get; set; }
+    public int StartingNumber { get; set; }
+    /// <summary>hyphen · none · underscore · slash</summary>
+    public string Separator { get; set; } = default!;
+    public bool AutoGenerate { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }
@@ -205,6 +238,12 @@ public class ZhrEmployee
     public string? PaymentMethod { get; set; }
     public string? BankAccountNumber { get; set; }
     public string? MobileMoneyNumber { get; set; }
+    public decimal? NetSalary { get; set; }
+
+    public string? MaritalStatus { get; set; }
+    public string? NextOfKinName { get; set; }
+    public string? NextOfKinPhone { get; set; }
+    public string? RelationshipToNextOfKin { get; set; }
 
     public bool IsDeleted { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
@@ -293,6 +332,122 @@ public class ZhrEmployeeIdentification
     public string IdNumber { get; set; } = default!;
     public DateOnly? IdIssueDate { get; set; }
     public DateOnly? IdExpiryDate { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeEmergencyContact
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string EmergencyContactName { get; set; } = default!;
+    public string? EmergencyContactPhone { get; set; }
+    public string? Relationship { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeePaymentMethod
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string PaymentMode { get; set; } = default!;
+    public string? BankName { get; set; }
+    public string? AccountName { get; set; }
+    public string? AccountNumber { get; set; }
+    public string? BranchName { get; set; }
+    public bool IsPrimary { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeMedicalProfile
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string? BloodGroup { get; set; }
+    public bool HasMedicalCondition { get; set; }
+    public bool TakesRegularMedication { get; set; }
+    public string? DisabilityStatus { get; set; }
+    public bool RequiresAccommodation { get; set; }
+    public string? AccommodationDetails { get; set; }
+    public string? EmergencyMedicalNotes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeMedicalCondition
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Condition { get; set; } = default!;
+    public string? Severity { get; set; }
+    public string? Notes { get; set; }
+    public DateOnly? DiagnosedDate { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeAllergy
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Allergen { get; set; } = default!;
+    public string? Reaction { get; set; }
+    public string? Severity { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeMedication
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public string? Dosage { get; set; }
+    public string? Frequency { get; set; }
+    public string? Notes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeSkill
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public string? Proficiency { get; set; }
+    public int? YearsOfExperience { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeExperience
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Company { get; set; } = default!;
+    public string? JobTitle { get; set; }
+    public string? EmploymentType { get; set; }
+    public string? Location { get; set; }
+    public DateOnly? StartDate { get; set; }
+    public DateOnly? EndDate { get; set; }
+    public bool IsCurrent { get; set; }
+    public string? Description { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrEmployeeReferral
+{
+    public Guid Id { get; set; }
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public string? JobTitle { get; set; }
+    public string? Company { get; set; }
+    public string? Relationship { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
@@ -495,6 +650,27 @@ public class ZhrDisciplinaryCase
     public string Status { get; set; } = default!;
     public DateOnly OpenedAt { get; set; }
     public string? Description { get; set; }
+}
+
+public class ZhrEmployeeChangeRequest
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    /// <summary>Dot path matching employee update JSON (e.g. identity.full_name, education).</summary>
+    public string FieldPath { get; set; } = default!;
+    public string? OldValueJson { get; set; }
+    public string NewValueJson { get; set; } = default!;
+    /// <summary>pending | approved | rejected | superseded</summary>
+    public string Status { get; set; } = default!;
+    public string RequestedBy { get; set; } = default!;
+    public string? ReviewedBy { get; set; }
+    public string? ReviewNote { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrEmployeeDocument

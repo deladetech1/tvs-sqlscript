@@ -77,6 +77,9 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<MsgTaskStepTarget> TaskStepTargets => Set<MsgTaskStepTarget>();
     public DbSet<MsgTaskNotificationSetting> TaskNotificationSettings => Set<MsgTaskNotificationSetting>();
     public DbSet<MsgTaskNotification> TaskNotifications => Set<MsgTaskNotification>();
+    public DbSet<MsgTaskComment> TaskComments => Set<MsgTaskComment>();
+    public DbSet<MsgTaskCommentMention> TaskCommentMentions => Set<MsgTaskCommentMention>();
+    public DbSet<MsgTaskAttachment> TaskAttachments => Set<MsgTaskAttachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -338,6 +338,8 @@ public class Sale
     public decimal PaidAmount { get; set; }
     public decimal BalanceAmount { get; set; }
     public decimal GiftCardAmountUsed { get; set; }
+    public decimal LoyaltyPointsUsed { get; set; }
+    public decimal LoyaltyAmountUsed { get; set; }
     public string? PromoCodeId { get; set; }
     public decimal PromoDiscountAmount { get; set; }
     public string? AffiliateId { get; set; }

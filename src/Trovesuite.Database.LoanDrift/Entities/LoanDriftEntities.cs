@@ -75,6 +75,9 @@ public class LoanType : TenantScopedEntity
     public string? BusId { get; set; }
     public string TypeName { get; set; } = default!;
     public bool IsSystem { get; set; } = true;
+
+    /// <summary>NONE | OPTIONAL | COMPULSORY — how penalties apply to loans of this product.</summary>
+    public string PenaltyMode { get; set; } = "NONE";
 }
 
 public class InterestType : TenantScopedEntity
@@ -108,6 +111,16 @@ public class LoanDetail : TenantScopedEntity
     public string? CurrencyId { get; set; }
 
     public DateTimeOffset? RegistrationDatetime { get; set; }
+
+    // ---- Penalty snapshot (copied from product + settings at capture) ----
+    /// <summary>NONE | OPTIONAL | COMPULSORY — snapshot of the product's penalty mode at capture.</summary>
+    public string PenaltyMode { get; set; } = "NONE";
+    /// <summary>Officer's decision for OPTIONAL loans; forced true for COMPULSORY, false for NONE.</summary>
+    public bool PenaltyEnabled { get; set; }
+    /// <summary>Penalty settings version in force at capture — settings changes are not retroactive.</summary>
+    public string? PenaltySettingsVersionId { get; set; }
+    /// <summary>Pre-computed penalty amounts (daily/missed/default) snapshotted at capture.</summary>
+    public JsonDocument? PenaltyTerms { get; set; }
 }
 
 public class LoanCalculation
@@ -355,6 +368,8 @@ public class Repayment
     public decimal AmountGiven { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal Balance { get; set; }
+    /// <summary>Portion of this repayment allocated to outstanding penalties (paid before interest/principal).</summary>
+    public decimal PenaltyPaid { get; set; }
 
     public string DeleteStatus { get; set; } = "NOT_DELETED";
     public string? Description { get; set; }

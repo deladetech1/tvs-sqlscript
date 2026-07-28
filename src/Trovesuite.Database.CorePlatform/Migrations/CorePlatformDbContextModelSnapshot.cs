@@ -1752,7 +1752,7 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         {
                             t.HasCheckConstraint("ck_cp_expenses_history_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 
-                            t.HasCheckConstraint("ck_cp_expenses_history_source", "source IN ('ALLOCATED','CONTIGENCY','FIXED','REIMBURSABLE')");
+                            t.HasCheckConstraint("ck_cp_expenses_history_source", "source IN ('ALLOCATED','CONTIGENCY','FIXED','REIMBURSABLE','SALARY','OTHERS')");
                         });
                 });
 

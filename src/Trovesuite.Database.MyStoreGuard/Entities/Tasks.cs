@@ -177,7 +177,7 @@ public class MsgTaskNotification
     public string TaskId { get; set; } = default!;
     public string? StepId { get; set; }
     public string RecipientUserId { get; set; } = default!;
-    public string Kind { get; set; } = default!;        // ASSIGNED | READY | DONE_NEEDS_APPROVAL | REMINDER
+    public string Kind { get; set; } = default!;        // ASSIGNED | READY | DONE_NEEDS_APPROVAL | REMINDER | MENTIONED
     public string Status { get; set; } = "PENDING";     // PENDING | SENT | FAILED
     public DateTimeOffset? PickedUpAt { get; set; }
     public DateTimeOffset? SentAt { get; set; }
@@ -185,4 +185,60 @@ public class MsgTaskNotification
     public string? FailureReason { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }
     public string? CreatedBy { get; set; }
+}
+
+// =====================================================
+// COMMENTS / ATTACHMENTS / MENTIONS (collaboration)
+// =====================================================
+
+public class MsgTaskComment
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string StepId { get; set; } = default!;   // the step (jira-style ticket) the comment lives on
+    public string TaskId { get; set; } = default!;    // denormalized parent task, for scoping/notifications
+    public string Body { get; set; } = default!;
+    public DateTimeOffset? EditedAt { get; set; }       // set when the author edits the comment
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    // NOTE: comments are hard-deleted (no DeleteStatus column).
+}
+
+public class MsgTaskCommentMention
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string CommentId { get; set; } = default!;
+    public string StepId { get; set; } = default!;
+    public string TaskId { get; set; } = default!;
+    public string MentionedUserId { get; set; } = default!;   // cp_users.id (cross-schema)
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+}
+
+public class MsgTaskAttachment
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string StepId { get; set; } = default!;    // the step the file is attached to
+    public string TaskId { get; set; } = default!;    // denormalized parent task, for scoping
+    public string? CommentId { get; set; }            // null => step-level attachment; set => comment-level
+    public string DocumentId { get; set; } = default!; // msg_document_paths.id
+    public bool IsActive { get; set; } = true;
+    public string DeleteStatus { get; set; } = "NOT_DELETED";
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    public string? DeletedBy { get; set; }
 }

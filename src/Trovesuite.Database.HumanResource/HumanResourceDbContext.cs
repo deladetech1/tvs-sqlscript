@@ -19,6 +19,8 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrCompanyProfile> ZhrCompanyProfiles => Set<ZhrCompanyProfile>();
     public DbSet<ZhrCompanyOffice> ZhrCompanyOffices => Set<ZhrCompanyOffice>();
     public DbSet<ZhrCompanyLocalization> ZhrCompanyLocalizations => Set<ZhrCompanyLocalization>();
+    public DbSet<ZhrEmployeeIdFormat> ZhrEmployeeIdFormats => Set<ZhrEmployeeIdFormat>();
+    public DbSet<ZhrEmployeePortalSubdomain> ZhrEmployeePortalSubdomains => Set<ZhrEmployeePortalSubdomain>();
     public DbSet<ZhrEmployee> ZhrEmployees => Set<ZhrEmployee>();
     public DbSet<ZhrAuditLog> ZhrAuditLogs => Set<ZhrAuditLog>();
     public DbSet<ZhrLifecycleEvent> ZhrLifecycleEvents => Set<ZhrLifecycleEvent>();
@@ -37,6 +39,7 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrEmployeeIdentification> ZhrEmployeeIdentifications => Set<ZhrEmployeeIdentification>();
     public DbSet<ZhrCustomFieldDefinition> ZhrCustomFieldDefinitions => Set<ZhrCustomFieldDefinition>();
     public DbSet<ZhrCustomFieldAuditLog> ZhrCustomFieldAuditLogs => Set<ZhrCustomFieldAuditLog>();
+    public DbSet<ZhrEmployeeChangeRequest> ZhrEmployeeChangeRequests => Set<ZhrEmployeeChangeRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

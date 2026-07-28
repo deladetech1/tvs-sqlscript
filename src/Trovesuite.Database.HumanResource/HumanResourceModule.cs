@@ -31,6 +31,10 @@ public sealed class HumanResourceModule : IModule
     {
         var assembly = typeof(HumanResourceModule).Assembly;
 
+        // RBAC reference data (resource types -> permissions -> roles -> core-platform
+        // navigation bindings) is embedded SQL under Sql/Seeds, same pattern as
+        // loandrift/mystoreguard. Permission->role assignment is done by the
+        // core_platform auto-assign triggers (by resource-type hierarchy).
         foreach (var (_, body) in EmbeddedSql.LoadAllOrdered(assembly, "Seeds"))
             await context.Database.ExecuteSqlRawAsync(body, ct);
     }
