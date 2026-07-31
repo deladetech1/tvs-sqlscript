@@ -78,6 +78,10 @@ public class LoanType : TenantScopedEntity
 
     /// <summary>NONE | OPTIONAL | COMPULSORY — how penalties apply to loans of this product.</summary>
     public string PenaltyMode { get; set; } = "NONE";
+
+    /// <summary>Penalty rate (%) charged on the outstanding defaulted amount each penalty
+    /// period for this product. Null falls back to the global penalty settings rate.</summary>
+    public decimal? PenaltyPercentage { get; set; }
 }
 
 public class InterestType : TenantScopedEntity
@@ -96,6 +100,10 @@ public class LoanDetail : TenantScopedEntity
     public string OrgId { get; set; } = default!;
     public string BusId { get; set; } = default!;
     public string LocId { get; set; } = default!;
+
+    /// <summary>System-generated, immutable, globally unique loan reference (LN-YYYYMMDD-NNNNNN).
+    /// Assigned by a column default so every loan row has one; a trigger blocks changes.</summary>
+    public string LoanReference { get; set; } = default!;
 
     public string? LoanTypeId { get; set; }
     public string? SectorId { get; set; }
@@ -121,6 +129,9 @@ public class LoanDetail : TenantScopedEntity
     public string? PenaltySettingsVersionId { get; set; }
     /// <summary>Pre-computed penalty amounts (daily/missed/default) snapshotted at capture.</summary>
     public JsonDocument? PenaltyTerms { get; set; }
+    /// <summary>Penalty rate (%) applied to the outstanding defaulted amount each penalty
+    /// period — snapshot of the product's rate (or the payload override) at capture.</summary>
+    public decimal? PenaltyPercentage { get; set; }
 }
 
 public class LoanCalculation
