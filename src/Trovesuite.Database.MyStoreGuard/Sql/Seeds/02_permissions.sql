@@ -133,6 +133,10 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-store-sales-cancel', 'Mystoreguard Store Sales Cancel', 'rt-store-sales', 'Can cancel sales', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-store-sales-delete', 'Mystoreguard Store Sales Delete', 'rt-store-sales', 'Can delete sales', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
+-- Backdate: lives under rt-store-sales-backdate, not rt-store-sales, so the auto-assign
+-- triggers only reach Owner, Admin, the MSG app admins and role-msg-store-sales-backdate.
+('permission-msg-store-sales-backdate', 'Mystoreguard Store Sales Backdate', 'rt-store-sales-backdate', 'Can set a past occurrence date and time (occurred_at) when creating a sale', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
 
 -- REPORTS
 -- Unified Report Permissions (replacing all report-specific permissions)

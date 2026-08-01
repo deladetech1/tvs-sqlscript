@@ -182,6 +182,14 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-user-get-locations'),
 
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-app-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-organization-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-user-get-locations'),
+
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-organization-get'),
@@ -285,6 +293,24 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-sales-create'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-sales-get'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-products-get')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Link Sales Backdate role to its single capability permission.
+-- The role-insert trigger already does this (rt-store-sales-backdate has exactly one
+-- permission), but state it explicitly so the grant survives if triggers are ever disabled.
+-- Deliberately NOT granted store-sales-create/get: this role is additive to a sales role.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-msg-store-sales-backdate')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Backfill the backdate permission for the roles that could already backdate before it existed
+-- (the role-based allow-list in the backend: Owner, Admin, and the two MSG admin roles), so the
+-- switch to a permission check is not a regression on databases seeded before this change.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
+SELECT r.tenant_id, r.id, 'permission-msg-store-sales-backdate'
+FROM core_platform.cp_roles r
+WHERE r.id IN ('role-owner', 'role-admin', 'role-msg-admin', 'role-subscribed-app-msg-admin')
+   OR r.role_name IN ('Owner', 'Admin')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Store Admin role (rt-shop) to all store-domain permissions.

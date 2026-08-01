@@ -41,6 +41,11 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 -- Estimator Admin Roles: the auto-assign trigger grants all matching permission-msg-estimate(-templates)-* on insert
 ('role-msg-estimate-template-admin', 'system-tenant-id', 'Mystoreguard Estimate Template Admin', 'Administrator for estimate template (per-domain blueprint) management', 'rt-estimate-template', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-estimate-admin', 'system-tenant-id', 'Mystoreguard Estimate Admin', 'Administrator for estimate management', 'rt-estimate', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Sales Backdate Role (resource type rt-store-sales-backdate): the auto-assign trigger grants
+-- the single permission-msg-store-sales-backdate on insert. This is a capability role meant to be
+-- assigned ALONGSIDE a sales role (permissions are additive across a user's roles) — on its own it
+-- grants no ability to create or view sales.
+('role-msg-store-sales-backdate', 'system-tenant-id', 'Mystoreguard Sales Backdate', 'Can backdate a sale to a past date and time when creating it. Assign in addition to a sales role.', 'rt-store-sales-backdate', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- Stock Takes Admin Role (resource type rt-stock-takes): the auto-assign trigger grants all permission-msg-stock-takes-* on insert
 ('role-msg-stock-takes-admin', 'system-tenant-id', 'Mystoreguard Stock Takes Admin', 'Administrator for stock takes management (count, investigate, and resolve variances)', 'rt-stock-takes', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
