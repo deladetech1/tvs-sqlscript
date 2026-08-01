@@ -237,6 +237,7 @@ WITH scope AS (
            sub.app_id,
            sub.shared_subscription_id,
            sub.is_enterprise
+           ,(sub.delete_status = 'NOT_DELETED' AND sub.is_active) AS subscription_active
     FROM core_platform.cp_app_subscriptions sub
     JOIN core_platform.cp_businesses b
       ON b.id = sub.business_id AND b.tenant_id = sub.tenant_id
@@ -248,7 +249,8 @@ resolved AS (
            sc.app_id,
            d.default_days,
            d.max_days,
-           st.retention_days AS custom_days
+           st.retention_days AS custom_days,
+           sc.subscription_active
     FROM scope sc
     LEFT JOIN core_platform.cp_subscription_retention_defaults d
            ON d.subscription_id = CASE WHEN sc.is_enterprise
@@ -268,6 +270,7 @@ per_app AS (
            default_days,
            max_days,
            custom_days,
+           subscription_active,
            -- floor of 7 days protects against a misconfigured 0; the tier max caps upgrades
            GREATEST(
                7,
@@ -280,22 +283,37 @@ per_app AS (
 )
 SELECT tenant_id, org_id, bus_id, app_id,
        default_days, max_days, custom_days, effective_days,
-       (custom_days IS NOT NULL) AS is_custom
+       (custom_days IS NOT NULL) AS is_custom,
+       -- Cancelled/inactive subscriptions stay in this view so their old logs are
+       -- still purged, but the settings UI filters them out: you cannot configure
+       -- retention for an app you no longer subscribe to.
+       subscription_active
 FROM per_app
 UNION ALL
--- Platform-level logs: the most generous window the scope is entitled to, unless
--- explicitly overridden with app_id = 'app-coreplatform'.
-SELECT p.tenant_id, p.org_id, p.bus_id, 'app-coreplatform'::text,
-       max(p.default_days), max(p.max_days), max(cp.retention_days),
+-- Platform-level logs (users, roles, organizations, locations, policies) are ONE
+-- thing per tenant — there is no per-business Core Platform — so this emits a single
+-- row per tenant with a NULL org/bus, not one row per business. Its window is the
+-- most generous the tenant is entitled to across their apps, so a platform trail is
+-- never cut shorter than their best plan allows, unless explicitly overridden.
+-- Tenant-level settings are stored against the '*' sentinel because
+-- cp_activity_log_retention_settings requires org_id/bus_id to be NOT NULL.
+SELECT p.tenant_id, NULL::text, NULL::text, 'app-coreplatform'::text,
+       max(p.default_days),
+       -- max() ignores NULLs, so an uncapped (Enterprise) plan among the tenant's apps
+       -- would otherwise be reported as the next-highest cap. If ANY plan is uncapped,
+       -- the platform window is uncapped.
+       CASE WHEN bool_or(p.max_days IS NULL) THEN NULL ELSE max(p.max_days) END,
+       max(cp.retention_days),
        GREATEST(7, COALESCE(max(cp.retention_days), max(p.effective_days), 14)),
-       (max(cp.retention_days) IS NOT NULL)
+       (max(cp.retention_days) IS NOT NULL),
+       bool_or(p.subscription_active)
 FROM per_app p
 LEFT JOIN core_platform.cp_activity_log_retention_settings cp
        ON cp.tenant_id = p.tenant_id
-      AND cp.org_id    = p.org_id
-      AND cp.bus_id    = p.bus_id
       AND cp.app_id    = 'app-coreplatform'
-GROUP BY p.tenant_id, p.org_id, p.bus_id;
+      AND cp.org_id    = '*'
+      AND cp.bus_id    = '*'
+GROUP BY p.tenant_id;
 
 CREATE OR REPLACE VIEW core_platform.cp_activity_log_cutoffs AS
 SELECT tenant_id, org_id, bus_id, app_id, effective_days,
@@ -348,7 +366,11 @@ BEGIN
         -- Tables scoped to org+business join the cutoff exactly. A table without those
         -- columns takes the most generous cutoff for the tenant (MIN, since a longer
         -- retention means an EARLIER cutoff) so it can never over-delete.
-        IF r.has_org_id AND r.has_bus_id THEN
+        -- Core Platform resolves per tenant (one window, no per-business split), so its
+        -- tables take the tenant-grouped cutoff even though they carry org_id/bus_id.
+        -- Without this the join on a NULL org_id would match nothing and platform logs
+        -- would silently never be purged.
+        IF r.has_org_id AND r.has_bus_id AND r.app_id <> 'app-coreplatform' THEN
             v_cutoffs := format(
                 'SELECT tenant_id, org_id, bus_id, cutoff_at FROM core_platform.cp_activity_log_cutoffs WHERE app_id = %L',
                 r.app_id);
