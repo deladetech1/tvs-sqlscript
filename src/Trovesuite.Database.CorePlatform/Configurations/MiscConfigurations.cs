@@ -149,6 +149,7 @@ public sealed class BillingLogConfiguration : IEntityTypeConfiguration<BillingLo
         b.Property(x => x.Rate).HasColumnType("numeric(20,6)").HasDefaultValue(0m);
         b.Property(x => x.PaidAmount).HasColumnType("numeric(20,6)").HasDefaultValue(0m);
         b.Property(x => x.IsPaid).HasDefaultValue(false);
+        b.Property(x => x.LineType).HasDefaultValue("SUBSCRIPTION");
         b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
         b.Property(x => x.IsActive).HasDefaultValue(true);
         b.Property(x => x.CreatedBy).HasDefaultValue("SYSTEM");
