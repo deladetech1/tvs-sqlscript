@@ -131,7 +131,19 @@ internal static class Program
                 if (stillPending.Count == 0) return;  // Nothing left — shouldn't happen but be safe.
 
                 var failingId = stillPending[0];
-                Info($"  Reconciling: '{failingId}' already applied outside EF — recording in history.");
+
+                // CAREFUL: "an object already exists" does NOT prove the whole migration
+                // was applied outside EF. EF runs a migration in ONE transaction, so a
+                // single clashing CreateTable rolls back every other operation in it —
+                // AddColumns included. Recording it here means EF will never retry, so
+                // those columns stay missing while history claims otherwise. That drift
+                // then surfaces far away, as a seed or view failing on a missing column.
+                // Reconciling is still the right default for legacy databases, but it
+                // must never be silent.
+                Warn($"  Reconciling: '{failingId}' hit an already-exists object and was rolled back; "
+                     + "recording it as applied. Any OTHER operations in that migration "
+                     + "(added columns, indexes) were NOT applied — verify the schema matches "
+                     + "the model, and add an idempotent reconcile if it does not.");
 
                 // Let EF generate the history SQL via its own IHistoryRepository so the
                 // table name, schema, columns, and naming convention (snake_case here)
@@ -492,5 +504,6 @@ internal static class Program
     }
     private static void Success(string msg) => Console.WriteLine($"✅ {msg}");
     private static void Info(string msg)    => Console.WriteLine($"ℹ️  {msg}");
+    private static void Warn(string msg)    => Console.WriteLine($"⚠️  {msg}");
     private static void Error(string msg)   => Console.Error.WriteLine($"❌ {msg}");
 }
