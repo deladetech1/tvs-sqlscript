@@ -1748,11 +1748,16 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("dotted_line_manager_id");
 
-                    b.Property<string>("EmployeeCode")
+                    b.Property<string>("EmployeeCodeCustom")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("employee_code_custom");
+
+                    b.Property<string>("EmployeeCodeSystem")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")
-                        .HasColumnName("employee_code");
+                        .HasColumnName("employee_code_system");
 
                     b.Property<DateOnly?>("EmploymentStartDate")
                         .HasColumnType("date")
@@ -2036,9 +2041,14 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.HasIndex("CurrencyId", "TenantId")
                         .HasDatabaseName("ix_zhr_employees_currency_id_tenant_id");
 
-                    b.HasIndex("TenantId", "EmployeeCode")
+                    b.HasIndex("TenantId", "EmployeeCodeCustom")
                         .IsUnique()
-                        .HasDatabaseName("ix_zhr_employees_tenant_id_employee_code");
+                        .HasDatabaseName("ix_zhr_employees_tenant_id_employee_code_custom")
+                        .HasFilter("employee_code_custom IS NOT NULL AND employee_code_custom <> ''");
+
+                    b.HasIndex("TenantId", "EmployeeCodeSystem")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_employees_tenant_id_employee_code_system");
 
                     b.HasIndex("TenantId", "GhanaCardNumber")
                         .IsUnique()
