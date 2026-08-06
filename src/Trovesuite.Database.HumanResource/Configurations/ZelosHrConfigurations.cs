@@ -222,7 +222,8 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.ToZelosHrTable("zhr_employees");
         b.HasKey(x => x.Id);
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
-        b.Property(x => x.EmployeeCode).HasMaxLength(32);
+        b.Property(x => x.EmployeeCodeSystem).HasMaxLength(32);
+        b.Property(x => x.EmployeeCodeCustom).HasMaxLength(32);
         b.Property(x => x.FullName).HasMaxLength(500);
         b.Property(x => x.UserId).HasMaxLength(128);
         b.Property(x => x.LinkedInUrl).HasColumnName("linked_in_url");
@@ -243,7 +244,10 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.HasOne<Currency>().WithMany()
             .HasForeignKey(x => new { x.CurrencyId, x.TenantId })
             .OnDelete(DeleteBehavior.Restrict);
-        b.HasIndex(x => new { x.TenantId, x.EmployeeCode }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.EmployeeCodeSystem }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.EmployeeCodeCustom })
+            .IsUnique()
+            .HasFilter("employee_code_custom IS NOT NULL AND employee_code_custom <> ''");
         b.HasIndex(x => new { x.TenantId, x.OrgId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmploymentStatus, x.DepartmentId, x.BranchId });
         b.HasIndex(x => new { x.TenantId, x.GhanaCardNumber })
