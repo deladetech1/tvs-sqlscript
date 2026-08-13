@@ -368,6 +368,25 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-delete')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
+-- Let every role that picks products read the product metadata used to filter them.
+-- The badge filter above each product picker (sales, invoices, purchase orders,
+-- product split, stock take, adding store/warehouse items) lists metadata from
+-- /product-metadata/list, which requires permission-msg-product-metadata-get. That
+-- permission lives under rt-product-metadata, so the auto-assign trigger only ever
+-- gives it to role-msg-product-metadata-admin — every other role got a 403 and the
+-- filter silently rendered empty, looking like a missing feature rather than a
+-- blocked one. Read-only access to what is effectively reference data.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-invoice-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-product-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-suppliers-admin', 'permission-msg-product-metadata-get')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
 -- =============================================
 -- CLEANUP: remove dead placeholder roles & resource types (creditors / depositors / returns)
 -- These features were never implemented (no controllers, routes, or feature permissions).
