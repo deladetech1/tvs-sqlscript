@@ -170,7 +170,8 @@ public class ZhrCompanyLocalization
 public class ZhrEmployee
 {
     public Guid Id { get; set; }
-    public string EmployeeCode { get; set; } = default!;
+    public string EmployeeCodeSystem { get; set; } = default!;
+    public string? EmployeeCodeCustom { get; set; }
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
 

@@ -101,6 +101,23 @@ public class BillingLog : TenantScopedEntity
     public string? SubscriptionId { get; set; }
     public string? Month { get; set; }
 
+    // What this line is charging for. A business-app can have more than one line in the
+    // same month — the subscription itself plus add-ons such as extended log retention —
+    // so the bill generator needs to tell them apart when deciding what it has already
+    // issued. app_id cannot carry that distinction: it is FK-constrained to cp_apps.
+    public string LineType { get; set; } = "SUBSCRIPTION";
+
+    // For RETENTION_ADDON lines: the window this line paid for. Kept so that lowering
+    // retention mid-month cannot delete logs the customer has already paid to keep —
+    // the purge honours the largest window paid for in the current month.
+    public int? RetentionDays { get; set; }
+
+    // When this line becomes collectable. NULL means "immediately", which is how every
+    // subscription line behaves. Add-ons raised mid-cycle sit on the bill with a due date
+    // of the subscription's next billing date, so the nightly charge sweep does not take
+    // the money early — the customer is charged for everything at their normal bill.
+    public DateTimeOffset? DueAt { get; set; }
+
     public bool IsPaid { get; set; }
     public decimal PaidAmount { get; set; }
     public string? PaidDate { get; set; }

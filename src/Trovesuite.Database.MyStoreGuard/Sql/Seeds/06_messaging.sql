@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS msg_messages
     body TEXT NOT NULL,
 
     -- Delivery channel
-    channel TEXT NOT NULL DEFAULT 'SMS' CHECK(channel IN ('SMS', 'EMAIL', 'WHATSAPP')),
+    channel TEXT NOT NULL DEFAULT 'SMS' CHECK(channel IN ('SMS', 'EMAIL')),
 
     -- Recipient targeting
     recipient_type TEXT NOT NULL CHECK(recipient_type IN ('SUPPLIER', 'CUSTOMER')),
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS msg_meetings
 
     -- Reminder notification (how many minutes before to send reminder)
     reminder_minutes INT DEFAULT 30,
-    reminder_channel TEXT DEFAULT 'SMS' CHECK(reminder_channel IN ('SMS', 'EMAIL', 'WHATSAPP')),
+    reminder_channel TEXT DEFAULT 'SMS' CHECK(reminder_channel IN ('SMS', 'EMAIL')),
 
     -- Status
     status TEXT NOT NULL DEFAULT 'SCHEDULED' CHECK(status IN

@@ -133,6 +133,10 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-store-sales-cancel', 'Mystoreguard Store Sales Cancel', 'rt-store-sales', 'Can cancel sales', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-store-sales-delete', 'Mystoreguard Store Sales Delete', 'rt-store-sales', 'Can delete sales', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
+-- Backdate: lives under rt-store-sales-backdate, not rt-store-sales, so the auto-assign
+-- triggers only reach Owner, Admin, the MSG app admins and role-msg-store-sales-backdate.
+('permission-msg-store-sales-backdate', 'Mystoreguard Store Sales Backdate', 'rt-store-sales-backdate', 'Can set a past occurrence date and time (occurred_at) when creating a sale', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
 
 -- REPORTS
 -- Unified Report Permissions (replacing all report-specific permissions)
@@ -184,6 +188,8 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-stock-takes-create', 'Mystoreguard Stock Takes Create', 'rt-stock-takes', 'Can create stock takes (count products) and complete/lock them', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-stock-takes-get', 'Mystoreguard Stock Takes Get', 'rt-stock-takes', 'Can view and list stock takes and their variance reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-stock-takes-resolve', 'Mystoreguard Stock Takes Resolve', 'rt-stock-takes', 'Can investigate and resolve stock take variances, including applying optional stock corrections', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-stock-takes-reverse', 'Mystoreguard Stock Takes Reverse', 'rt-stock-takes', 'Can reverse stock corrections applied when resolving a stock take variance, putting the stock back and reopening the line', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-stock-takes-delete', 'Mystoreguard Stock Takes Delete', 'rt-stock-takes', 'Can permanently delete a DRAFT stock take along with its counted lines and comments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Estimate template permissions (the per-domain blueprint)
 ('permission-msg-estimate-templates-create', 'Mystoreguard Estimate Templates Create', 'rt-estimate-template', 'Can create new estimate templates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

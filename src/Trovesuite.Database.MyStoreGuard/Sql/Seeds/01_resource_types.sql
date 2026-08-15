@@ -52,7 +52,11 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-store-returns', 'Store Returns', 'Store Returns management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-reports', 'Mystoreguard Reports', 'Centralized reporting and analytics module for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-estimate-template', 'Estimate Template', 'Estimate template (per-domain blueprint) management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-estimate', 'Estimate', 'Estimate management for Mystoreguard', 'rt-subscribed-app-msg')
+('rt-estimate', 'Estimate', 'Estimate management for Mystoreguard', 'rt-subscribed-app-msg'),
+-- Backdating sales is a standalone capability, deliberately NOT under rt-store-sales:
+-- the auto-assign triggers would otherwise hand it to every Store Sales role. Its own
+-- resource type keeps it grantable to one named person via role-msg-store-sales-backdate.
+('rt-store-sales-backdate', 'Store Sales Backdate', 'Permission to set a past occurrence date when creating a sale in Mystoreguard', 'rt-subscribed-app-msg')
 
 ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,

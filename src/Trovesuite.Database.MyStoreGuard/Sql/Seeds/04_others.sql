@@ -182,6 +182,14 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-user-get-locations'),
 
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-app-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-organization-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-get'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-user-get-locations'),
+
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-organization-get'),
@@ -287,6 +295,24 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-store-products-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
+-- Link Sales Backdate role to its single capability permission.
+-- The role-insert trigger already does this (rt-store-sales-backdate has exactly one
+-- permission), but state it explicitly so the grant survives if triggers are ever disabled.
+-- Deliberately NOT granted store-sales-create/get: this role is additive to a sales role.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-msg-store-sales-backdate')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Backfill the backdate permission for the roles that could already backdate before it existed
+-- (the role-based allow-list in the backend: Owner, Admin, and the two MSG admin roles), so the
+-- switch to a permission check is not a regression on databases seeded before this change.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
+SELECT r.tenant_id, r.id, 'permission-msg-store-sales-backdate'
+FROM core_platform.cp_roles r
+WHERE r.id IN ('role-owner', 'role-admin', 'role-msg-admin', 'role-subscribed-app-msg-admin')
+   OR r.role_name IN ('Owner', 'Admin')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
 -- Link Store Admin role (rt-shop) to all store-domain permissions.
 -- The auto-assign trigger cannot reach these: store permissions live under sibling
 -- resource types (rt-store-products, rt-store-transfers, etc.), not children of rt-shop,
@@ -314,7 +340,9 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-approve'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-create'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-get'),
-('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-resolve')
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-resolve'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-reverse'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-stock-takes-delete')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Warehouse Admin role (rt-warehouse) to all warehouse-domain permissions.
@@ -335,7 +363,28 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-warehouse-transfers-delete'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-create'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-get'),
-('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-resolve')
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-resolve'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-reverse'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-stock-takes-delete')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Let every role that picks products read the product metadata used to filter them.
+-- The badge filter above each product picker (sales, invoices, purchase orders,
+-- product split, stock take, adding store/warehouse items) lists metadata from
+-- /product-metadata/list, which requires permission-msg-product-metadata-get. That
+-- permission lives under rt-product-metadata, so the auto-assign trigger only ever
+-- gives it to role-msg-product-metadata-admin — every other role got a 403 and the
+-- filter silently rendered empty, looking like a missing feature rather than a
+-- blocked one. Read-only access to what is effectively reference data.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-invoice-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-product-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-suppliers-admin', 'permission-msg-product-metadata-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- =============================================

@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.LoanDrift;
@@ -12,9 +13,11 @@ using Trovesuite.Database.LoanDrift;
 namespace Trovesuite.Database.LoanDrift.Migrations
 {
     [DbContext(typeof(LoanDriftDbContext))]
-    partial class LoanDriftDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260731225418_AddLoanReferenceAndPenaltyPercentage")]
+    partial class AddLoanReferenceAndPenaltyPercentage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

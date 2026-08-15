@@ -18,7 +18,7 @@ public sealed class MsgMessageConfiguration : IEntityTypeConfiguration<MsgMessag
         b.Property(x => x.Channel).HasDefaultValue("SMS");
         b.Property(x => x.Status).HasDefaultValue("DRAFT");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
-        b.HasInCheck("channel", "SMS", "EMAIL", "WHATSAPP");
+        b.HasInCheck("channel", "SMS", "EMAIL");
         b.HasInCheck("recipient_type", "SUPPLIER", "CUSTOMER");
         b.HasInCheck("status", "DRAFT", "SCHEDULED", "QUEUED", "SENDING", "SENT", "FAILED", "CANCELLED");
         b.WithTenantOrgBusFks();
@@ -61,7 +61,7 @@ public sealed class MeetingConfiguration : IEntityTypeConfiguration<Meeting>
         b.Property(x => x.Status).HasDefaultValue("SCHEDULED");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
         b.HasInCheck("participant_type", "SUPPLIER", "CUSTOMER");
-        b.HasInCheck("reminder_channel", "SMS", "EMAIL", "WHATSAPP");
+        b.HasInCheck("reminder_channel", "SMS", "EMAIL");
         b.HasInCheck("status", "SCHEDULED", "REMINDER_SENT", "IN_PROGRESS", "COMPLETED", "CANCELLED");
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
