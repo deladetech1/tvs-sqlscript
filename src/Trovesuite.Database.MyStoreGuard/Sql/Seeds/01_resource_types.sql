@@ -56,7 +56,10 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 -- Backdating sales is a standalone capability, deliberately NOT under rt-store-sales:
 -- the auto-assign triggers would otherwise hand it to every Store Sales role. Its own
 -- resource type keeps it grantable to one named person via role-msg-store-sales-backdate.
-('rt-store-sales-backdate', 'Store Sales Backdate', 'Permission to set a past occurrence date when creating a sale in Mystoreguard', 'rt-subscribed-app-msg')
+('rt-store-sales-backdate', 'Store Sales Backdate', 'Permission to set a past occurrence date when creating a sale in Mystoreguard', 'rt-subscribed-app-msg'),
+-- Same reasoning for receiving stock against a past date: kept out of rt-purchase-orders
+-- so the auto-assign triggers do not hand it to everyone who can receive a delivery.
+('rt-purchase-orders-backdate', 'Purchase Orders Backdate', 'Permission to date received stock to the day it actually arrived in Mystoreguard', 'rt-subscribed-app-msg')
 
 ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,

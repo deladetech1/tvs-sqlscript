@@ -46,6 +46,10 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 -- assigned ALONGSIDE a sales role (permissions are additive across a user's roles) — on its own it
 -- grants no ability to create or view sales.
 ('role-msg-store-sales-backdate', 'system-tenant-id', 'Mystoreguard Sales Backdate', 'Can backdate a sale to a past date and time when creating it. Assign in addition to a sales role.', 'rt-store-sales-backdate', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Purchase Backdate Role (resource type rt-purchase-orders-backdate): same shape as the sales
+-- one. Additive to a purchasing role — on its own it grants no ability to raise or receive an
+-- order, only to have the Received Date count for the stock ledger rather than the entry time.
+('role-msg-purchase-orders-backdate', 'system-tenant-id', 'Mystoreguard Purchase Backdate', 'Can date received stock to the day it arrived rather than the day it was keyed in. Assign in addition to a purchase orders role.', 'rt-purchase-orders-backdate', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- Stock Takes Admin Role (resource type rt-stock-takes): the auto-assign trigger grants all permission-msg-stock-takes-* on insert
 ('role-msg-stock-takes-admin', 'system-tenant-id', 'Mystoreguard Stock Takes Admin', 'Administrator for stock takes management (count, investigate, and resolve variances)', 'rt-stock-takes', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 

@@ -190,6 +190,14 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-user-get-locations'),
 
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-app-get'),
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-get'),
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-organization-get'),
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-app-get'),
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-user-get-locations'),
+
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-organization-get'),
@@ -308,6 +316,21 @@ ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 -- switch to a permission check is not a regression on databases seeded before this change.
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
 SELECT r.tenant_id, r.id, 'permission-msg-store-sales-backdate'
+FROM core_platform.cp_roles r
+WHERE r.id IN ('role-owner', 'role-admin', 'role-msg-admin', 'role-subscribed-app-msg-admin')
+   OR r.role_name IN ('Owner', 'Admin')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Link Purchase Backdate role to its single capability permission, and grant it to the
+-- same administrative roles. Unlike the sales one this is not a backfill of an existing
+-- ability — nothing could date received stock before — so it is simply the set of roles
+-- expected to hold every capability by default.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-msg-purchase-orders-backdate')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
+SELECT r.tenant_id, r.id, 'permission-msg-purchase-orders-backdate'
 FROM core_platform.cp_roles r
 WHERE r.id IN ('role-owner', 'role-admin', 'role-msg-admin', 'role-subscribed-app-msg-admin')
    OR r.role_name IN ('Owner', 'Admin')
