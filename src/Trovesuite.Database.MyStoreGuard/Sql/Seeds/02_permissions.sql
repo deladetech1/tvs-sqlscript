@@ -137,6 +137,11 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 -- triggers only reach Owner, Admin, the MSG app admins and role-msg-store-sales-backdate.
 ('permission-msg-store-sales-backdate', 'Mystoreguard Store Sales Backdate', 'rt-store-sales-backdate', 'Can set a past occurrence date and time (occurred_at) when creating a sale', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
+-- Backdate for receiving. Without it the Received Date still records on the receipt, but the
+-- batch and the stock movement are stamped with the moment of entry, so a delivery keyed in
+-- late lands in today's stock figures rather than the day it arrived.
+('permission-msg-purchase-orders-backdate', 'Mystoreguard Purchase Orders Backdate', 'rt-purchase-orders-backdate', 'Can date received stock to the Received Date, so a delivery entered late lands on the day it actually arrived', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
 
 -- REPORTS
 -- Unified Report Permissions (replacing all report-specific permissions)
