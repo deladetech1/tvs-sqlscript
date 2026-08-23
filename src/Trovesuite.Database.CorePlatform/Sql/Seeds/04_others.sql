@@ -79,8 +79,12 @@ ON CONFLICT (id) DO UPDATE SET
     is_active   = EXCLUDED.is_active;
 
 -- INSERT INTO APP TIER CONFIGS (caps + pricing per (app, tier)) --
+-- max_login_users is a per-(business, app) SEAT cap, separate from the tenant-wide
+-- account cap in cp_subscription_platform_limits. Keep MyStoreGuard BASIC at 5 to
+-- match that plan's 5 users: a lower number here means an account a tenant is
+-- entitled to create simply cannot sign in to the app, which reads as a bug.
 INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_login_users, price, rate, cdate, ctime, cdatetime) VALUES
-('tier-cfg-msg-basic',      'app-mystoreguard', 'shared-subscription-basic',      4,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-msg-basic',      'app-mystoreguard', 'shared-subscription-basic',      5,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-msg-advance',    'app-mystoreguard', 'shared-subscription-advance',    8,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-msg-premium',    'app-mystoreguard', 'shared-subscription-premium',   16,   190.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-msg-enterprise', 'app-mystoreguard', 'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
