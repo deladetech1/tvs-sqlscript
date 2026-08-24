@@ -30,8 +30,13 @@ public class InstallmentPolicy
     // ---- B. targeting (locations live in InstallmentPolicyLocation) ----
     public string PolicyTargetType { get; set; } = default!;
     public string? PolicyTargetId { get; set; }
-    public decimal? MinSaleAmount { get; set; }
-    public decimal? MaxSaleAmount { get; set; }
+    /// <summary>
+    /// The band is tested against the LINE TOTAL of the item this policy
+    /// matched, not the cart total. A policy targets one product, so an
+    /// unrelated item in the same basket must not change whether it applies.
+    /// </summary>
+    public decimal? MinItemAmount { get; set; }
+    public decimal? MaxItemAmount { get; set; }
 
     // ---- C. down payment ----
     public bool InitialPaymentRequired { get; set; } = true;

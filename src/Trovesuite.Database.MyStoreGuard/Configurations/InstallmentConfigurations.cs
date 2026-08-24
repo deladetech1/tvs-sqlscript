@@ -18,8 +18,8 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
 
         b.Property(x => x.PolicyMode).HasDefaultValue("ALLOW");
 
-        b.Property(x => x.MinSaleAmount).HasColumnType("decimal(14,2)");
-        b.Property(x => x.MaxSaleAmount).HasColumnType("decimal(14,2)");
+        b.Property(x => x.MinItemAmount).HasColumnType("decimal(14,2)");
+        b.Property(x => x.MaxItemAmount).HasColumnType("decimal(14,2)");
 
         b.Property(x => x.InitialPaymentRequired).HasDefaultValue(true);
         b.Property(x => x.InitialPaymentMin).HasColumnType("decimal(14,2)");
@@ -88,8 +88,8 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
                 "OR penalty_max_cap IS NOT NULL");
 
             t.HasCheckConstraint("ck_msg_installment_policies_amount_band",
-                "min_sale_amount IS NULL OR max_sale_amount IS NULL " +
-                "OR max_sale_amount >= min_sale_amount");
+                "min_item_amount IS NULL OR max_item_amount IS NULL " +
+                "OR max_item_amount >= min_item_amount");
 
             t.HasCheckConstraint("ck_msg_installment_policies_date_window",
                 "start_datetime IS NULL OR end_datetime IS NULL " +
