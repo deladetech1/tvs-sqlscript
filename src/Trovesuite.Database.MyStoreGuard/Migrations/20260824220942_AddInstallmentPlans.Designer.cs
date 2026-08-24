@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260824220942_AddInstallmentPlans")]
+    partial class AddInstallmentPlans
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2270,121 +2273,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                             t.HasCheckConstraint("ck_msg_installment_allocations_amount", "amount > 0");
 
                             t.HasCheckConstraint("ck_msg_installment_allocations_shape", "(allocation_type = 'SCHEDULED' AND schedule_id IS NOT NULL) OR (allocation_type <> 'SCHEDULED' AND schedule_id IS NULL)");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentApproval", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("LocId")
-                        .HasColumnType("text")
-                        .HasColumnName("loc_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("Comment")
-                        .HasColumnType("text")
-                        .HasColumnName("comment");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<DateTimeOffset?>("DecidedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("decided_at");
-
-                    b.Property<DateTimeOffset?>("LastRemindedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_reminded_at");
-
-                    b.Property<string>("PlanId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("plan_id");
-
-                    b.Property<int>("ReminderCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("reminder_count");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("PENDING")
-                        .HasColumnName("status");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-                        .HasName("pk_msg_installment_approvals");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_approvals_bus_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_approvals_created_by_tenant_id");
-
-                    b.HasIndex("LocId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_approvals_loc_id_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_approvals_org_id_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_approvals_updated_by_tenant_id");
-
-                    b.HasIndex("UserId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_approvals_user_id_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "UserId", "Status")
-                        .HasDatabaseName("ix_msg_installment_approvals_tenant_id_org_id_bus_id_user_id_s");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "PlanId", "UserId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_msg_installment_approvals_tenant_id_org_id_bus_id_loc_id_pl");
-
-                    b.ToTable("msg_installment_approvals", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_installment_approvals_status", "status IN ('PENDING','APPROVED','REJECTED','SUPERSEDED')");
                         });
                 });
 
@@ -10302,63 +10190,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ScheduleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_msg_installment_allocations_installment_schedule_rows_tenan");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentApproval", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_approvals_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_approvals_cp_businesses_bus_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_installment_approvals_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
-                        .WithMany()
-                        .HasForeignKey("LocId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_approvals_cp_locations_loc_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_approvals_cp_organizations_org_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_installment_approvals_cp_users_updated_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_approvals_cp_users_user_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPlan", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "PlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_approvals_installment_plans_tenant_id_org_i");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPlan", b =>

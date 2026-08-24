@@ -335,6 +335,18 @@ public class Sale
     public DateTimeOffset? FulfillmentDateTime { get; set; }
     public string? Description { get; set; }
     public decimal TotalAmount { get; set; }
+    /// <summary>
+    /// What the customer actually owes: the goods plus any installment finance
+    /// charge. Equals TotalAmount for every non-installment sale, which is why
+    /// it is safe for BalanceAmount to be measured against it everywhere.
+    ///
+    /// TotalAmount deliberately stays the GOODS total. Folding interest into it
+    /// would inflate sales-summary, product profitability, tax and commission,
+    /// all of which read it.
+    /// </summary>
+    public decimal PayableAmount { get; set; }
+    /// <summary>PayableAmount - TotalAmount. Interest income, reported separately.</summary>
+    public decimal FinanceChargeAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal BalanceAmount { get; set; }
     public decimal GiftCardAmountUsed { get; set; }

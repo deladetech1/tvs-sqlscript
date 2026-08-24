@@ -1,0 +1,171 @@
+namespace Trovesuite.Database.MyStoreGuard.Entities;
+
+/// <summary>
+/// One rule answering, for some slice of the catalogue at some set of locations:
+/// may this be sold on installment, and if so on what terms?
+///
+/// Deliberately has NO priority column and no "stops other policies" flag.
+/// Resolution is: any matching DENY denies the item; otherwise the most SPECIFIC
+/// matching ALLOW supplies the terms (SKU beats PRODUCT beats TAG beats LABEL
+/// beats CATEGORY beats BRAND beats ALL_PRODUCTS). That makes the allow/deny
+/// verdict order-independent, so a priority number would have nothing to order.
+///
+/// Contrast msg_return_policies and msg_pricing_rules, which both carry a
+/// priority AND a stops_other flag — the flag is dead in both, because their
+/// resolvers take a single winner and "stop the others" cannot then do anything.
+/// </summary>
+public class InstallmentPolicy
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+
+    public string Name { get; set; } = default!;
+    public string? Description { get; set; }
+
+    // ---- A. verdict ----
+    public string PolicyMode { get; set; } = "ALLOW";
+
+    // ---- B. targeting (locations live in InstallmentPolicyLocation) ----
+    public string PolicyTargetType { get; set; } = default!;
+    public string? PolicyTargetId { get; set; }
+    public decimal? MinSaleAmount { get; set; }
+    public decimal? MaxSaleAmount { get; set; }
+
+    // ---- C. down payment ----
+    public bool InitialPaymentRequired { get; set; } = true;
+    public string? InitialPaymentFormula { get; set; }
+    public decimal? InitialPaymentMin { get; set; }
+    public decimal? InitialPaymentMax { get; set; }
+
+    // ---- D. plan (frequency/term options live in InstallmentPlanOption) ----
+    public string InstallmentFormula { get; set; } = default!;
+    public int FirstDueOffsetDays { get; set; }
+    public bool AllowCustomStartDate { get; set; }
+    public string? EarlySettlementFormula { get; set; }
+
+    // ---- E. approval (approver list lives in InstallmentPolicyApprover) ----
+    public bool ApprovalRequired { get; set; }
+    public string ApprovalMode { get; set; } = "ANY";
+    public decimal? ApprovalThresholdAmount { get; set; }
+    public int? ApprovalMinTermCount { get; set; }
+    public bool ApprovalOnMissingGuarantor { get; set; }
+    public bool ApprovalOnCustomerArrears { get; set; }
+    public bool ReminderEnabled { get; set; }
+    public int ReminderIntervalMinutes { get; set; } = 1440;
+    public int ReminderMaxCount { get; set; } = 5;
+
+    // ---- F. penalty ----
+    public bool PenaltyEnabled { get; set; }
+    public string? PenaltyKind { get; set; }
+    public decimal? PenaltyValue { get; set; }
+    public string? PenaltyBasis { get; set; }
+    public int PenaltyGraceDays { get; set; }
+    public string PenaltyRecurrence { get; set; } = "ONCE_PER_PERIOD";
+    public decimal? PenaltyMaxCap { get; set; }
+
+    // ---- security / fulfilment ----
+    public int GuarantorsRequiredMin { get; set; }
+    public bool GuarantorIdDocumentRequired { get; set; }
+    public string ReleaseGoodsOn { get; set; } = "FULL_PAYMENT";
+
+    public bool IsActive { get; set; } = true;
+    public DateTime? StartDatetime { get; set; }
+    public DateTime? EndDatetime { get; set; }
+
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    public string? DeletedBy { get; set; }
+}
+
+/// <summary>
+/// Which locations a policy applies at. NO rows means every location — that
+/// keeps the common case a single policy row instead of one per branch.
+///
+/// This is a scope, ANDed on top of the product target, not another target
+/// type. msg_return_policies folds LOCATION into its target enum, which makes
+/// "this brand, but only at East Legon" unexpressible.
+/// </summary>
+public class InstallmentPolicyLocation
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string PolicyId { get; set; } = default!;
+    public string LocId { get; set; } = default!;
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+}
+
+/// <summary>
+/// One frequency a policy offers, plus the exact term counts allowed for it —
+/// e.g. MONTHLY with {3, 6, 12}. A cashier picks from the list; 200 is refused
+/// because it is not in the array, not because it exceeds some maximum.
+/// A policy may offer several frequencies.
+/// </summary>
+public class InstallmentPlanOption
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string PolicyId { get; set; } = default!;
+    public string Frequency { get; set; } = default!;
+    /// <summary>Number of PERIODS, not days. WEEKLY {4,8,12} = 4, 8 or 12 weeks.</summary>
+    public int[] AllowedTerms { get; set; } = default!;
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+}
+
+/// <summary>
+/// A named number the policy's formulas can reference by name — interest_rate,
+/// admin_fee, min_down_pct. This is what lets a formula read like a rate to
+/// whoever configures it while staying arbitrary arithmetic underneath.
+/// </summary>
+public class InstallmentPolicyVariable
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string PolicyId { get; set; } = default!;
+    /// <summary>Formula identifier: letters, digits, underscore; no leading digit.</summary>
+    public string VarName { get; set; } = default!;
+    public decimal VarValue { get; set; }
+    public string? Label { get; set; }
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+}
+
+/// <summary>
+/// Who may approve a plan created under this policy.
+///
+/// Holds cp_users.id, not an email address. msg_return_policies stores a JSONB
+/// list of emails, which silently stops matching the moment a user changes
+/// theirs; the address is looked up at send time instead.
+/// </summary>
+public class InstallmentPolicyApprover
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string PolicyId { get; set; } = default!;
+    public string UserId { get; set; } = default!;
+    public int DisplayOrder { get; set; }
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+}

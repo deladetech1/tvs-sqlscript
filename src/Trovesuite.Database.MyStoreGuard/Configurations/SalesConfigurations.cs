@@ -286,6 +286,8 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         b.Property(x => x.FulfillmentStatus).HasDefaultValue("PENDING");
         b.Property(x => x.FulfillmentDateTime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
         b.Property(x => x.TotalAmount).HasColumnType("numeric(18,2)");
+        b.Property(x => x.PayableAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
+        b.Property(x => x.FinanceChargeAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.PaidAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.BalanceAmount).HasColumnType("numeric(18,2)");
         b.Property(x => x.GiftCardAmountUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
@@ -296,7 +298,7 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.SaleNumber }).IsUnique();
         b.HasInCheck("status", "ON_HOLD", "PAID", "PARTIALLY_PAID", "OVERDUE", "CANCELLED", "QUEUED");
-        b.HasInCheck("sale_mode", "INSTANT", "DEPOSIT", "CREDIT");
+        b.HasInCheck("sale_mode", "INSTANT", "INSTALLMENT", "CREDIT");
         b.HasInCheck("fulfillment_status", "PENDING", "PARTIALLY_FULFILLED", "FULFILLED");
         b.WithTenantOrgBusLocFks();
         b.WithCustomerFk(DeleteBehavior.Restrict);
@@ -479,7 +481,7 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.InvoiceNumber }).IsUnique();
         b.HasInCheck("status", "DRAFT", "COMPLETED", "PARTIALLY_PAID", "OVERDUE", "CANCELLED");
-        b.HasInCheck("sale_mode", "INSTANT", "DEPOSIT", "CREDIT");
+        b.HasInCheck("sale_mode", "INSTANT", "INSTALLMENT", "CREDIT");
         b.WithTenantOrgBusLocFks();
         b.WithCustomerFk(DeleteBehavior.Restrict);
         // Restrict (not SetNull): these FKs span TenantId/OrgId/BusId, which are

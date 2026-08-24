@@ -48,6 +48,8 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-promo-codes', 'Promo Codes', 'Promo Codes management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-affiliates', 'Affiliates', 'Affiliates management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-deliveries', 'Deliveries', 'Deliveries management for Mystoreguard', 'rt-subscribed-app-msg'),
+('rt-installment-policies', 'Installment Policies', 'Installment Policies management for Mystoreguard', 'rt-subscribed-app-msg'),
+('rt-installment-plans', 'Installment Plans', 'Installment plans, schedules and collections for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-return-policies', 'Return Policies', 'Return Policies management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-store-returns', 'Store Returns', 'Store Returns management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-reports', 'Mystoreguard Reports', 'Centralized reporting and analytics module for Mystoreguard', 'rt-subscribed-app-msg'),

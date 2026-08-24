@@ -81,6 +81,16 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<MsgTaskCommentMention> TaskCommentMentions => Set<MsgTaskCommentMention>();
     public DbSet<MsgTaskAttachment> TaskAttachments => Set<MsgTaskAttachment>();
 
+    public DbSet<InstallmentPolicy> InstallmentPolicies => Set<InstallmentPolicy>();
+    public DbSet<InstallmentPolicyLocation> InstallmentPolicyLocations => Set<InstallmentPolicyLocation>();
+    public DbSet<InstallmentPlanOption> InstallmentPlanOptions => Set<InstallmentPlanOption>();
+    public DbSet<InstallmentPolicyVariable> InstallmentPolicyVariables => Set<InstallmentPolicyVariable>();
+    public DbSet<InstallmentPolicyApprover> InstallmentPolicyApprovers => Set<InstallmentPolicyApprover>();
+    public DbSet<InstallmentPlan> InstallmentPlans => Set<InstallmentPlan>();
+    public DbSet<InstallmentScheduleRow> InstallmentScheduleRows => Set<InstallmentScheduleRow>();
+    public DbSet<InstallmentAllocation> InstallmentAllocations => Set<InstallmentAllocation>();
+    public DbSet<InstallmentApproval> InstallmentApprovals => Set<InstallmentApproval>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);

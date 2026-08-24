@@ -82,7 +82,7 @@ INSERT INTO core_platform.cp_app_feature_catalog (feature_key, app_id, title, mi
 
 -- ---- ADVANCE ----------------------------------------------------------------------
 ('sales.credit',              'app-mystoreguard', 'Credit Sales',             2, 'sale_mode = CREDIT ("Creditors")'),
-('sales.deposit',             'app-mystoreguard', 'Deposit Sales',            2, 'sale_mode = DEPOSIT ("Depositors")'),
+('sales.installment',         'app-mystoreguard', 'Installment Sales',        2, 'sale_mode = INSTALLMENT. Replaced sales.deposit — see 20260825-02'),
 ('inventory.product-split',   'app-mystoreguard', 'Product Split',            2, 'One key for all three split screens (inventory, store, warehouse) — they all call /products/split*'),
 ('inventory.purchase-orders', 'app-mystoreguard', 'Purchase Orders',          2, NULL),
 ('store.stock-take',          'app-mystoreguard', 'Store Stock Taking',       2, NULL),
@@ -96,6 +96,7 @@ INSERT INTO core_platform.cp_app_feature_catalog (feature_key, app_id, title, mi
 ('settings.product-prices',   'app-mystoreguard', 'Product Pricing',          2, NULL),
 ('settings.pricing-rules',    'app-mystoreguard', 'Pricing Rules',            2, NULL),
 ('settings.price-edits',      'app-mystoreguard', 'Price Edit Settings',      2, 'Governs overriding the prices that ADVANCE pricing sets up'),
+('settings.installment-policy','app-mystoreguard','Installment Policy',       2, 'Who may buy on installment, on what terms — gates the policy builder, not the sale'),
 
 -- ---- PREMIUM ----------------------------------------------------------------------
 ('sales.returns',             'app-mystoreguard', 'Store Returns',            3, NULL),
