@@ -43,6 +43,15 @@ public class InstallmentPlan
     public decimal FinanceCharge { get; set; }
 
     public decimal AmountPaid { get; set; }
+    /// <summary>
+    /// Interest forgiven when a customer cleared the plan early.
+    ///
+    /// Held separately so the plan's own figures stay exactly as they were
+    /// priced. Without it, amount_paid would sit permanently below
+    /// total_payable and the plan would read as still owing the discount.
+    /// A settled plan satisfies: amount_paid + settlement_discount = total_payable.
+    /// </summary>
+    public decimal SettlementDiscount { get; set; }
     public decimal PenaltiesAccrued { get; set; }
     public decimal PenaltiesPaid { get; set; }
 

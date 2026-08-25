@@ -24,7 +24,8 @@ public sealed class InstallmentPlanConfiguration : IEntityTypeConfiguration<Inst
                      nameof(InstallmentPlan.GoodsAmount), nameof(InstallmentPlan.InitialPayment),
                      nameof(InstallmentPlan.FinancedAmount), nameof(InstallmentPlan.InstallmentAmount),
                      nameof(InstallmentPlan.TotalPayable), nameof(InstallmentPlan.FinanceCharge),
-                     nameof(InstallmentPlan.AmountPaid), nameof(InstallmentPlan.PenaltiesAccrued),
+                     nameof(InstallmentPlan.AmountPaid), nameof(InstallmentPlan.SettlementDiscount),
+                     nameof(InstallmentPlan.PenaltiesAccrued),
                      nameof(InstallmentPlan.PenaltiesPaid),
                  })
             b.Property(col).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
@@ -131,7 +132,11 @@ public sealed class InstallmentAllocationConfiguration : IEntityTypeConfiguratio
         b.Property(x => x.AllocationType).HasDefaultValue("SCHEDULED");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
 
-        b.HasInCheck("allocation_type", "INITIAL", "SCHEDULED", "OVERPAYMENT");
+        // SETTLEMENT_DISCOUNT is not money that moved — it is the part of a
+        // plan written off when the customer cleared early, recorded so the
+        // ledger explains why the rows closed for less than they were worth.
+        b.HasInCheck("allocation_type",
+            "INITIAL", "SCHEDULED", "OVERPAYMENT", "SETTLEMENT_DISCOUNT");
 
         b.ToTable(t =>
         {
