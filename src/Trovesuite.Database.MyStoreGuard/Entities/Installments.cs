@@ -93,6 +93,14 @@ public class InstallmentPolicy
     public decimal? PenaltyMaxCap { get; set; }
 
     // ---- security / fulfilment ----
+    /// <summary>
+    /// Refuse a new plan outright to a customer already behind on another one.
+    ///
+    /// Distinct from ApprovalOnCustomerArrears, which asks a human to look:
+    /// this does not ask, it declines. A shop that keeps lending to someone who
+    /// is not paying is not being kind to them.
+    /// </summary>
+    public bool BlockWhenCustomerOwes { get; set; }
     public int GuarantorsRequiredMin { get; set; }
     public bool GuarantorIdDocumentRequired { get; set; }
     public string ReleaseGoodsOn { get; set; } = "FULL_PAYMENT";
