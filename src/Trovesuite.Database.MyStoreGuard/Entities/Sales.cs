@@ -475,6 +475,24 @@ public class Return
     public DateTimeOffset? ProcessedAt { get; set; }
     public string? ProcessingNotes { get; set; }
     public string? CustomerId { get; set; }
+
+    /// <summary>
+    /// Set when the sale being returned was financed. The goods coming back
+    /// pay off what the customer still owes before any cash goes out, so a
+    /// return on a plan is a settlement first and a refund second.
+    /// </summary>
+    public string? InstallmentPlanId { get; set; }
+    /// <summary>How much of the returned value went to clearing the plan.</summary>
+    public decimal PlanSettledAmount { get; set; }
+    /// <summary>
+    /// What the returned goods did not cover. The shop has the item back, so
+    /// the remainder is written off rather than chased — recorded here so it
+    /// is never a silent loss.
+    /// </summary>
+    public decimal PlanWrittenOffAmount { get; set; }
+    /// <summary>What actually goes back to the customer once the plan is clear.</summary>
+    public decimal CashRefundAmount { get; set; }
+
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }

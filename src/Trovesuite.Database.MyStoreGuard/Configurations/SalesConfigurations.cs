@@ -401,15 +401,33 @@ public sealed class ReturnConfiguration : IEntityTypeConfiguration<Return>
         b.Property(x => x.RestockingFeePercent).HasColumnType("decimal(5,2)").HasDefaultValue(0m);
         b.Property(x => x.RestockingFeeAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
         b.Property(x => x.TotalRefundAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
+        b.Property(x => x.PlanSettledAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
+        b.Property(x => x.PlanWrittenOffAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
+        b.Property(x => x.CashRefundAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
         b.Property(x => x.ApprovalRequired).HasDefaultValue(false);
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
         b.HasInCheck("return_type", "REFUND", "EXCHANGE", "STORE_CREDIT");
         b.HasInCheck("status", "PENDING", "APPROVED", "REJECTED", "COMPLETED");
         b.HasInCheck("reason", "DEFECTIVE", "WRONG_ITEM", "CUSTOMER_CHANGED_MIND", "EXPIRED", "DAMAGED_IN_TRANSIT", "OTHER");
         b.HasInCheck("refund_method", "ORIGINAL_PAYMENT", "STORE_CREDIT", "CASH", "ANY");
+        b.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_msg_returns_plan_amounts",
+                "plan_settled_amount >= 0 AND plan_written_off_amount >= 0 "
+                + "AND cash_refund_amount >= 0");
+            t.HasCheckConstraint("ck_msg_returns_plan_link",
+                "installment_plan_id IS NOT NULL OR (plan_settled_amount = 0 "
+                + "AND plan_written_off_amount = 0)");
+        });
         b.WithTenantOrgBusFks();
         b.WithSaleFk(DeleteBehavior.Restrict);
         b.WithCrossSchemaCreateUpdateUserFks();
+        // installment_plan_id → msg_installment_plans RESTRICT: a return is the
+        // record of how a plan ended, so the plan cannot vanish beneath it.
+        b.HasOne<InstallmentPlan>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "InstallmentPlanId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+            .OnDelete(DeleteBehavior.Restrict);
         // approved_by / rejected_by / processed_by → cp_users RESTRICT
         foreach (var c in new[] { "ApprovedBy", "RejectedBy", "ProcessedBy" })
         {
