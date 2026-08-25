@@ -38,6 +38,11 @@ public sealed class InstallmentPlanConfiguration : IEntityTypeConfiguration<Inst
         b.HasInCheck("status",
             "DRAFT", "PENDING_APPROVAL", "REJECTED", "ACTIVE",
             "COMPLETED", "DEFAULTED", "CANCELLED");
+        // Spelled out for the DATABASE, not just for C#: a property
+        // initialiser is invisible to Postgres, so existing rows would
+        // come out as empty strings and fail this very check.
+        b.Property(x => x.RefundStatus).HasDefaultValue("NONE");
+        b.HasInCheck("refund_status", "NONE", "PENDING", "RETURNED");
         b.HasInCheck("frequency",
             "DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY");
 
@@ -50,6 +55,13 @@ public sealed class InstallmentPlanConfiguration : IEntityTypeConfiguration<Inst
             // assumes it.
             t.HasCheckConstraint("ck_msg_installment_plans_financed",
                 "financed_amount = goods_amount - initial_payment");
+            // A refund that is owed must have an amount, and one declared
+            // returned must record who said so — otherwise "RETURNED" is a
+            // claim with nobody behind it.
+            t.HasCheckConstraint("ck_msg_installment_plans_refund_amount",
+                "refund_status = 'NONE' OR refund_amount > 0");
+            t.HasCheckConstraint("ck_msg_installment_plans_refund_closed",
+                "refund_status <> 'RETURNED' OR (refund_closed_at IS NOT NULL AND refund_closed_by IS NOT NULL)");
             t.HasCheckConstraint("ck_msg_installment_plans_charge",
                 "finance_charge = total_payable - goods_amount");
         });

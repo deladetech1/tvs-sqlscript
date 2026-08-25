@@ -66,6 +66,23 @@ public class InstallmentPolicy
     public int ReminderIntervalMinutes { get; set; } = 1440;
     public int ReminderMaxCount { get; set; } = 5;
 
+    // ---- E2. money taken before a decision exists ----
+    //
+    // Off by default, and deliberately so: a deposit taken before approval must
+    // be given back if the answer is no, and money owed to a customer that
+    // nobody is chasing is how cash quietly goes missing. Turning this on is
+    // what brings the refund settings below into play.
+    public bool AllowPaymentBeforeApproval { get; set; }
+
+    /// <summary>
+    /// How often to chase an unreturned refund, and how many times. Zero means
+    /// never stop — unlike an approval, which can sit unanswered, money owed to
+    /// a customer has no acceptable resting state.
+    /// </summary>
+    public bool RefundReminderEnabled { get; set; } = true;
+    public int RefundReminderIntervalMinutes { get; set; } = 1440;
+    public int RefundReminderMaxCount { get; set; }
+
     // ---- F. penalty ----
     public bool PenaltyEnabled { get; set; }
     public string? PenaltyKind { get; set; }
@@ -152,6 +169,29 @@ public class InstallmentPolicyVariable
     public string VarName { get; set; } = default!;
     public decimal VarValue { get; set; }
     public string? Label { get; set; }
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+}
+
+/// <summary>
+/// Who may declare that a refund has been handed back to the customer.
+///
+/// Separate from the approver list on purpose: approving a plan and handing
+/// cash across a counter are different jobs, and a business may well want the
+/// second done by someone who did not make the first decision. Nothing stops
+/// the same person being on both lists.
+/// </summary>
+public class InstallmentPolicyRefundCloser
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string PolicyId { get; set; } = default!;
+    public string UserId { get; set; } = default!;
+    public int DisplayOrder { get; set; }
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }

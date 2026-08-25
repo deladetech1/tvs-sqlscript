@@ -71,6 +71,26 @@ public class InstallmentPlan
     public DateTimeOffset? DefaultedAt { get; set; }
     public DateTimeOffset? CancelledAt { get; set; }
 
+    // ---- money owed back to the customer ----
+    //
+    // A plan rejected after money was taken leaves the shop holding cash that
+    // is not theirs. REJECTED alone does not say that, and a status that does
+    // not say it is a status nobody acts on — so the refund carries its own
+    // state, and stays PENDING until a person says otherwise.
+    //
+    // NONE     nothing was taken, or nothing is owed
+    // PENDING  money is held that belongs to the customer
+    // RETURNED someone has handed it back and said so
+    public string RefundStatus { get; set; } = "NONE";
+    public decimal RefundAmount { get; set; }
+    public DateTimeOffset? RefundClosedAt { get; set; }
+    public string? RefundClosedBy { get; set; }
+    public string? RefundNote { get; set; }
+
+    /// <summary>Last time the chasers were emailed, and how often they have been.</summary>
+    public DateTimeOffset? RefundRemindedAt { get; set; }
+    public int RefundReminderCount { get; set; }
+
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }

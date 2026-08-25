@@ -86,6 +86,7 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<InstallmentPlanOption> InstallmentPlanOptions => Set<InstallmentPlanOption>();
     public DbSet<InstallmentPolicyVariable> InstallmentPolicyVariables => Set<InstallmentPolicyVariable>();
     public DbSet<InstallmentPolicyApprover> InstallmentPolicyApprovers => Set<InstallmentPolicyApprover>();
+    public DbSet<InstallmentPolicyRefundCloser> InstallmentPolicyRefundClosers => Set<InstallmentPolicyRefundCloser>();
     public DbSet<InstallmentPlan> InstallmentPlans => Set<InstallmentPlan>();
     public DbSet<InstallmentScheduleRow> InstallmentScheduleRows => Set<InstallmentScheduleRow>();
     public DbSet<InstallmentAllocation> InstallmentAllocations => Set<InstallmentAllocation>();

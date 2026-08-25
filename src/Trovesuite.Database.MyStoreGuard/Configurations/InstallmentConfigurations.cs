@@ -11,6 +11,11 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
 {
     public void Configure(EntityTypeBuilder<InstallmentPolicy> b)
     {
+        // Same reason as refund_status: without these the column defaults
+        // are false and 0, and "chasing enabled every 0 minutes" is both
+        // wrong and a constraint violation.
+        b.Property(x => x.RefundReminderEnabled).HasDefaultValue(true);
+        b.Property(x => x.RefundReminderIntervalMinutes).HasDefaultValue(1440);
         b.ToTable("msg_installment_policies");
         b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
         b.Property(x => x.Id).AsTextUuidDefault();
@@ -92,6 +97,13 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
                 "penalty_recurrence <> 'DAILY_WHILE_LATE' OR penalty_enabled = false " +
                 "OR penalty_max_cap IS NOT NULL");
 
+            // Taking money before a decision only makes sense on a policy that
+            // asks for one; and a chase interval of zero is a loop, not a
+            // reminder.
+            t.HasCheckConstraint("ck_msg_installment_policies_early_payment",
+                "allow_payment_before_approval = false OR approval_required = true");
+            t.HasCheckConstraint("ck_msg_installment_policies_refund_interval",
+                "refund_reminder_enabled = false OR refund_reminder_interval_minutes > 0");
             t.HasCheckConstraint("ck_msg_installment_policies_amount_band",
                 "min_item_amount IS NULL OR max_item_amount IS NULL " +
                 "OR max_item_amount >= min_item_amount");
@@ -169,6 +181,36 @@ public sealed class InstallmentPlanOptionConfiguration : IEntityTypeConfiguratio
             .HasForeignKey("TenantId", "OrgId", "BusId", "PolicyId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
             .OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId))
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+public sealed class InstallmentPolicyRefundCloserConfiguration
+    : IEntityTypeConfiguration<InstallmentPolicyRefundCloser>
+{
+    public void Configure(EntityTypeBuilder<InstallmentPolicyRefundCloser> b)
+    {
+        b.ToTable("msg_installment_policy_refund_closers");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.DisplayOrder).HasDefaultValue(0);
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+
+        // Listing someone twice would chase them twice for the same money.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.PolicyId, x.UserId }).IsUnique();
+
+        b.WithTenantOrgBusFks();
+        b.HasOne<InstallmentPolicy>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "PolicyId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+        // Restrict, as with approvers: losing the only person who can close a
+        // refund would leave the money owed with nobody able to say it was paid.
+        b.HasOne<User>().WithMany().HasForeignKey("UserId", "TenantId")
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId))
+            .OnDelete(DeleteBehavior.Restrict);
         b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId))
             .OnDelete(DeleteBehavior.Restrict);
