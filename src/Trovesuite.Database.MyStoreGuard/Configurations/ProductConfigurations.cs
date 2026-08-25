@@ -129,7 +129,7 @@ public sealed class ProductMetadataConfiguration : IEntityTypeConfiguration<Prod
         b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
         b.Property(x => x.Id).AsTextUuidDefault();
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Name, x.OfType }).IsUnique();
-        b.HasInCheck("of_type", "TAG", "CATEGORY", "BRAND", "LABEL");
+        b.HasInCheck("of_type", "TAG", "CATEGORY", "BRAND", "LABEL", "COLOR", "CONDITION");
         b.ApplyAuditDefaults();
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusFks();
@@ -550,7 +550,8 @@ public sealed class ProductPriceConfiguration : IEntityTypeConfiguration<Product
         b.Property(x => x.Price).HasColumnType("numeric(10,2)");
         b.Property(x => x.StopsOtherPrices).HasDefaultValue(false);
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
-        b.HasInCheck("of_type", "SKU", "GLOBAL", "LOCATION", "TAG", "CATEGORY", "BRAND", "LABEL");
+        b.HasInCheck("of_type", "SKU", "GLOBAL", "LOCATION", "TAG", "CATEGORY", "BRAND", "LABEL",
+            "COLOR", "CONDITION");
         // Unique COALESCE-based index applied via Sql/Triggers/01_product_prices_unique_index.sql.
         b.WithTenantOrgBusFks();
         b.WithProductFk();

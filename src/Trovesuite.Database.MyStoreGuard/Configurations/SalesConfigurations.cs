@@ -25,7 +25,8 @@ public sealed class PricingRuleConfiguration : IEntityTypeConfiguration<PricingR
         b.HasInCheck("rule_category", "PRICE_ADJUSTMENT", "QUANTITY_BASED");
         b.HasInCheck("rule_type", "FIXED_AMOUNT", "PRICE_DISCOUNT", "PERCENTAGE_DISCOUNT",
                                   "PRICE_MARKUP", "PERCENTAGE_MARKUP", "BUNDLE", "BOGO", "QUANTITY_BREAK");
-        b.HasInCheck("rule_target_type", "PRODUCT", "ALL_PRODUCTS", "SKU", "LOCATION", "TAG", "CATEGORY", "BRAND", "LABEL");
+        b.HasInCheck("rule_target_type", "PRODUCT", "ALL_PRODUCTS", "SKU", "LOCATION", "TAG",
+                                         "CATEGORY", "BRAND", "LABEL", "COLOR", "CONDITION");
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
     }
