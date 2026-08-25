@@ -74,6 +74,11 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
             t.HasCheckConstraint("ck_msg_installment_policies_initial_formula",
                 "initial_payment_required = false OR initial_payment_formula IS NOT NULL");
 
+            // An ALLOW policy has to be able to price a plan; a DENY never
+            // prices anything, so it carries no formula at all.
+            t.HasCheckConstraint("ck_msg_installment_policies_allow_formula",
+                "policy_mode <> 'ALLOW' OR installment_formula IS NOT NULL");
+
             // A percentage penalty needs something to be a percentage OF.
             t.HasCheckConstraint("ck_msg_installment_policies_penalty_shape",
                 "penalty_enabled = false OR (" +

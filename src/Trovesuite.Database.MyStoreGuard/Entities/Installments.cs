@@ -45,7 +45,12 @@ public class InstallmentPolicy
     public decimal? InitialPaymentMax { get; set; }
 
     // ---- D. plan (frequency/term options live in InstallmentPlanOption) ----
-    public string InstallmentFormula { get; set; } = default!;
+    /// <summary>
+    /// Null on a DENY policy, which never prices anything. It used to be
+    /// NOT NULL, so a deny stored the string "0" — a sentinel that then looked
+    /// like a formula to anything reading the row back.
+    /// </summary>
+    public string? InstallmentFormula { get; set; }
     public int FirstDueOffsetDays { get; set; }
     public bool AllowCustomStartDate { get; set; }
     public string? EarlySettlementFormula { get; set; }
