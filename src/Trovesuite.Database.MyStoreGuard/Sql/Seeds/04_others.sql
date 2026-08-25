@@ -213,6 +213,14 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-installment-approver', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-installment-approver', 'permission-user-get-locations'),
 
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-app-get'),
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-get'),
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-user-get-locations'),
+
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-organization-get'),

@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260825063656_AddGuarantorsAndPenalties")]
+    partial class AddGuarantorsAndPenalties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3687,10 +3690,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("plan_id");
-
-                    b.Property<DateTimeOffset?>("RemindedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("reminded_at");
 
                     b.Property<string>("Status")
                         .IsRequired()

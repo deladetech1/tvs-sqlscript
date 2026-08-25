@@ -100,6 +100,11 @@ public class InstallmentScheduleRow
     public decimal PaidAmount { get; set; }
     public string Status { get; set; } = "PENDING";
     public DateTimeOffset? PaidAt { get; set; }
+    /// <summary>
+    /// When the customer was last nudged about this period. Stamped by the
+    /// reminder job so a period is chased once, not every morning it stays due.
+    /// </summary>
+    public DateTimeOffset? RemindedAt { get; set; }
 
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }

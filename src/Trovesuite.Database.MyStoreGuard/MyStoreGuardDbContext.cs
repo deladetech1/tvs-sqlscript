@@ -90,6 +90,11 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<InstallmentScheduleRow> InstallmentScheduleRows => Set<InstallmentScheduleRow>();
     public DbSet<InstallmentAllocation> InstallmentAllocations => Set<InstallmentAllocation>();
     public DbSet<InstallmentApproval> InstallmentApprovals => Set<InstallmentApproval>();
+    public DbSet<InstallmentPenalty> InstallmentPenalties => Set<InstallmentPenalty>();
+    public DbSet<Guarantor> Guarantors => Set<Guarantor>();
+    public DbSet<GuarantorContact> GuarantorContacts => Set<GuarantorContact>();
+    public DbSet<GuarantorDocument> GuarantorDocuments => Set<GuarantorDocument>();
+    public DbSet<SaleGuarantor> SaleGuarantors => Set<SaleGuarantor>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
