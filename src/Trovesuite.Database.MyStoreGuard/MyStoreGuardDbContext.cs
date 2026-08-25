@@ -96,6 +96,11 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<GuarantorContact> GuarantorContacts => Set<GuarantorContact>();
     public DbSet<GuarantorDocument> GuarantorDocuments => Set<GuarantorDocument>();
     public DbSet<SaleGuarantor> SaleGuarantors => Set<SaleGuarantor>();
+    public DbSet<CreditScore> CreditScores => Set<CreditScore>();
+    public DbSet<CreditScoreSetting> CreditScoreSettings => Set<CreditScoreSetting>();
+    public DbSet<CreditScoreSettingHistory> CreditScoreSettingHistories =>
+        Set<CreditScoreSettingHistory>();
+    public DbSet<Collection> Collections => Set<Collection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
