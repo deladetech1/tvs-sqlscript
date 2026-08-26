@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826094533_AddPolicyProductScope")]
+    partial class AddPolicyProductScope
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3861,6 +3864,13 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnType("text")
                         .HasColumnName("policy_target_type");
 
+                    b.Property<string>("ProductScope")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("ALL")
+                        .HasColumnName("product_scope");
+
                     b.Property<bool>("RefundReminderEnabled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -3960,7 +3970,9 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                             t.HasCheckConstraint("ck_msg_installment_policies_policy_mode", "policy_mode IN ('ALLOW','DENY')");
 
-                            t.HasCheckConstraint("ck_msg_installment_policies_policy_target_type", "policy_target_type IN ('ALL_PRODUCTS','PRODUCT','PRODUCTS','SKU','TAG','LABEL','CATEGORY','BRAND')");
+                            t.HasCheckConstraint("ck_msg_installment_policies_policy_target_type", "policy_target_type IN ('ALL_PRODUCTS','PRODUCT','SKU','TAG','LABEL','CATEGORY','BRAND')");
+
+                            t.HasCheckConstraint("ck_msg_installment_policies_product_scope", "product_scope IN ('ALL','INCLUDE','EXCLUDE')");
 
                             t.HasCheckConstraint("ck_msg_installment_policies_refund_interval", "refund_reminder_enabled = false OR refund_reminder_interval_minutes > 0");
 
@@ -4162,13 +4174,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnType("text")
                         .HasColumnName("product_id");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("TARGET")
-                        .HasColumnName("role");
-
                     b.HasKey("TenantId", "OrgId", "BusId", "Id")
                         .HasName("pk_msg_installment_policy_products");
 
@@ -4185,10 +4190,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_msg_installment_policy_products_tenant_id_org_id_bus_id_pol");
 
-                    b.ToTable("msg_installment_policy_products", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_installment_policy_products_role", "role IN ('TARGET','EXCEPT')");
-                        });
+                    b.ToTable("msg_installment_policy_products", "mystoreguard");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyRefundCloser", b =>

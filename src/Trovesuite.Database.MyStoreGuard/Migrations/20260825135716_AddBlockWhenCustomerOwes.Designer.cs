@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260825135716_AddBlockWhenCustomerOwes")]
+    partial class AddBlockWhenCustomerOwes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1506,511 +1509,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         {
                             t.HasCheckConstraint("ck_msg_batch_locations_location_type", "location_type IN ('STORE','WAREHOUSE')");
                         });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.Collection", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("LocId")
-                        .HasColumnType("text")
-                        .HasColumnName("loc_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("Channel")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("MOBILE_MONEY")
-                        .HasColumnName("channel");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("Currency")
-                        .HasColumnType("text")
-                        .HasColumnName("currency");
-
-                    b.Property<string>("ExternalReference")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("external_reference");
-
-                    b.Property<string>("ImportBatch")
-                        .HasColumnType("text")
-                        .HasColumnName("import_batch");
-
-                    b.Property<int>("MatchConfidence")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("match_confidence");
-
-                    b.Property<string>("MatchMethod")
-                        .HasColumnType("text")
-                        .HasColumnName("match_method");
-
-                    b.Property<string>("Narration")
-                        .HasColumnType("text")
-                        .HasColumnName("narration");
-
-                    b.Property<DateTimeOffset?>("PaidAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("paid_at");
-
-                    b.Property<string>("PayerContact")
-                        .HasColumnType("text")
-                        .HasColumnName("payer_contact");
-
-                    b.Property<string>("PayerName")
-                        .HasColumnType("text")
-                        .HasColumnName("payer_name");
-
-                    b.Property<string>("PaymentId")
-                        .HasColumnType("text")
-                        .HasColumnName("payment_id");
-
-                    b.Property<string>("PlanId")
-                        .HasColumnType("text")
-                        .HasColumnName("plan_id");
-
-                    b.Property<string>("ResolutionNote")
-                        .HasColumnType("text")
-                        .HasColumnName("resolution_note");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("resolved_at");
-
-                    b.Property<string>("ResolvedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("resolved_by");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("UNMATCHED")
-                        .HasColumnName("status");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-                        .HasName("pk_msg_collections");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_collections_bus_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_collections_created_by_tenant_id");
-
-                    b.HasIndex("LocId", "TenantId")
-                        .HasDatabaseName("ix_msg_collections_loc_id_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_collections_org_id_tenant_id");
-
-                    b.HasIndex("ResolvedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_collections_resolved_by_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_collections_updated_by_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "ExternalReference")
-                        .IsUnique()
-                        .HasDatabaseName("ix_msg_collections_tenant_id_org_id_bus_id_external_reference");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "PlanId")
-                        .HasDatabaseName("ix_msg_collections_tenant_id_org_id_bus_id_loc_id_plan_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Status", "PaidAt")
-                        .HasDatabaseName("ix_msg_collections_tenant_id_org_id_bus_id_status_paid_at");
-
-                    b.ToTable("msg_collections", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_collections_amount", "amount > 0");
-
-                            t.HasCheckConstraint("ck_msg_collections_channel", "channel IN ('MOBILE_MONEY','BANK_TRANSFER','CASH_DEPOSIT')");
-
-                            t.HasCheckConstraint("ck_msg_collections_confidence", "match_confidence >= 0 AND match_confidence <= 100");
-
-                            t.HasCheckConstraint("ck_msg_collections_ignored_has_reason", "status <> 'IGNORED' OR (resolved_by IS NOT NULL AND resolution_note IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_msg_collections_match_method", "match_method IN ('REFERENCE','CONTACT','AMOUNT_AND_DATE','MANUAL')");
-
-                            t.HasCheckConstraint("ck_msg_collections_matched_has_plan", "status NOT IN ('MATCHED','POSTED') OR plan_id IS NOT NULL");
-
-                            t.HasCheckConstraint("ck_msg_collections_posted_has_payment", "status <> 'POSTED' OR payment_id IS NOT NULL");
-
-                            t.HasCheckConstraint("ck_msg_collections_status", "status IN ('UNMATCHED','MATCHED','POSTED','IGNORED')");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.CreditScore", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("LocId")
-                        .HasColumnType("text")
-                        .HasColumnName("loc_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("AdjustmentReason")
-                        .HasColumnType("text")
-                        .HasColumnName("adjustment_reason");
-
-                    b.Property<string>("Band")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("band");
-
-                    b.Property<JsonDocument>("Breakdown")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("breakdown");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("CustomerId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("customer_id");
-
-                    b.Property<bool>("IsManualAdjustment")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_manual_adjustment");
-
-                    b.Property<string>("PlanId")
-                        .HasColumnType("text")
-                        .HasColumnName("plan_id");
-
-                    b.Property<int?>("PreviousScore")
-                        .HasColumnType("integer")
-                        .HasColumnName("previous_score");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("integer")
-                        .HasColumnName("score");
-
-                    b.Property<JsonDocument>("SettingsSnapshot")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("settings_snapshot");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-                        .HasName("pk_msg_credit_scores");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_scores_bus_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_scores_created_by_tenant_id");
-
-                    b.HasIndex("LocId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_scores_loc_id_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_scores_org_id_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Band")
-                        .HasDatabaseName("ix_msg_credit_scores_tenant_id_org_id_bus_id_band");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "CustomerId", "Cdatetime")
-                        .HasDatabaseName("ix_msg_credit_scores_tenant_id_org_id_bus_id_customer_id_cdate");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "PlanId")
-                        .HasDatabaseName("ix_msg_credit_scores_tenant_id_org_id_bus_id_loc_id_plan_id");
-
-                    b.ToTable("msg_credit_scores", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_credit_scores_adjustment", "is_manual_adjustment = false OR (previous_score IS NOT NULL AND adjustment_reason IS NOT NULL)");
-
-                            t.HasCheckConstraint("ck_msg_credit_scores_band", "band IN ('VERY_POOR','POOR','FAIR','GOOD','EXCELLENT')");
-
-                            t.HasCheckConstraint("ck_msg_credit_scores_range", "score >= 0 AND score <= 1000");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.CreditScoreSetting", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("LocId")
-                        .HasColumnType("text")
-                        .HasColumnName("loc_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<int?>("ApprovalMinScore")
-                        .HasColumnType("integer")
-                        .HasColumnName("approval_min_score");
-
-                    b.Property<int>("BandExcellentMin")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(800)
-                        .HasColumnName("band_excellent_min");
-
-                    b.Property<int>("BandFairMin")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(500)
-                        .HasColumnName("band_fair_min");
-
-                    b.Property<int>("BandGoodMin")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(650)
-                        .HasColumnName("band_good_min");
-
-                    b.Property<int>("BandPoorMin")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(350)
-                        .HasColumnName("band_poor_min");
-
-                    b.Property<int?>("BlockMinScore")
-                        .HasColumnType("integer")
-                        .HasColumnName("block_min_score");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.Property<int>("WeightOutstandingLoad")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(20)
-                        .HasColumnName("weight_outstanding_load");
-
-                    b.Property<int>("WeightPlanHistory")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(25)
-                        .HasColumnName("weight_plan_history");
-
-                    b.Property<int>("WeightRelationship")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(10)
-                        .HasColumnName("weight_relationship");
-
-                    b.Property<int>("WeightRepaymentHistory")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(45)
-                        .HasColumnName("weight_repayment_history");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-                        .HasName("pk_msg_credit_score_settings");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_bus_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_created_by_tenant_id");
-
-                    b.HasIndex("LocId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_loc_id_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_org_id_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_updated_by_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_msg_credit_score_settings_tenant_id_org_id_bus_id_loc_id");
-
-                    b.ToTable("msg_credit_score_settings", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_credit_score_settings_bands", "band_poor_min < band_fair_min AND band_fair_min < band_good_min AND band_good_min < band_excellent_min");
-
-                            t.HasCheckConstraint("ck_msg_credit_score_settings_gates", "block_min_score IS NULL OR approval_min_score IS NULL OR block_min_score <= approval_min_score");
-
-                            t.HasCheckConstraint("ck_msg_credit_score_settings_weights", "weight_repayment_history + weight_plan_history + weight_outstanding_load + weight_relationship = 100");
-                        });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.CreditScoreSettingHistory", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("LocId")
-                        .HasColumnType("text")
-                        .HasColumnName("loc_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<JsonDocument>("NewSettings")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("new_settings");
-
-                    b.Property<JsonDocument>("OldSettings")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("old_settings");
-
-                    b.Property<string>("Summary")
-                        .HasColumnType("text")
-                        .HasColumnName("summary");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-                        .HasName("pk_msg_credit_score_settings_history");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_history_bus_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_history_created_by_tenant_id");
-
-                    b.HasIndex("LocId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_history_loc_id_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_credit_score_settings_history_org_id_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Cdatetime")
-                        .HasDatabaseName("ix_msg_credit_score_settings_history_tenant_id_org_id_bus_id_c");
-
-                    b.ToTable("msg_credit_score_settings_history", "mystoreguard");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.Customer", b =>
@@ -3960,7 +3458,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                             t.HasCheckConstraint("ck_msg_installment_policies_policy_mode", "policy_mode IN ('ALLOW','DENY')");
 
-                            t.HasCheckConstraint("ck_msg_installment_policies_policy_target_type", "policy_target_type IN ('ALL_PRODUCTS','PRODUCT','PRODUCTS','SKU','TAG','LABEL','CATEGORY','BRAND')");
+                            t.HasCheckConstraint("ck_msg_installment_policies_policy_target_type", "policy_target_type IN ('ALL_PRODUCTS','PRODUCT','SKU','TAG','LABEL','CATEGORY','BRAND')");
 
                             t.HasCheckConstraint("ck_msg_installment_policies_refund_interval", "refund_reminder_enabled = false OR refund_reminder_interval_minutes > 0");
 
@@ -4112,83 +3610,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasDatabaseName("ix_msg_installment_policy_locations_tenant_id_org_id_bus_id_po");
 
                     b.ToTable("msg_installment_policy_locations", "mystoreguard");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyProduct", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("PolicyId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("policy_id");
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("product_id");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("TARGET")
-                        .HasColumnName("role");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
-                        .HasName("pk_msg_installment_policy_products");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_policy_products_bus_id_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_policy_products_org_id_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "ProductId")
-                        .HasDatabaseName("ix_msg_installment_policy_products_tenant_id_org_id_bus_id_pro");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "PolicyId", "ProductId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_msg_installment_policy_products_tenant_id_org_id_bus_id_pol");
-
-                    b.ToTable("msg_installment_policy_products", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_installment_policy_products_role", "role IN ('TARGET','EXCEPT')");
-                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyRefundCloser", b =>
@@ -7084,7 +6505,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         {
                             t.HasCheckConstraint("ck_msg_pricing_rule_rule_category", "rule_category IN ('PRICE_ADJUSTMENT','QUANTITY_BASED')");
 
-                            t.HasCheckConstraint("ck_msg_pricing_rule_rule_target_type", "rule_target_type IN ('PRODUCT','ALL_PRODUCTS','SKU','LOCATION','TAG','CATEGORY','BRAND','LABEL','COLOR','CONDITION')");
+                            t.HasCheckConstraint("ck_msg_pricing_rule_rule_target_type", "rule_target_type IN ('PRODUCT','ALL_PRODUCTS','SKU','LOCATION','TAG','CATEGORY','BRAND','LABEL')");
 
                             t.HasCheckConstraint("ck_msg_pricing_rule_rule_type", "rule_type IN ('FIXED_AMOUNT','PRICE_DISCOUNT','PERCENTAGE_DISCOUNT','PRICE_MARKUP','PERCENTAGE_MARKUP','BUNDLE','BOGO','QUANTITY_BREAK')");
                         });
@@ -7389,7 +6810,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         {
                             t.HasCheckConstraint("ck_msg_product_metadata_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 
-                            t.HasCheckConstraint("ck_msg_product_metadata_of_type", "of_type IN ('TAG','CATEGORY','BRAND','LABEL','COLOR','CONDITION')");
+                            t.HasCheckConstraint("ck_msg_product_metadata_of_type", "of_type IN ('TAG','CATEGORY','BRAND','LABEL')");
                         });
                 });
 
@@ -7606,7 +7027,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_product_prices", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_product_prices_of_type", "of_type IN ('SKU','GLOBAL','LOCATION','TAG','CATEGORY','BRAND','LABEL','COLOR','CONDITION')");
+                            t.HasCheckConstraint("ck_msg_product_prices_of_type", "of_type IN ('SKU','GLOBAL','LOCATION','TAG','CATEGORY','BRAND','LABEL')");
                         });
                 });
 
@@ -8604,12 +8025,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnType("text")
                         .HasColumnName("approved_by");
 
-                    b.Property<decimal>("CashRefundAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(10,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("cash_refund_amount");
-
                     b.Property<string>("Cdate")
                         .HasColumnType("text")
                         .HasColumnName("cdate");
@@ -8629,22 +8044,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.Property<string>("CustomerId")
                         .HasColumnType("text")
                         .HasColumnName("customer_id");
-
-                    b.Property<string>("InstallmentPlanId")
-                        .HasColumnType("text")
-                        .HasColumnName("installment_plan_id");
-
-                    b.Property<decimal>("PlanSettledAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(10,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("plan_settled_amount");
-
-                    b.Property<decimal>("PlanWrittenOffAmount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(10,2)")
-                        .HasDefaultValue(0m)
-                        .HasColumnName("plan_written_off_amount");
 
                     b.Property<DateTimeOffset?>("ProcessedAt")
                         .HasColumnType("timestamp with time zone")
@@ -8772,18 +8171,11 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_msg_returns_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "InstallmentPlanId")
-                        .HasDatabaseName("ix_msg_returns_tenant_id_org_id_bus_id_loc_id_installment_plan");
-
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "SaleId")
                         .HasDatabaseName("ix_msg_returns_tenant_id_org_id_bus_id_loc_id_sale_id");
 
                     b.ToTable("msg_returns", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_returns_plan_amounts", "plan_settled_amount >= 0 AND plan_written_off_amount >= 0 AND cash_refund_amount >= 0");
-
-                            t.HasCheckConstraint("ck_msg_returns_plan_link", "installment_plan_id IS NOT NULL OR (plan_settled_amount = 0 AND plan_written_off_amount = 0)");
-
                             t.HasCheckConstraint("ck_msg_returns_reason", "reason IN ('DEFECTIVE','WRONG_ITEM','CUSTOMER_CHANGED_MIND','EXPIRED','DAMAGED_IN_TRANSIT','OTHER')");
 
                             t.HasCheckConstraint("ck_msg_returns_refund_method", "refund_method IN ('ORIGINAL_PAYMENT','STORE_CREDIT','CASH','ANY')");
@@ -11209,191 +10601,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasConstraintName("fk_msg_batch_locations_purchase_batches_tenant_id_org_id_bus_i");
                 });
 
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.Collection", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_collections_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_collections_cp_businesses_bus_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_collections_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
-                        .WithMany()
-                        .HasForeignKey("LocId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_collections_cp_locations_loc_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_collections_cp_organizations_org_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("ResolvedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_collections_cp_users_resolved_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_collections_cp_users_updated_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPlan", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "PlanId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_msg_collections_installment_plans_tenant_id_org_id_bus_id_l");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.CreditScore", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_scores_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_scores_cp_businesses_bus_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_credit_scores_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
-                        .WithMany()
-                        .HasForeignKey("LocId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_scores_cp_locations_loc_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_scores_cp_organizations_org_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Customer", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_scores_customers_tenant_id_org_id_bus_id_custome");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPlan", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "PlanId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_msg_credit_scores_installment_plans_tenant_id_org_id_bus_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.CreditScoreSetting", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_cp_businesses_bus_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_credit_score_settings_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
-                        .WithMany()
-                        .HasForeignKey("LocId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_cp_locations_loc_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_cp_organizations_org_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_credit_score_settings_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.CreditScoreSettingHistory", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_history_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_history_cp_businesses_bus_id_tena");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_credit_score_settings_history_cp_users_created_by_tenan");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Location", null)
-                        .WithMany()
-                        .HasForeignKey("LocId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_history_cp_locations_loc_id_tenan");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_credit_score_settings_history_cp_organizations_org_id_t");
-                });
-
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.Customer", b =>
                 {
                     b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
@@ -12227,44 +11434,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_msg_installment_policy_locations_msg_installment_policies_t");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyProduct", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_cp_businesses_bus_id_tenant");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_cp_organizations_org_id_ten");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicy", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "PolicyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_msg_installment_policies_te");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Product", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_products_tenant_id_org_id_b");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyRefundCloser", b =>
@@ -14164,12 +13333,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasForeignKey("UpdatedBy", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_returns_cp_users_updated_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPlan", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "InstallmentPlanId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_returns_msg_installment_plans_tenant_id_org_id_bus_id_l");
 
                     b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Sale", null)
                         .WithMany()

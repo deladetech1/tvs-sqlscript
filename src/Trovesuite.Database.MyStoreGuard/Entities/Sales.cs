@@ -335,6 +335,18 @@ public class Sale
     public DateTimeOffset? FulfillmentDateTime { get; set; }
     public string? Description { get; set; }
     public decimal TotalAmount { get; set; }
+    /// <summary>
+    /// What the customer actually owes: the goods plus any installment finance
+    /// charge. Equals TotalAmount for every non-installment sale, which is why
+    /// it is safe for BalanceAmount to be measured against it everywhere.
+    ///
+    /// TotalAmount deliberately stays the GOODS total. Folding interest into it
+    /// would inflate sales-summary, product profitability, tax and commission,
+    /// all of which read it.
+    /// </summary>
+    public decimal PayableAmount { get; set; }
+    /// <summary>PayableAmount - TotalAmount. Interest income, reported separately.</summary>
+    public decimal FinanceChargeAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal BalanceAmount { get; set; }
     public decimal GiftCardAmountUsed { get; set; }
@@ -463,6 +475,24 @@ public class Return
     public DateTimeOffset? ProcessedAt { get; set; }
     public string? ProcessingNotes { get; set; }
     public string? CustomerId { get; set; }
+
+    /// <summary>
+    /// Set when the sale being returned was financed. The goods coming back
+    /// pay off what the customer still owes before any cash goes out, so a
+    /// return on a plan is a settlement first and a refund second.
+    /// </summary>
+    public string? InstallmentPlanId { get; set; }
+    /// <summary>How much of the returned value went to clearing the plan.</summary>
+    public decimal PlanSettledAmount { get; set; }
+    /// <summary>
+    /// What the returned goods did not cover. The shop has the item back, so
+    /// the remainder is written off rather than chased — recorded here so it
+    /// is never a silent loss.
+    /// </summary>
+    public decimal PlanWrittenOffAmount { get; set; }
+    /// <summary>What actually goes back to the customer once the plan is clear.</summary>
+    public decimal CashRefundAmount { get; set; }
+
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }

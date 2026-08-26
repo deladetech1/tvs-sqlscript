@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260825225213_AddCreditScoringAndCollections")]
+    partial class AddCreditScoringAndCollections
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3960,7 +3963,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                             t.HasCheckConstraint("ck_msg_installment_policies_policy_mode", "policy_mode IN ('ALLOW','DENY')");
 
-                            t.HasCheckConstraint("ck_msg_installment_policies_policy_target_type", "policy_target_type IN ('ALL_PRODUCTS','PRODUCT','PRODUCTS','SKU','TAG','LABEL','CATEGORY','BRAND')");
+                            t.HasCheckConstraint("ck_msg_installment_policies_policy_target_type", "policy_target_type IN ('ALL_PRODUCTS','PRODUCT','SKU','TAG','LABEL','CATEGORY','BRAND')");
 
                             t.HasCheckConstraint("ck_msg_installment_policies_refund_interval", "refund_reminder_enabled = false OR refund_reminder_interval_minutes > 0");
 
@@ -4112,83 +4115,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasDatabaseName("ix_msg_installment_policy_locations_tenant_id_org_id_bus_id_po");
 
                     b.ToTable("msg_installment_policy_locations", "mystoreguard");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyProduct", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("PolicyId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("policy_id");
-
-                    b.Property<string>("ProductId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("product_id");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("TARGET")
-                        .HasColumnName("role");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
-                        .HasName("pk_msg_installment_policy_products");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_policy_products_bus_id_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_installment_policy_products_org_id_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "ProductId")
-                        .HasDatabaseName("ix_msg_installment_policy_products_tenant_id_org_id_bus_id_pro");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "PolicyId", "ProductId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_msg_installment_policy_products_tenant_id_org_id_bus_id_pol");
-
-                    b.ToTable("msg_installment_policy_products", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_installment_policy_products_role", "role IN ('TARGET','EXCEPT')");
-                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyRefundCloser", b =>
@@ -12227,44 +12153,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_msg_installment_policy_locations_msg_installment_policies_t");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyProduct", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_cp_businesses_bus_id_tenant");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_cp_organizations_org_id_ten");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicy", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "PolicyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_msg_installment_policies_te");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.Product", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_installment_policy_products_products_tenant_id_org_id_b");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.InstallmentPolicyRefundCloser", b =>

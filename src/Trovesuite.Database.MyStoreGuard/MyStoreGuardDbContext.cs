@@ -81,6 +81,29 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<MsgTaskCommentMention> TaskCommentMentions => Set<MsgTaskCommentMention>();
     public DbSet<MsgTaskAttachment> TaskAttachments => Set<MsgTaskAttachment>();
 
+    public DbSet<InstallmentPolicy> InstallmentPolicies => Set<InstallmentPolicy>();
+    public DbSet<InstallmentPolicyLocation> InstallmentPolicyLocations => Set<InstallmentPolicyLocation>();
+    public DbSet<InstallmentPlanOption> InstallmentPlanOptions => Set<InstallmentPlanOption>();
+    public DbSet<InstallmentPolicyVariable> InstallmentPolicyVariables => Set<InstallmentPolicyVariable>();
+    public DbSet<InstallmentPolicyApprover> InstallmentPolicyApprovers => Set<InstallmentPolicyApprover>();
+    public DbSet<InstallmentPolicyRefundCloser> InstallmentPolicyRefundClosers => Set<InstallmentPolicyRefundCloser>();
+    public DbSet<InstallmentPlan> InstallmentPlans => Set<InstallmentPlan>();
+    public DbSet<InstallmentScheduleRow> InstallmentScheduleRows => Set<InstallmentScheduleRow>();
+    public DbSet<InstallmentAllocation> InstallmentAllocations => Set<InstallmentAllocation>();
+    public DbSet<InstallmentApproval> InstallmentApprovals => Set<InstallmentApproval>();
+    public DbSet<InstallmentPenalty> InstallmentPenalties => Set<InstallmentPenalty>();
+    public DbSet<Guarantor> Guarantors => Set<Guarantor>();
+    public DbSet<GuarantorContact> GuarantorContacts => Set<GuarantorContact>();
+    public DbSet<GuarantorDocument> GuarantorDocuments => Set<GuarantorDocument>();
+    public DbSet<SaleGuarantor> SaleGuarantors => Set<SaleGuarantor>();
+    public DbSet<CreditScore> CreditScores => Set<CreditScore>();
+    public DbSet<CreditScoreSetting> CreditScoreSettings => Set<CreditScoreSetting>();
+    public DbSet<CreditScoreSettingHistory> CreditScoreSettingHistories =>
+        Set<CreditScoreSettingHistory>();
+    public DbSet<InstallmentPolicyProduct> InstallmentPolicyProducts =>
+        Set<InstallmentPolicyProduct>();
+    public DbSet<Collection> Collections => Set<Collection>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);

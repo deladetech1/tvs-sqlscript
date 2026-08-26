@@ -25,7 +25,8 @@ public sealed class PricingRuleConfiguration : IEntityTypeConfiguration<PricingR
         b.HasInCheck("rule_category", "PRICE_ADJUSTMENT", "QUANTITY_BASED");
         b.HasInCheck("rule_type", "FIXED_AMOUNT", "PRICE_DISCOUNT", "PERCENTAGE_DISCOUNT",
                                   "PRICE_MARKUP", "PERCENTAGE_MARKUP", "BUNDLE", "BOGO", "QUANTITY_BREAK");
-        b.HasInCheck("rule_target_type", "PRODUCT", "ALL_PRODUCTS", "SKU", "LOCATION", "TAG", "CATEGORY", "BRAND", "LABEL");
+        b.HasInCheck("rule_target_type", "PRODUCT", "ALL_PRODUCTS", "SKU", "LOCATION", "TAG",
+                                         "CATEGORY", "BRAND", "LABEL", "COLOR", "CONDITION");
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
     }
@@ -286,6 +287,8 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         b.Property(x => x.FulfillmentStatus).HasDefaultValue("PENDING");
         b.Property(x => x.FulfillmentDateTime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
         b.Property(x => x.TotalAmount).HasColumnType("numeric(18,2)");
+        b.Property(x => x.PayableAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
+        b.Property(x => x.FinanceChargeAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.PaidAmount).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
         b.Property(x => x.BalanceAmount).HasColumnType("numeric(18,2)");
         b.Property(x => x.GiftCardAmountUsed).HasColumnType("numeric(18,2)").HasDefaultValue(0m);
@@ -296,7 +299,7 @@ public sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.SaleNumber }).IsUnique();
         b.HasInCheck("status", "ON_HOLD", "PAID", "PARTIALLY_PAID", "OVERDUE", "CANCELLED", "QUEUED");
-        b.HasInCheck("sale_mode", "INSTANT", "DEPOSIT", "CREDIT");
+        b.HasInCheck("sale_mode", "INSTANT", "INSTALLMENT", "CREDIT");
         b.HasInCheck("fulfillment_status", "PENDING", "PARTIALLY_FULFILLED", "FULFILLED");
         b.WithTenantOrgBusLocFks();
         b.WithCustomerFk(DeleteBehavior.Restrict);
@@ -399,15 +402,33 @@ public sealed class ReturnConfiguration : IEntityTypeConfiguration<Return>
         b.Property(x => x.RestockingFeePercent).HasColumnType("decimal(5,2)").HasDefaultValue(0m);
         b.Property(x => x.RestockingFeeAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
         b.Property(x => x.TotalRefundAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
+        b.Property(x => x.PlanSettledAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
+        b.Property(x => x.PlanWrittenOffAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
+        b.Property(x => x.CashRefundAmount).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
         b.Property(x => x.ApprovalRequired).HasDefaultValue(false);
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
         b.HasInCheck("return_type", "REFUND", "EXCHANGE", "STORE_CREDIT");
         b.HasInCheck("status", "PENDING", "APPROVED", "REJECTED", "COMPLETED");
         b.HasInCheck("reason", "DEFECTIVE", "WRONG_ITEM", "CUSTOMER_CHANGED_MIND", "EXPIRED", "DAMAGED_IN_TRANSIT", "OTHER");
         b.HasInCheck("refund_method", "ORIGINAL_PAYMENT", "STORE_CREDIT", "CASH", "ANY");
+        b.ToTable(t =>
+        {
+            t.HasCheckConstraint("ck_msg_returns_plan_amounts",
+                "plan_settled_amount >= 0 AND plan_written_off_amount >= 0 "
+                + "AND cash_refund_amount >= 0");
+            t.HasCheckConstraint("ck_msg_returns_plan_link",
+                "installment_plan_id IS NOT NULL OR (plan_settled_amount = 0 "
+                + "AND plan_written_off_amount = 0)");
+        });
         b.WithTenantOrgBusFks();
         b.WithSaleFk(DeleteBehavior.Restrict);
         b.WithCrossSchemaCreateUpdateUserFks();
+        // installment_plan_id → msg_installment_plans RESTRICT: a return is the
+        // record of how a plan ended, so the plan cannot vanish beneath it.
+        b.HasOne<InstallmentPlan>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "InstallmentPlanId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+            .OnDelete(DeleteBehavior.Restrict);
         // approved_by / rejected_by / processed_by → cp_users RESTRICT
         foreach (var c in new[] { "ApprovedBy", "RejectedBy", "ProcessedBy" })
         {
@@ -479,7 +500,7 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.InvoiceNumber }).IsUnique();
         b.HasInCheck("status", "DRAFT", "COMPLETED", "PARTIALLY_PAID", "OVERDUE", "CANCELLED");
-        b.HasInCheck("sale_mode", "INSTANT", "DEPOSIT", "CREDIT");
+        b.HasInCheck("sale_mode", "INSTANT", "INSTALLMENT", "CREDIT");
         b.WithTenantOrgBusLocFks();
         b.WithCustomerFk(DeleteBehavior.Restrict);
         // Restrict (not SetNull): these FKs span TenantId/OrgId/BusId, which are
