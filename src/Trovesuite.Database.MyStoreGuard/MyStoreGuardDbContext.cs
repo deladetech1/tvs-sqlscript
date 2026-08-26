@@ -100,6 +100,8 @@ public class MyStoreGuardDbContext : DbContext
     public DbSet<CreditScoreSetting> CreditScoreSettings => Set<CreditScoreSetting>();
     public DbSet<CreditScoreSettingHistory> CreditScoreSettingHistories =>
         Set<CreditScoreSettingHistory>();
+    public DbSet<InstallmentPolicyProduct> InstallmentPolicyProducts =>
+        Set<InstallmentPolicyProduct>();
     public DbSet<Collection> Collections => Set<Collection>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

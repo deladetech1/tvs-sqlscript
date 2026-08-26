@@ -30,6 +30,17 @@ public class InstallmentPolicy
     // ---- B. targeting (locations live in InstallmentPolicyLocation) ----
     public string PolicyTargetType { get; set; } = default!;
     public string? PolicyTargetId { get; set; }
+
+    /// <summary>
+    /// What the attached product list means: ALL ignores it, INCLUDE narrows
+    /// the policy to only those products, EXCLUDE holds it back from them.
+    ///
+    /// A second dial rather than another target type, because it answers a
+    /// different question. The target says what KIND of thing this policy is
+    /// about; the list says which of them, and a shop usually wants "this
+    /// category, except the two lines we never finance".
+    /// </summary>
+    public string ProductScope { get; set; } = "ALL";
     /// <summary>
     /// The band is tested against the LINE TOTAL of the item this policy
     /// matched, not the cart total. A policy targets one product, so an
@@ -125,6 +136,31 @@ public class InstallmentPolicy
 /// type. msg_return_policies folds LOCATION into its target enum, which makes
 /// "this brand, but only at East Legon" unexpressible.
 /// </summary>
+/// <summary>
+/// A named list of products a policy is narrowed to, or held back from.
+///
+/// Sits ON TOP of the target, it does not replace it. A policy still targets a
+/// category or the whole shop; this says "…but only these ten", or "…except
+/// these three". Without it a shop wanting a policy for most of a category had
+/// to either write one policy per product or add a DENY policy alongside, and
+/// neither reads as what they meant.
+///
+/// No rows means the list is not in use, exactly as with locations.
+/// </summary>
+public class InstallmentPolicyProduct
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string PolicyId { get; set; } = default!;
+    public string ProductId { get; set; } = default!;
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+}
+
 public class InstallmentPolicyLocation
 {
     public string Id { get; set; } = default!;

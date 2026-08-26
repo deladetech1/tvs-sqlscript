@@ -60,6 +60,8 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
         b.HasInCheck("policy_target_type",
             "ALL_PRODUCTS", "PRODUCT", "SKU", "TAG", "LABEL", "CATEGORY", "BRAND");
         b.HasInCheck("policy_mode", "ALLOW", "DENY");
+        b.Property(x => x.ProductScope).HasDefaultValue("ALL");
+        b.HasInCheck("product_scope", "ALL", "INCLUDE", "EXCLUDE");
         b.HasInCheck("approval_mode", "ANY", "ALL");
         // NULL is not listed and does not need to be: a CHECK passes when its
         // expression evaluates to NULL, so `col IN (...)` already permits NULL.
@@ -120,6 +122,30 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
 
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
+    }
+}
+
+public sealed class InstallmentPolicyProductConfiguration
+    : IEntityTypeConfiguration<InstallmentPolicyProduct>
+{
+    public void Configure(EntityTypeBuilder<InstallmentPolicyProduct> b)
+    {
+        b.ToTable("msg_installment_policy_products");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+
+        // One row per (policy, product), the same reason as locations: a
+        // duplicate lets the same product be removed once and still match.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.PolicyId, x.ProductId })
+            .IsUnique();
+
+        b.WithTenantOrgBusFks();
+        b.WithProductFk(DeleteBehavior.Cascade);
+        b.HasOne<InstallmentPolicy>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "PolicyId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 
