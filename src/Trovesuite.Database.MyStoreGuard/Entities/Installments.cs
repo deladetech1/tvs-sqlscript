@@ -32,16 +32,6 @@ public class InstallmentPolicy
     public string? PolicyTargetId { get; set; }
 
     /// <summary>
-    /// What the attached product list means: ALL ignores it, INCLUDE narrows
-    /// the policy to only those products, EXCLUDE holds it back from them.
-    ///
-    /// A second dial rather than another target type, because it answers a
-    /// different question. The target says what KIND of thing this policy is
-    /// about; the list says which of them, and a shop usually wants "this
-    /// category, except the two lines we never finance".
-    /// </summary>
-    public string ProductScope { get; set; } = "ALL";
-    /// <summary>
     /// The band is tested against the LINE TOTAL of the item this policy
     /// matched, not the cart total. A policy targets one product, so an
     /// unrelated item in the same basket must not change whether it applies.
@@ -129,23 +119,17 @@ public class InstallmentPolicy
 }
 
 /// <summary>
-/// Which locations a policy applies at. NO rows means every location — that
-/// keeps the common case a single policy row instead of one per branch.
+/// Products named on a policy, in one of two roles.
 ///
-/// This is a scope, ANDed on top of the product target, not another target
-/// type. msg_return_policies folds LOCATION into its target enum, which makes
-/// "this brand, but only at East Legon" unexpressible.
-/// </summary>
-/// <summary>
-/// A named list of products a policy is narrowed to, or held back from.
+/// TARGET is the policy's own list — what it applies to, used when the target
+/// type is PRODUCTS. EXCEPT carves products back out of whatever the policy
+/// targets, so "all televisions, except the two cheap models" is one policy
+/// rather than one per model.
 ///
-/// Sits ON TOP of the target, it does not replace it. A policy still targets a
-/// category or the whole shop; this says "…but only these ten", or "…except
-/// these three". Without it a shop wanting a policy for most of a category had
-/// to either write one policy per product or add a DENY policy alongside, and
-/// neither reads as what they meant.
-///
-/// No rows means the list is not in use, exactly as with locations.
+/// Two roles on one table rather than an include/exclude flag on the policy,
+/// because a flag let you target a product and then exclude that same product
+/// — a policy that silently matched nothing. EXCEPT can only ever subtract
+/// from what was already chosen.
 /// </summary>
 public class InstallmentPolicyProduct
 {
@@ -155,12 +139,22 @@ public class InstallmentPolicyProduct
     public string BusId { get; set; } = default!;
     public string PolicyId { get; set; } = default!;
     public string ProductId { get; set; } = default!;
+    /// <summary>TARGET (what it applies to) or EXCEPT (carved back out).</summary>
+    public string Role { get; set; } = "TARGET";
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }
     public string? CreatedBy { get; set; }
 }
 
+/// <summary>
+/// Which locations a policy applies at. NO rows means every location — that
+/// keeps the common case a single policy row instead of one per branch.
+///
+/// This is a scope, ANDed on top of the product target, not another target
+/// type. msg_return_policies folds LOCATION into its target enum, which makes
+/// "this brand, but only at East Legon" unexpressible.
+/// </summary>
 public class InstallmentPolicyLocation
 {
     public string Id { get; set; } = default!;

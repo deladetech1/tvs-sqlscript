@@ -58,10 +58,10 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
         // No LOCATION here on purpose — location is a separate scope table, so a
         // policy can target a brand AND be limited to two branches at once.
         b.HasInCheck("policy_target_type",
-            "ALL_PRODUCTS", "PRODUCT", "SKU", "TAG", "LABEL", "CATEGORY", "BRAND");
+            "ALL_PRODUCTS", "PRODUCT", "PRODUCTS", "SKU", "TAG", "LABEL",
+            "CATEGORY", "BRAND");
         b.HasInCheck("policy_mode", "ALLOW", "DENY");
-        b.Property(x => x.ProductScope).HasDefaultValue("ALL");
-        b.HasInCheck("product_scope", "ALL", "INCLUDE", "EXCLUDE");
+
         b.HasInCheck("approval_mode", "ANY", "ALL");
         // NULL is not listed and does not need to be: a CHECK passes when its
         // expression evaluates to NULL, so `col IN (...)` already permits NULL.
@@ -137,6 +137,10 @@ public sealed class InstallmentPolicyProductConfiguration
 
         // One row per (policy, product), the same reason as locations: a
         // duplicate lets the same product be removed once and still match.
+        b.Property(x => x.Role).HasDefaultValue("TARGET");
+        b.HasInCheck("role", "TARGET", "EXCEPT");
+        // One row per (policy, product, role). The same product may not be both
+        // targeted and excepted — that policy would match nothing.
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.PolicyId, x.ProductId })
             .IsUnique();
 
