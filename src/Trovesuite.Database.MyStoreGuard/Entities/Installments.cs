@@ -103,6 +103,29 @@ public class InstallmentPolicy
     /// </summary>
     public bool AllowOnlinePayment { get; set; } = true;
 
+    /// <summary>
+    /// May the cashier change the deposit amount the till fills in?
+    ///
+    /// Off means the deposit is collected in full or not at all. A deposit is a
+    /// risk control — it is the shop's cover if the customer stops paying — so
+    /// a business that sets 30% usually means 30%, not "30% unless someone at
+    /// the counter is talked down".
+    ///
+    /// Separate from the installment switch below because the two are commonly
+    /// answered differently: fix the deposit, but let a customer who is short
+    /// this week pay what they have.
+    /// </summary>
+    public bool AllowInitialPaymentEdit { get; set; } = true;
+
+    /// <summary>
+    /// May the cashier change the installment amount the till fills in?
+    ///
+    /// Off means each collection is exactly what is due. Worth turning off
+    /// where part-payments create more bookkeeping than they are worth; worth
+    /// leaving on where taking something beats taking nothing.
+    /// </summary>
+    public bool AllowInstallmentAmountEdit { get; set; } = true;
+
     // ---- F. penalty ----
     public bool PenaltyEnabled { get; set; }
     public string? PenaltyKind { get; set; }
