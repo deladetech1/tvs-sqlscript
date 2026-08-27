@@ -33,6 +33,10 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
         b.Property(x => x.FirstDueOffsetDays).HasDefaultValue(0);
         b.Property(x => x.AllowCustomStartDate).HasDefaultValue(false);
 
+        // Existing policies get true on backfill: online payment worked on
+        // these plans before this column existed, so defaulting to false would
+        // silently switch it off everywhere.
+        b.Property(x => x.AllowOnlinePayment).HasDefaultValue(true);
         b.Property(x => x.ApprovalRequired).HasDefaultValue(false);
         b.Property(x => x.ApprovalMode).HasDefaultValue("ANY");
         b.Property(x => x.ApprovalThresholdAmount).HasColumnType("decimal(14,2)");

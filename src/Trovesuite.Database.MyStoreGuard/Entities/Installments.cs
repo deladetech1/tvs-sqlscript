@@ -84,6 +84,25 @@ public class InstallmentPolicy
     public int RefundReminderIntervalMinutes { get; set; } = 1440;
     public int RefundReminderMaxCount { get; set; }
 
+    /// <summary>
+    /// May a payment on a plan under this policy be collected online?
+    ///
+    /// Deliberately here rather than read from the per-location online payment
+    /// setting. That setting answers "may this till offer online payment",
+    /// which is a question about where a cashier is standing — and Owing is
+    /// business-wide, so the branch that sold a plan is routinely not the
+    /// branch collecting on it. Judging by location meant a plan you could see
+    /// was one you could not take money for.
+    ///
+    /// The policy already decides everything else about how a plan may be
+    /// paid, and a plan carries its policy wherever it is opened, so the answer
+    /// travels with the plan instead of with the person.
+    ///
+    /// Default true: the gateway is configured once for the tenant, so a
+    /// business that has online payment at all almost certainly wants it here.
+    /// </summary>
+    public bool AllowOnlinePayment { get; set; } = true;
+
     // ---- F. penalty ----
     public bool PenaltyEnabled { get; set; }
     public string? PenaltyKind { get; set; }
