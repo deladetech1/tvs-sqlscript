@@ -25,6 +25,19 @@ public class Client : TenantScopedEntity
     public string? IdNumber { get; set; }
     public string? IdIssueDate { get; set; }
     public string? IdExpiryDate { get; set; }
+
+    // ---- Name, as a regulatory return wants it ----
+    // Fullname stays the name the app displays and searches on. A credit bureau
+    // return reports surname, first name and middle names as separate columns
+    // and cannot split a combined string reliably (two-word surnames, titles
+    // typed into the name), so the parts are captured rather than parsed.
+    public string? Title { get; set; }
+    public string? Surname { get; set; }
+    public string? FirstName { get; set; }
+    public string? MiddleNames { get; set; }
+
+    /// <summary>ISO 3166-1 alpha-2. Required on every bureau submission.</summary>
+    public string? Nationality { get; set; }
 }
 
 public class LoanDriftActivityLog
@@ -344,6 +357,15 @@ public class Guarantor : TenantScopedEntity
     public string? ReligionExtraInfo { get; set; }
     public string? IdIssueDate { get; set; }
     public string? IdExpiryDate { get; set; }
+
+    // ---- Name parts, for the guarantor columns of a bureau return.
+    // Same reasoning as Client: Fullname stays what the app shows.
+    public string? Surname { get; set; }
+    public string? FirstName { get; set; }
+    public string? MiddleNames { get; set; }
+
+    /// <summary>ISO 3166-1 alpha-2.</summary>
+    public string? Nationality { get; set; }
 }
 
 public class LoanDriftResourceDeletionChatHistory

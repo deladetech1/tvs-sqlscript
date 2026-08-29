@@ -44,6 +44,12 @@ public class LoanDriftDbContext : DbContext
     public DbSet<CreditScoreSettingsHistory> CreditScoreSettingsHistories => Set<CreditScoreSettingsHistory>();
     public DbSet<CreditScore> CreditScores => Set<CreditScore>();
 
+    // Regulatory reporting — who files the return, and the identity documents it reports
+    public DbSet<CompanyProfile> CompanyProfiles => Set<CompanyProfile>();
+    public DbSet<BranchProfile> BranchProfiles => Set<BranchProfile>();
+    public DbSet<ClientIdentification> ClientIdentifications => Set<ClientIdentification>();
+    public DbSet<GuarantorIdentification> GuarantorIdentifications => Set<GuarantorIdentification>();
+
     // Loan penalties
     public DbSet<PenaltySettings> PenaltySettings => Set<PenaltySettings>();
     public DbSet<PenaltySettingsHistory> PenaltySettingsHistories => Set<PenaltySettingsHistory>();
