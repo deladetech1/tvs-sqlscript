@@ -84,6 +84,48 @@ public class InstallmentPolicy
     public int RefundReminderIntervalMinutes { get; set; } = 1440;
     public int RefundReminderMaxCount { get; set; }
 
+    /// <summary>
+    /// May a payment on a plan under this policy be collected online?
+    ///
+    /// Deliberately here rather than read from the per-location online payment
+    /// setting. That setting answers "may this till offer online payment",
+    /// which is a question about where a cashier is standing — and Owing is
+    /// business-wide, so the branch that sold a plan is routinely not the
+    /// branch collecting on it. Judging by location meant a plan you could see
+    /// was one you could not take money for.
+    ///
+    /// The policy already decides everything else about how a plan may be
+    /// paid, and a plan carries its policy wherever it is opened, so the answer
+    /// travels with the plan instead of with the person.
+    ///
+    /// Default true: the gateway is configured once for the tenant, so a
+    /// business that has online payment at all almost certainly wants it here.
+    /// </summary>
+    public bool AllowOnlinePayment { get; set; } = true;
+
+    /// <summary>
+    /// May the cashier change the deposit amount the till fills in?
+    ///
+    /// Off means the deposit is collected in full or not at all. A deposit is a
+    /// risk control — it is the shop's cover if the customer stops paying — so
+    /// a business that sets 30% usually means 30%, not "30% unless someone at
+    /// the counter is talked down".
+    ///
+    /// Separate from the installment switch below because the two are commonly
+    /// answered differently: fix the deposit, but let a customer who is short
+    /// this week pay what they have.
+    /// </summary>
+    public bool AllowInitialPaymentEdit { get; set; } = true;
+
+    /// <summary>
+    /// May the cashier change the installment amount the till fills in?
+    ///
+    /// Off means each collection is exactly what is due. Worth turning off
+    /// where part-payments create more bookkeeping than they are worth; worth
+    /// leaving on where taking something beats taking nothing.
+    /// </summary>
+    public bool AllowInstallmentAmountEdit { get; set; } = true;
+
     // ---- F. penalty ----
     public bool PenaltyEnabled { get; set; }
     public string? PenaltyKind { get; set; }

@@ -400,7 +400,12 @@ public sealed class RepaymentConfiguration : IEntityTypeConfiguration<Repayment>
         foreach (var col in new[] { "AmountGiven", "PaidAmount", "Balance", "PenaltyPaid" })
             b.Property(col).HasColumnType("numeric(20,6)").HasDefaultValue(0m);
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
-        b.HasInCheck("payment_method", "CASH", "CHEQUE", "MOMO", "BANK_TRANSFER", "OTHERS", null!);
+        // CARD is here for gateway repayments: a checkout settles as card,
+        // mobile money, bank transfer, USSD or QR, and the accounting reads
+        // this column to decide which account the money landed in. An
+        // unrecognised value falls back to CASH, so a card filed as OTHERS
+        // would put money in a till nobody could count.
+        b.HasInCheck("payment_method", "CASH", "CHEQUE", "MOMO", "BANK_TRANSFER", "CARD", "OTHERS", null!);
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusLocFks();
         b.WithClientFk();
