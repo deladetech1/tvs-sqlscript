@@ -71,7 +71,11 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Contact }).IsUnique();
         b.HasInCheck("marital_status", "SINGLE", "MARRIED", "DIVORCED", "WIDOWED", null!);
         b.HasInCheck("gender", "MALE", "FEMALE", "OTHER", null!);
-        b.HasInCheck("id_type", "GHANA_CARD", "VOTER_ID", "DRIVERS_LICENSE", "PASSPORT", null!);
+        // Widened past the four documents an officer used to be able to sight:
+        // a bureau return reports SSNIT, e-zwich and TIN as columns of their own,
+        // and any of them can be the document registration captured.
+        b.HasInCheck("id_type", RegulatoryDefaults.IdTypesOrNull);
+        b.HasInCheck("title", "MR", "MRS", "MISS", "MS", "DR", "MADAM", null!);
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusLocFks();
         b.WithCrossSchemaAuditUserFks();
@@ -359,7 +363,7 @@ public sealed class GuarantorConfiguration : IEntityTypeConfiguration<Guarantor>
         b.HasInCheck("gender", "MALE", "FEMALE", "OTHER", null!);
         b.HasInCheck("marital_status", "SINGLE", "MARRIED", "DIVORCED", "WIDOWED", null!);
         b.HasInCheck("relationship_to_borrower", "FAMILY", "FRIEND", "COLLEAGUE", "OTHER", null!);
-        b.HasInCheck("id_type", "GHANA_CARD", "VOTER_ID", "DRIVERS_LICENSE", "PASSPORT", null!);
+        b.HasInCheck("id_type", RegulatoryDefaults.IdTypesOrNull);
         b.HasDeleteStatusCheck();
         // bkup: org/bus/loc FKs are CASCADE (not RESTRICT) for guarantors
         b.WithTenantFk();
