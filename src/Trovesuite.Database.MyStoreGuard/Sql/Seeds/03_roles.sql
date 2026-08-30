@@ -57,6 +57,9 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 -- Stock Takes Admin Role (resource type rt-stock-takes): the auto-assign trigger grants all permission-msg-stock-takes-* on insert
 ('role-msg-stock-takes-admin', 'system-tenant-id', 'Mystoreguard Stock Takes Admin', 'Administrator for stock takes management (count, investigate, and resolve variances)', 'rt-stock-takes', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
+-- Ecommerce Admin Role (resource type rt-ecommerce): the auto-assign trigger grants all permission-msg-ecommerce-* on insert
+('role-msg-ecommerce-admin', 'system-tenant-id', 'Mystoreguard Ecommerce Admin', 'Administrator for the ecommerce storefront - configuration, listings, images, versions and promotion', 'rt-ecommerce', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
 -- Viewer Admin Role (read-only access to all Mystoreguard resources)
 ('role-msg-viewer-admin', 'system-tenant-id', 'Mystoreguard Viewer Admin', 'Viewer Admin for Mystoreguard - can view all Mystoreguard resources with GET permissions only', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (tenant_id, role_name) DO UPDATE SET

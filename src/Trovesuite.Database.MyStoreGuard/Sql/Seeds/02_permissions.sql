@@ -223,7 +223,16 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-estimates-create', 'Mystoreguard Estimates Create', 'rt-estimate', 'Can create new estimates from a template', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-estimates-get', 'Mystoreguard Estimates Get', 'rt-estimate', 'Can view, list, read estimates and view statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-estimates-update', 'Mystoreguard Estimates Update', 'rt-estimate', 'Can update/re-price estimates and change their status', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-estimates-delete', 'Mystoreguard Estimates Delete', 'rt-estimate', 'Can delete estimates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-msg-estimates-delete', 'Mystoreguard Estimates Delete', 'rt-estimate', 'Can delete estimates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Ecommerce permissions (storefront configuration, listings, versions, home page)
+-- -update is what publishes: promoting a version is an update, and it is the act that
+-- changes what the public sees. Anyone holding it can change the shop window, which is
+-- why reading (-get) is separate and much more freely granted.
+('permission-msg-ecommerce-create', 'Mystoreguard Ecommerce Create', 'rt-ecommerce', 'Can create storefront versions, version items, home sections and product images', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-ecommerce-get', 'Mystoreguard Ecommerce Get', 'rt-ecommerce', 'Can view the storefront overview, settings, listings, versions and previews', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-ecommerce-update', 'Mystoreguard Ecommerce Update', 'rt-ecommerce', 'Can change storefront settings, edit versions and promote or unpromote them', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-ecommerce-delete', 'Mystoreguard Ecommerce Delete', 'rt-ecommerce', 'Can delete storefront versions, version items, home sections and product images', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
