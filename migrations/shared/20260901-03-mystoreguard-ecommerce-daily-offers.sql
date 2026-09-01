@@ -26,7 +26,10 @@ ALTER TABLE mystoreguard.msg_ecommerce_versions
 
 ALTER TABLE mystoreguard.msg_ecommerce_versions
     ADD CONSTRAINT ck_msg_ecommerce_versions_enums CHECK (
-        page_key IN ('HOME', 'BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'HOME', 'INSTALLMENT', 'MARKET',
+            'PRE_USED'
+        )
         AND status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')
         AND layout IN ('GRID', 'CAROUSEL', 'HERO', 'LIST')
     );
@@ -41,9 +44,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_enums CHECK (
         section_key IN (
-            'HERO', 'BIDDING', 'PRE_USED', 'MARKET', 'CUSTOM',
-            'HOW_IT_WORKS', 'PROMO', 'CATEGORY_TILES', 'RICH_TEXT',
-            'DAILY_OFFER'
+            'BIDDING', 'CATEGORY_TILES', 'CUSTOM', 'DAILY_OFFER', 'HERO',
+            'HOW_IT_WORKS', 'INSTALLMENT', 'MARKET', 'PRE_USED', 'PROMO',
+            'RICH_TEXT'
         )
     );
 
@@ -52,7 +55,10 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_page CHECK (
-        page_key IN ('HOME', 'BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'HOME', 'INSTALLMENT', 'MARKET',
+            'PRE_USED'
+        )
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
@@ -61,7 +67,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_source CHECK (
         source_page_key IS NULL
-        OR source_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        OR source_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
@@ -70,7 +78,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_cta_page CHECK (
         cta_page_key IS NULL
-        OR cta_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        OR cta_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
@@ -79,7 +89,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_cta_secondary CHECK (
         cta_secondary_page_key IS NULL
-        OR cta_secondary_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        OR cta_secondary_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
     );
 
 
@@ -92,9 +104,13 @@ ALTER TABLE mystoreguard.msg_ecommerce_banner_slides
 ALTER TABLE mystoreguard.msg_ecommerce_banner_slides
     ADD CONSTRAINT ck_msg_ecommerce_banner_slides_cta CHECK (
         (cta_page_key IS NULL
-         OR cta_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER'))
+         OR cta_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        ))
         AND (cta_secondary_page_key IS NULL
-             OR cta_secondary_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER'))
+             OR cta_secondary_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        ))
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_section_cards
@@ -103,7 +119,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_section_cards
 ALTER TABLE mystoreguard.msg_ecommerce_section_cards
     ADD CONSTRAINT ck_msg_ecommerce_section_cards_link CHECK (
         link_page_key IS NULL
-        OR link_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        OR link_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_footer_links
@@ -112,7 +130,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_footer_links
 ALTER TABLE mystoreguard.msg_ecommerce_footer_links
     ADD CONSTRAINT ck_msg_ecommerce_footer_links_link CHECK (
         link_page_key IS NULL
-        OR link_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        OR link_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
     );
 
 
@@ -127,7 +147,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_pages
 
 ALTER TABLE mystoreguard.msg_ecommerce_pages
     ADD CONSTRAINT ck_msg_ecommerce_pages_keys CHECK (
-        page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER')
+        page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
         AND (page_key <> 'MARKET' OR is_enabled)
     );
 

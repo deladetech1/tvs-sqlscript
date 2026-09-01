@@ -70,7 +70,9 @@ BEGIN
     ) THEN
         ALTER TABLE mystoreguard.msg_ecommerce_pages
             ADD CONSTRAINT ck_msg_ecommerce_pages_keys CHECK (
-                page_key IN ('BIDDING', 'PRE_USED', 'MARKET')
+                page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
                 -- Market is the shop. A storefront with it switched off is a
                 -- storefront that sells nothing, which is not a state anybody
                 -- means to reach — so it is not reachable.
@@ -129,8 +131,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_enums CHECK (
         section_key IN (
-            'HERO', 'BIDDING', 'PRE_USED', 'MARKET', 'CUSTOM',
-            'HOW_IT_WORKS', 'PROMO', 'CATEGORY_TILES', 'RICH_TEXT'
+            'BIDDING', 'CATEGORY_TILES', 'CUSTOM', 'DAILY_OFFER', 'HERO',
+            'HOW_IT_WORKS', 'INSTALLMENT', 'MARKET', 'PRE_USED', 'PROMO',
+            'RICH_TEXT'
         )
     );
 
@@ -229,7 +232,9 @@ BEGIN
         ALTER TABLE mystoreguard.msg_ecommerce_section_cards
             ADD CONSTRAINT ck_msg_ecommerce_section_cards_link CHECK (
                 link_page_key IS NULL
-                OR link_page_key IN ('BIDDING', 'PRE_USED', 'MARKET')
+                OR link_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
             );
     END IF;
 END $$;
@@ -326,7 +331,9 @@ BEGIN
         ALTER TABLE mystoreguard.msg_ecommerce_footer_links
             ADD CONSTRAINT ck_msg_ecommerce_footer_links_link CHECK (
                 link_page_key IS NULL
-                OR link_page_key IN ('BIDDING', 'PRE_USED', 'MARKET')
+                OR link_page_key IN (
+            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+        )
             );
     END IF;
 END $$;
