@@ -71,8 +71,8 @@ BEGIN
         ALTER TABLE mystoreguard.msg_ecommerce_pages
             ADD CONSTRAINT ck_msg_ecommerce_pages_keys CHECK (
                 page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+                    'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+                )
                 -- Market is the shop. A storefront with it switched off is a
                 -- storefront that sells nothing, which is not a state anybody
                 -- means to reach — so it is not reachable.
@@ -233,8 +233,8 @@ BEGIN
             ADD CONSTRAINT ck_msg_ecommerce_section_cards_link CHECK (
                 link_page_key IS NULL
                 OR link_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+                    'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+                )
             );
     END IF;
 END $$;
@@ -332,8 +332,8 @@ BEGIN
             ADD CONSTRAINT ck_msg_ecommerce_footer_links_link CHECK (
                 link_page_key IS NULL
                 OR link_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+                    'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
+                )
             );
     END IF;
 END $$;
