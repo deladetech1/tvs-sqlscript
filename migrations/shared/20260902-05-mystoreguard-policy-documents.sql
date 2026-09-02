@@ -58,9 +58,9 @@ CREATE TABLE IF NOT EXISTS mystoreguard.msg_policy_templates (
     -- form.
     variables       jsonb       NOT NULL DEFAULT '[]'::jsonb,
 
-    -- Which document a sale gets when nobody picks one. A shop may keep several
-    -- — one per branch's wording, one for high-value plans — but exactly one
-    -- can be the default, enforced below.
+    -- The fallback for a plan whose policy names no documents at all — a shop
+    -- that wrote one agreement and never linked it should still get it printed
+    -- rather than a blank. A policy naming its own set overrides this.
     is_default      boolean     NOT NULL DEFAULT false,
     is_active       boolean     NOT NULL DEFAULT true,
 
@@ -180,3 +180,51 @@ CREATE INDEX IF NOT EXISTS ix_msg_issued_policies_plan
 CREATE INDEX IF NOT EXISTS ix_msg_issued_policies_unsigned
     ON mystoreguard.msg_issued_policies (tenant_id, org_id, bus_id, cdatetime DESC)
     WHERE signed_at IS NULL AND delete_status = 'NOT_DELETED';
+
+
+-- =====================================================================================
+-- 3. Which agreements a plan sold under this policy has to carry.
+--
+--    A shop rarely has one document. There is the agreement itself, and then
+--    often a guarantor undertaking, a data-consent note, a repossession
+--    acknowledgement — separate pieces of paper because separate people sign
+--    them. So a policy names a set, in the order they should be printed, and
+--    the counter prints what the policy asks for rather than somebody
+--    remembering.
+--
+--    A link table rather than an array on the policy: the ordering is real,
+--    and a document that gets retired needs to be findable from the policies
+--    that referenced it.
+-- =====================================================================================
+CREATE TABLE IF NOT EXISTS mystoreguard.msg_installment_policy_documents (
+    id              text        PRIMARY KEY,
+    tenant_id       text        NOT NULL,
+    org_id          text        NOT NULL,
+    bus_id          text        NOT NULL,
+
+    policy_id       text        NOT NULL,
+    template_id     text        NOT NULL,
+
+    -- The order they are printed in. A guarantor undertaking that comes out
+    -- before the agreement it guarantees is a stack of paper somebody has to
+    -- reorder by hand at the counter.
+    sort_order      integer     NOT NULL DEFAULT 0,
+
+    -- Whether the plan may proceed without this one signed. Most agreements
+    -- are required; a consent note may not be.
+    is_required     boolean     NOT NULL DEFAULT true,
+
+    cdatetime       timestamptz NOT NULL DEFAULT now(),
+    created_by      text
+);
+
+-- One link per pair. Selecting the same document twice would print it twice.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_msg_installment_policy_documents_pair
+    ON mystoreguard.msg_installment_policy_documents (tenant_id, policy_id, template_id);
+
+CREATE INDEX IF NOT EXISTS ix_msg_installment_policy_documents_policy
+    ON mystoreguard.msg_installment_policy_documents (tenant_id, policy_id, sort_order);
+
+-- "Which policies use this document", asked before retiring one.
+CREATE INDEX IF NOT EXISTS ix_msg_installment_policy_documents_template
+    ON mystoreguard.msg_installment_policy_documents (tenant_id, template_id);
