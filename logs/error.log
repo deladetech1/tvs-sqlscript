@@ -1,0 +1,316 @@
+2026-08-30 17:05:56 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:05:56 | ERROR    | app.ecommerce_service | ecommerce_service.save_settings:239 | Error saving ecommerce settings: current transaction is aborted, commands ignored until end of transaction block
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 235, in save_settings
+    **EcommerceService._settings_payload(
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, tenant_id, org_id, bus_id, settings, row))],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 76, in _settings_payload
+    cursor.execute(
+    ~~~~~~~~~~~~~~^
+        f"""SELECT bus_name FROM {db_settings.CORE_PLATFORM_BUSINESSES_TABLE}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        WHERE id = %s AND tenant_id = %s""",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (bus_id, tenant_id),
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+2026-08-30 17:05:56 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:05:56 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:05:56 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:06:08 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:06:08 | ERROR    | app.ecommerce_service | ecommerce_service.save_settings:239 | Error saving ecommerce settings: current transaction is aborted, commands ignored until end of transaction block
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 235, in save_settings
+    **EcommerceService._settings_payload(
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, tenant_id, org_id, bus_id, settings, row))],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 76, in _settings_payload
+    cursor.execute(
+    ~~~~~~~~~~~~~~^
+        f"""SELECT bus_name FROM {db_settings.CORE_PLATFORM_BUSINESSES_TABLE}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        WHERE id = %s AND tenant_id = %s""",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (bus_id, tenant_id),
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+2026-08-30 17:06:08 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:06:08 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:06:08 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.UndefinedColumn: column "performed_by_email" of relation "msg_activity_logs" does not exist
+LINE 4:                  performed_by_email, performed_by_contact, p...
+                         ^
+
+2026-08-30 17:06:58 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
+2026-08-30 17:06:58 | ERROR    | app.ecommerce_service | ecommerce_service.save_settings:239 | Error saving ecommerce settings: current transaction is aborted, commands ignored until end of transaction block
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 235, in save_settings
+    **EcommerceService._settings_payload(
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, tenant_id, org_id, bus_id, settings, row))],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 76, in _settings_payload
+    cursor.execute(
+    ~~~~~~~~~~~~~~^
+        f"""SELECT bus_name FROM {db_settings.CORE_PLATFORM_BUSINESSES_TABLE}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        WHERE id = %s AND tenant_id = %s""",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (bus_id, tenant_id),
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+2026-08-30 17:06:58 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
+2026-08-30 17:06:58 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
+2026-08-30 17:06:58 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
+2026-08-30 17:07:04 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
+2026-08-30 17:07:04 | ERROR    | app.ecommerce_service | ecommerce_service.save_settings:239 | Error saving ecommerce settings: current transaction is aborted, commands ignored until end of transaction block
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 235, in save_settings
+    **EcommerceService._settings_payload(
+      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, tenant_id, org_id, bus_id, settings, row))],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/ecommerce/ecommerce_service.py", line 76, in _settings_payload
+    cursor.execute(
+    ~~~~~~~~~~~~~~^
+        f"""SELECT bus_name FROM {db_settings.CORE_PLATFORM_BUSINESSES_TABLE}
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        WHERE id = %s AND tenant_id = %s""",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        (bus_id, tenant_id),
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InFailedSqlTransaction: current transaction is aborted, commands ignored until end of transaction block
+
+2026-08-30 17:07:04 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
+2026-08-30 17:07:04 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
+2026-08-30 17:07:04 | ERROR    | app.shared_service | sh_service.log_activity:527 | Database error logging activity (transaction will be rolled back): invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+Traceback (most recent call last):
+  File "/Users/debrah/Documents/work/trovesuite/mystoreguard/tvs-mystoreguard-bk/app/src/entities/shared/sh_service.py", line 516, in log_activity
+    cursor.execute(query, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/psycopg2/extras.py", line 236, in execute
+    return super().execute(query, vars)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+psycopg2.errors.InvalidDatetimeFormat: invalid input syntax for type date: "Sunday 30th August, 2026"
+LINE 6: ..., 'ama@example.com', '0244000000', 'Ama Boateng', 'Sunday 30...
+                                                             ^
+
