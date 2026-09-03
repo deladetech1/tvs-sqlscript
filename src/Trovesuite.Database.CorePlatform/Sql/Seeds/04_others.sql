@@ -83,6 +83,18 @@ ON CONFLICT (id) DO UPDATE SET
 -- account cap in cp_subscription_platform_limits. Keep MyStoreGuard BASIC at 5 to
 -- match that plan's 5 users: a lower number here means an account a tenant is
 -- entitled to create simply cannot sign in to the app, which reads as a bug.
+--
+-- Retire the pre-rename `tier-cfg-hr-*` rows first. On an environment that was
+-- already seeded under `app-hr`, the 20260706 rename repointed those rows to
+-- app-zeloshr but kept their old ids, so the zeloshr rows below collide with
+-- them on ix_cp_app_tier_configs_app_id_subscription_id — and ON CONFLICT (id)
+-- cannot see that conflict. Seeds run before migrations/shared, so the cleanup
+-- has to live here or the deploy dies before the shared SQL gets a turn.
+-- Nothing references cp_app_tier_configs.id (every reader joins on
+-- app_id + subscription_id), and the rows are re-created immediately below, so
+-- deleting them is safe. No-op on a fresh or already-reconciled DB.
+DELETE FROM core_platform.cp_app_tier_configs WHERE id LIKE 'tier-cfg-hr-%';
+
 INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_login_users, price, rate, cdate, ctime, cdatetime) VALUES
 ('tier-cfg-msg-basic',      'app-mystoreguard', 'shared-subscription-basic',      5,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-msg-advance',    'app-mystoreguard', 'shared-subscription-advance',    8,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

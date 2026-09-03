@@ -18,15 +18,15 @@
 -- IDEMPOTENT: safe to re-run. On an already-migrated (or fresh) DB every
 -- statement is a no-op. This is why it can live in migrations/shared/.
 --
--- ORDERING CAVEAT (existing environments only): the HR seeder
--- (HumanResourceRbacSeeder.UpsertHrAdminRolePermissionsAsync) inserts
--- role-permission rows with the deterministic id `rp-hr-admin-{permissionId}`.
--- On a DB that was already seeded under the old role id, those ids already
--- exist, so the seeder will hit a duplicate-key error BEFORE this shared SQL
--- (which runs after seeds) gets a chance. For any environment that already has
--- live app-hr subscribers, RUN THIS SCRIPT MANUALLY ONCE against the DB before
--- deploying the renamed seeds. Run standalone it fully migrates the DB, after
--- which the seeder's existence check passes and the deploy is clean.
+-- ORDERING (historical): this script used to require a manual standalone run on
+-- any environment with live app-hr subscribers, because the old HR seeder wrote
+-- role-permission rows under deterministic `rp-hr-admin-{permissionId}` ids and
+-- would duplicate-key BEFORE this file (shared SQL runs after seeds) got a
+-- chance. That seeder is gone — the zeloshr seed keys role-permissions on
+-- (tenant_id, role_id, permission_id) with ON CONFLICT DO NOTHING — and the
+-- CorePlatform seed now retires the `tier-cfg-hr-*` rows itself, so a plain
+-- deploy carries an untouched app-hr database all the way through. Verified end
+-- to end against a scratch Postgres seeded to the old shape. No manual step.
 
 BEGIN;
 
@@ -97,6 +97,20 @@ UPDATE core_platform.cp_assign_roles
 -- 3. Repoint the tenant DATA rows that store the app-id value. These are the
 --    rows that decide whether an existing subscriber still resolves to the app.
 -- ---------------------------------------------------------------------
+-- Tier configs carry a unique (app_id, subscription_id). The CorePlatform seed
+-- now ships canonical `tier-cfg-zhr-*` rows for app-zeloshr, so a blind repoint
+-- of the old rows collides on ix_cp_app_tier_configs_app_id_subscription_id.
+-- Drop only the old rows whose tier the seed already covers, then repoint what
+-- is left — that way a tier the seed has not (yet) written keeps its pricing
+-- instead of vanishing, which matters when this script is run standalone with
+-- no seed pass behind it. Nothing references cp_app_tier_configs.id.
+DELETE FROM core_platform.cp_app_tier_configs old
+ WHERE old.app_id = 'app-hr'
+   AND EXISTS (SELECT 1
+                 FROM core_platform.cp_app_tier_configs cur
+                WHERE cur.app_id = 'app-zeloshr'
+                  AND cur.subscription_id = old.subscription_id);
+
 UPDATE core_platform.cp_app_tier_configs
    SET app_id = 'app-zeloshr' WHERE app_id = 'app-hr';
 

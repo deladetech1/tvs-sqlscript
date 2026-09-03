@@ -285,6 +285,24 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-user-get-locations'),
 
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-app-get'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-get'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-app-subscribe'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-user-get-locations'),
+
+-- The storefront is built out of products, their metadata and their prices, and every
+-- screen in the module reads all three: the setup screen picks locations and metadata,
+-- the listing screen shows products, the version builder shows what each item will
+-- cost. Read-only grants, so this role can compose a shop window without being able to
+-- edit the catalogue behind it.
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-msg-products-get'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-msg-product-metadata-get'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-msg-product-price-get'),
+('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-msg-store-products-get'),
+
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-organization-get'),
