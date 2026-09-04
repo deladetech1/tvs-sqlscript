@@ -32,6 +32,104 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-business-app-admin', 'permission-subscription-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
+-- =============================================
+-- NAVIGATION PERMISSIONS FOR EVERY CORE PLATFORM ADMIN ROLE
+-- =============================================
+-- Nothing in this platform sits on its own: a location belongs to a business,
+-- a business to an organization, and every screen begins by asking which one
+-- you are standing in. The auto-assign trigger only ever hands a role the
+-- permissions of its OWN resource type, so a Location Admin could administer
+-- locations but could not list the businesses they belong to — the picker at
+-- the top of the page came back empty and the screen had nothing to show.
+--
+-- Every app role (MyStoreGuard, LoanDrift, ZelosHR) has been granted this same
+-- block in its own 04_others.sql since the beginning, for exactly this reason.
+-- The core platform's own roles never were. Read-only, and the floor below
+-- which a role cannot navigate at all.
+--
+-- Three more permissions belong to this floor — business-app-get,
+-- user-change-password and user-get-own — and are deliberately NOT repeated
+-- here: every user is put in sysgrp-default-group, whose role-default-group
+-- already grants all three (see above). Granting them again would be duplicating
+-- a floor that is already under everybody.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
+SELECT 'system-tenant-id', r.id, p.permission_id
+FROM core_platform.cp_roles r
+CROSS JOIN (VALUES
+  ('permission-business-get'),
+  ('permission-organization-get'),
+  ('permission-business-app-get-locations'),
+  ('permission-user-get-locations')
+) AS p(permission_id)
+WHERE r.tenant_id = 'system-tenant-id'
+  AND r.is_system = true
+  -- Owner and Admin already hold everything via their own triggers, and
+  -- role-default-group is the self-service floor itself, not an admin role.
+  AND r.id NOT IN ('role-owner', 'role-admin', 'role-default-group')
+  -- App roles seed this block themselves, alongside the app-store permissions
+  -- they also need. Left to them so each app keeps one place to look.
+  AND r.resource_type_id NOT LIKE 'rt-subscribed-app-%'
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- =============================================
+-- CLEANUP: business-app-subscribe belongs to whoever manages subscriptions, not to everybody
+-- =============================================
+-- It had been travelling inside the navigation block every app role is given, so 64 seeded
+-- roles held it — a cashier, a stock counter, a loan officer. It is not navigation. It is
+-- the call that picks a paid tier out of cp_app_tier_configs and can spend the tenant's
+-- one free-trial window.
+--
+-- Nothing was ever exposed by it: /business-apps/subscribe checks the permission and then
+-- checks the caller's role against a hard-coded list of role-owner and role-admin, so all
+-- other callers
+-- was refused at the second gate. That is the problem. The grant did nothing, so it read as
+-- an ability people had, and the only thing standing behind it was a list of role ids that
+-- somebody will one day, quite reasonably, replace with the permission check in front of it.
+-- Removing it now means that day is uneventful.
+--
+-- Three roles keep it, and all three receive it from a trigger rather than a seeded row —
+-- so there is nothing to re-grant here:
+--   role-owner              every permission, by the Owner trigger
+--   role-admin              every non-log permission, by the Admin trigger
+--   role-business-app-admin its resource type IS rt-business-app; this is its whole job
+--
+-- Tenant-created roles are left alone: is_system = false means somebody ticked that box on
+-- purpose, and this is not the place to overrule them.
+--
+-- Idempotent. Safe to re-run.
+DELETE FROM core_platform.cp_role_permissions rp
+USING core_platform.cp_roles r
+WHERE rp.role_id = r.id
+  AND rp.permission_id = 'permission-business-app-subscribe'
+  AND r.is_system = true
+  AND r.id NOT IN ('role-owner', 'role-admin')
+  AND (r.resource_type_id IS DISTINCT FROM 'rt-business-app');
+
+-- =============================================
+-- CLEANUP: permission-app-get was granted 68 times and read nowhere
+-- =============================================
+-- It rode along in the same navigation block as the permission above, so nearly every
+-- seeded role in every app held it. No endpoint in core platform, MyStoreGuard, LoanDrift
+-- or ZelosHR checks it, and no frontend reads it — it has never decided anything.
+--
+-- What people take it to mean, seeing apps and subscriptions, is permission-business-app-get,
+-- and that is granted to EVERY user by role-default-group before any role is looked at. So
+-- removing this takes nothing away: the roles that held it could already see the app store,
+-- and will carry on doing so.
+--
+-- Kept where a trigger supplies it and where it would mean something if it were ever wired
+-- up: Owner, Admin, and role-app-admin, whose resource type IS rt-app. Tenant-created roles
+-- are left alone — somebody ticked that box themselves.
+--
+-- Idempotent. Safe to re-run.
+DELETE FROM core_platform.cp_role_permissions rp
+USING core_platform.cp_roles r
+WHERE rp.role_id = r.id
+  AND rp.permission_id = 'permission-app-get'
+  AND r.is_system = true
+  AND r.id NOT IN ('role-owner', 'role-admin')
+  AND (r.resource_type_id IS DISTINCT FROM 'rt-app');
+
 -- Then insert into cp_groups
 INSERT INTO core_platform.cp_groups (id, tenant_id, group_name, description, is_active, is_system, cdate, ctime, cdatetime) VALUES
 ('sysgrp-default-group', 'system-tenant-id', 'Default Group', 'Default system group for all users - provides basic self-service permissions', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)

@@ -12,12 +12,8 @@ SET search_path TO mystoreguard;
 
 INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES
 
--- Clients permissions
-('permission-msg-clients-create', 'Mystoreguard Clients Create', 'rt-clients', 'Can create new clients', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-clients-get', 'Mystoreguard Clients Get', 'rt-clients', 'Can view, list, read clients, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-clients-update', 'Mystoreguard Clients Update', 'rt-clients', 'Can update clients, restore soft-deleted clients, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-clients-delete', 'Mystoreguard Clients Delete', 'rt-clients', 'Can delete clients', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-
+-- Removed: the four permission-msg-clients-* permissions. They guarded a router that was
+-- never mounted, against a table that was never created. Dropped in Seeds/04_others.sql.
 
 -- Invoice permissions
 ('permission-msg-invoices-create', 'Mystoreguard Invoices Create', 'rt-invoice', 'Can create new invoices', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

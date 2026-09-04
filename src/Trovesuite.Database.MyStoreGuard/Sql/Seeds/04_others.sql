@@ -21,11 +21,9 @@ SET search_path TO mystoreguard;
 -- Note: role-msg-admin is excluded as it gets all permissions via trigger
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
 -- Core platform navigation permissions for all roles
-('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-user-get-locations'),
 
@@ -41,35 +39,21 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 
 -- role-msg-admin (Admin) is only in cp_roles if 5_insert_role.sql was run; add same permissions for it via separate INSERT when that role exists
 
-('system-tenant-id', 'role-msg-warehouse-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-warehouse-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-warehouse-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-store-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-store-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-clients-admin', 'permission-app-get'),
-('system-tenant-id', 'role-msg-clients-admin', 'permission-business-get'),
-('system-tenant-id', 'role-msg-clients-admin', 'permission-organization-get'),
-('system-tenant-id', 'role-msg-clients-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-clients-admin', 'permission-business-app-subscribe'),
-('system-tenant-id', 'role-msg-clients-admin', 'permission-business-app-get-locations'),
-('system-tenant-id', 'role-msg-clients-admin', 'permission-user-get-locations'),
-
-('system-tenant-id', 'role-msg-expenses-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-expenses-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-expenses-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-expenses-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-expenses-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-expenses-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-expenses-admin', 'permission-user-get-locations'),
 
@@ -78,218 +62,165 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 -- or feature-specific permissions anywhere in the codebase). The roles, their resource types,
 -- and any leftover rows are dropped in the cleanup block at the end of this file.
 
-('system-tenant-id', 'role-msg-invoice-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-invoice-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-invoice-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-invoice-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-invoice-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-invoice-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-invoice-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-suppliers-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-suppliers-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-suppliers-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-suppliers-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-suppliers-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-suppliers-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-suppliers-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-product-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-product-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-product-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-product-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-product-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-product-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-product-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-product-metadata-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-product-metadata-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-product-metadata-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-product-metadata-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-product-metadata-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-product-metadata-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-product-metadata-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-product-prices-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-product-prices-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-product-prices-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-product-prices-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-product-prices-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-product-prices-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-product-prices-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-pricing-rules-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-pricing-rules-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-pricing-rules-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-pricing-rules-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-pricing-rules-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-pricing-rules-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-pricing-rules-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-customers-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-customers-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-customers-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-customers-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-customers-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-customers-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-customers-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-file-manager-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-file-manager-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-taxes-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-taxes-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-taxes-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-taxes-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-taxes-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-taxes-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-taxes-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-tax-rules-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-tax-rules-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-tax-rules-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-tax-rules-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-tax-rules-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-tax-rules-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-tax-rules-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-store-configs-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-store-configs-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-store-configs-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-store-configs-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-store-configs-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-store-configs-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-configs-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-store-sales-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-store-sales-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-sales-backdate', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-purchase-orders-backdate', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-reports-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-reports-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-reports-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-installment-approver', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-installment-approver', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-installment-approver', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-installment-approver', 'permission-business-app-get'),
 ('system-tenant-id', 'role-msg-installment-approver', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-installment-approver', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-guarantors-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-guarantors-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-guarantors-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-guarantors-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-installment-policies-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-installment-policies-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-installment-policies-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-installment-policies-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-installment-policies-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-installment-policies-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-installment-policies-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-return-policies-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-return-policies-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-return-policies-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-return-policies-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-return-policies-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-return-policies-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-return-policies-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-store-returns-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-store-returns-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-store-returns-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-store-returns-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-store-returns-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-store-returns-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-store-returns-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-tasks-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-tasks-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-tasks-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-tasks-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-tasks-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-tasks-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-tasks-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-estimate-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-estimate-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-estimate-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-estimate-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-estimate-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-estimate-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-estimate-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-stock-takes-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-user-get-locations'),
 
@@ -303,7 +234,6 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-msg-product-price-get'),
 ('system-tenant-id', 'role-msg-ecommerce-admin', 'permission-msg-store-products-get'),
 
-('system-tenant-id', 'role-msg-viewer-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-viewer-admin', 'permission-business-app-get'),
@@ -460,22 +390,40 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- =============================================
--- CLEANUP: remove dead placeholder roles & resource types (creditors / depositors / returns)
+-- CLEANUP: remove dead placeholder roles & resource types (creditors / depositors / returns / clients)
 -- These features were never implemented (no controllers, routes, or feature permissions).
+--
+-- Clients came later and got further — a controller, a service, DTOs — but the router is
+-- never imported in main.py, no msg_clients table exists in any migration, and the
+-- MSG_CLIENTS_TABLE setting its queries interpolate is not defined anywhere. Three
+-- independent ways of being unreachable, so it is retired with the placeholders. Its
+-- permissions go too, which is why it needs a row in the permissions delete below: the
+-- others never had any.
+--
 -- Idempotent: re-running on a clean database is a harmless no-op.
--- Deleted child-first to respect foreign keys: assignments -> role_permissions -> roles -> resource_types.
+-- Deleted child-first to respect foreign keys: assignments -> role_permissions -> roles -> permissions -> resource_types.
 -- =============================================
 DELETE FROM core_platform.cp_assign_roles
-WHERE role_id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin');
+WHERE role_id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin', 'role-msg-clients-admin');
 
+-- Both directions: the grants this role held, and the clients permissions held by anyone
+-- else (Owner and Admin get every permission by trigger, and a tenant may have put them on
+-- a custom role). cp_role_permissions.permission_id is RESTRICT onto cp_permissions, so the
+-- permissions themselves cannot go until every grant of them has.
 DELETE FROM core_platform.cp_role_permissions
-WHERE role_id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin');
+WHERE role_id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin', 'role-msg-clients-admin')
+   OR permission_id IN ('permission-msg-clients-create', 'permission-msg-clients-get',
+                        'permission-msg-clients-update', 'permission-msg-clients-delete');
 
 DELETE FROM core_platform.cp_roles
-WHERE id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin');
+WHERE id IN ('role-msg-creditors-admin', 'role-msg-depositors-admin', 'role-msg-returns-admin', 'role-msg-clients-admin');
+
+DELETE FROM core_platform.cp_permissions
+WHERE id IN ('permission-msg-clients-create', 'permission-msg-clients-get',
+             'permission-msg-clients-update', 'permission-msg-clients-delete');
 
 DELETE FROM core_platform.cp_resource_types
-WHERE id IN ('rt-creditors', 'rt-depositors', 'rt-returns');
+WHERE id IN ('rt-creditors', 'rt-depositors', 'rt-returns', 'rt-clients');
 
 -- =============================================
 -- RENAME: permission-msg-stock-takes-view -> permission-msg-stock-takes-get

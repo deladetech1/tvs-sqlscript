@@ -20,11 +20,9 @@ SET search_path TO loandrift;
 -- All Loandrift roles need these core platform permissions to navigate the system
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
 -- Core platform navigation permissions for all roles
-('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-user-get-locations'),
 
@@ -38,103 +36,78 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-expense-delete'),
 ('system-tenant-id', 'role-subscribed-app-loandrift-admin', 'permission-expense-get-statistics'),
 
-('system-tenant-id', 'role-loandrift-approval-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-approval-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-approval-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-approval-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-approval-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-approval-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-approval-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-calender-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-calender-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-calender-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-calender-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-calender-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-calender-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-calender-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-capturing-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-capturing-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-capturing-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-capturing-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-capturing-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-capturing-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-capturing-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-disbursement-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-disbursement-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-disbursement-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-disbursement-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-disbursement-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-disbursement-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-disbursement-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-settings-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-settings-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-settings-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-settings-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-settings-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-settings-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-settings-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-expense-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-expense-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-expense-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-expense-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-expense-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-expense-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-expense-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-repayment-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-repayment-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-repayment-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-repayment-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-repayment-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-repayment-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-repayment-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-client-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-client-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-client-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-client-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-client-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-client-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-client-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-loan-registration-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-loan-registration-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-loan-registration-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-loan-registration-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-loan-registration-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-loan-registration-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-loan-registration-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-file-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-file-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-file-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-file-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-file-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-file-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-file-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-dashboard-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-reports-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-reports-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-reports-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-reports-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-reports-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-reports-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-reports-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-viewer-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-viewer-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-viewer-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-viewer-admin', 'permission-business-app-get'),
@@ -194,19 +167,15 @@ ON CONFLICT (id) DO UPDATE SET
 -- Core platform navigation permissions for Savings & Investment admin roles
 -- =============================================
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
-('system-tenant-id', 'role-loandrift-savings-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-savings-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-savings-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-savings-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-investment-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-investment-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-investment-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-investment-admin', 'permission-user-get-locations')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
@@ -255,19 +224,15 @@ ON CONFLICT (id) DO UPDATE SET
 -- Core platform navigation permissions for Credit Score admin role
 -- =============================================
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
-('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-credit-score-admin', 'permission-user-get-locations'),
 
-('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-user-get-locations')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;

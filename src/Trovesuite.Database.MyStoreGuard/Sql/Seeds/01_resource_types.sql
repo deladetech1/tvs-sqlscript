@@ -15,9 +15,13 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-subscribed-app-msg', 'MSG APP', 'MSG Subscribed APP', null),
 ('rt-warehouse', 'Warehouse', 'Warehouse management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-shop', 'Store', 'Store management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-clients', 'Clients', 'Clients management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-expenses', 'Expenses', 'Expenses management for Mystoreguard', 'rt-subscribed-app-msg'),
 -- Removed rt-creditors / rt-depositors / rt-returns: placeholder resource types for features that were never built (cleaned up in Seeds/04_others.sql)
+-- Removed rt-clients for the same reason, one step further along: clients got as far as a
+-- controller and a service, but the router was never mounted, no msg_clients table was ever
+-- created, and MSG_CLIENTS_TABLE is not a setting that exists — so every one of those
+-- endpoints was unreachable, and would have raised on the table name if it weren't.
+-- Its role and permissions are dropped alongside it in Seeds/04_others.sql.
 ('rt-invoice', 'Invoice', 'Invoice management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-sales', 'Sales', 'Sales management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-suppliers', 'Suppliers', 'Suppliers management for Mystoreguard', 'rt-subscribed-app-msg'),
