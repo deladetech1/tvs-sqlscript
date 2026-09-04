@@ -274,6 +274,7 @@ ON CONFLICT (tenant_id, role_name) DO UPDATE SET
 -- =====================================================
 
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-messaging-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-messaging-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-messaging-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-messaging-admin', 'permission-business-app-get'),

@@ -92,7 +92,12 @@ CROSS JOIN (VALUES
   ('permission-business-get'),
   ('permission-organization-get'),
   ('permission-business-app-get-locations'),
-  ('permission-user-get-locations')
+  ('permission-user-get-locations'),
+  -- The App Store is where a person chooses which app to open, and it is gated on this: the
+  -- page asks hasAnyPermissionForResource("app"), which only permission-app-* satisfies.
+  -- Every app role has been given it since the beginning; the platform's own roles never
+  -- were, so a Location Admin signing in met Unauthorized where the list of apps belongs.
+  ('permission-app-get')
 ) AS p(permission_id)
 WHERE r.tenant_id = 'system-tenant-id'
   AND r.is_system = true
@@ -113,9 +118,8 @@ ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 -- one free-trial window.
 --
 -- Nothing was ever exposed by it: /business-apps/subscribe checks the permission and then
--- checks the caller's role against a hard-coded list of role-owner and role-admin, so all
--- other callers
--- was refused at the second gate. That is the problem. The grant did nothing, so it read as
+-- checks the caller's role against a hard-coded list of role-owner and role-admin, so every
+-- other caller was refused at the second gate. That is the problem. The grant did nothing, so it read as
 -- an ability people had, and the only thing standing behind it was a list of role ids that
 -- somebody will one day, quite reasonably, replace with the permission check in front of it.
 -- Removing it now means that day is uneventful.
@@ -139,29 +143,17 @@ WHERE rp.role_id = r.id
   AND (r.resource_type_id IS DISTINCT FROM 'rt-business-app');
 
 -- =============================================
--- CLEANUP: permission-app-get was granted 68 times and read nowhere
+-- NOTE: permission-app-get is load-bearing after all
 -- =============================================
--- It rode along in the same navigation block as the permission above, so nearly every
--- seeded role in every app held it. No endpoint in core platform, MyStoreGuard, LoanDrift
--- or ZelosHR checks it, and no frontend reads it — it has never decided anything.
+-- It was briefly retired here on the grounds that no endpoint checks it. No endpoint does —
+-- but the App Store page does, and that is where somebody chooses which app to open. The
+-- check is written hasAnyPermissionForResource("app"), which builds the id at runtime, so
+-- grepping the frontends for the literal "permission-app-get" found nothing and the
+-- conclusion drawn from that was wrong. Removing it left every role except Owner, Admin and
+-- App Admin looking at Unauthorized where the list of apps should be.
 --
--- What people take it to mean, seeing apps and subscriptions, is permission-business-app-get,
--- and that is granted to EVERY user by role-default-group before any role is looked at. So
--- removing this takes nothing away: the roles that held it could already see the app store,
--- and will carry on doing so.
---
--- Kept where a trigger supplies it and where it would mean something if it were ever wired
--- up: Owner, Admin, and role-app-admin, whose resource type IS rt-app. Tenant-created roles
--- are left alone — somebody ticked that box themselves.
---
--- Idempotent. Safe to re-run.
-DELETE FROM core_platform.cp_role_permissions rp
-USING core_platform.cp_roles r
-WHERE rp.role_id = r.id
-  AND rp.permission_id = 'permission-app-get'
-  AND r.is_system = true
-  AND r.id NOT IN ('role-owner', 'role-admin')
-  AND (r.resource_type_id IS DISTINCT FROM 'rt-app');
+-- The grants are back in each app's own seed file. Nothing to do here; this note exists so
+-- the next person to notice it is enforced by no router does not reach the same conclusion.
 
 -- Then insert into cp_groups
 INSERT INTO core_platform.cp_groups (id, tenant_id, group_name, description, is_active, is_system, cdate, ctime, cdatetime) VALUES
