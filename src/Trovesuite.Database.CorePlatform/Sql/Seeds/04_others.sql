@@ -33,6 +33,39 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- =============================================
+-- CORE PLATFORM ADMIN: every Core Platform permission, and nothing from any app
+-- =============================================
+-- Granted here rather than by a trigger. The resource-type trigger hands a role only the
+-- permissions of its own resource type, and this role spans all twenty of them; the
+-- alternative was a fourth bespoke trigger function beside the three already in
+-- Triggers/01_auto_assign_permissions.sql, each of which has to be edited in two places to
+-- stay complete. A SELECT states the rule once, and because seeds re-run on every deploy it
+-- picks up Core Platform permissions added later without anyone remembering to.
+--
+-- The boundary is the permission's own namespace, NOT its resource type. Resource types look
+-- like the obvious test and are the wrong one: rt-expenses and rt-file are Core Platform
+-- resource types that MyStoreGuard and LoanDrift re-parent under their own rt-subscribed-app-%
+-- when their seeds run. A parentage test would therefore include permission-expense-* and
+-- permission-cp-file-* on a fresh database — this file runs before the apps re-parent anything
+-- — and exclude them on the next deploy, when it runs after. Same seeds, two different roles.
+--
+-- Every app permission is prefixed with its app (permission-msg-, permission-loandrift-,
+-- permission-zeloshr-) and no Core Platform permission is, so the namespace says plainly what
+-- the hierarchy only implies, and says the same thing whenever it is asked. A new app means
+-- adding a line here — as it means adding lines in a dozen other places.
+--
+-- Deleting activity logs is withheld: an administrator who can erase the record of what they
+-- did is not one the record can be trusted about. Reading them is included.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
+SELECT 'system-tenant-id', 'role-cp-admin', p.id
+FROM core_platform.cp_permissions p
+WHERE p.id NOT LIKE 'permission-msg-%'
+  AND p.id NOT LIKE 'permission-loandrift-%'
+  AND p.id NOT LIKE 'permission-zeloshr-%'
+  AND p.id <> 'permission-cp-logs-delete'
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- =============================================
 -- NAVIGATION PERMISSIONS FOR EVERY CORE PLATFORM ADMIN ROLE
 -- =============================================
 -- Nothing in this platform sits on its own: a location belongs to a business,

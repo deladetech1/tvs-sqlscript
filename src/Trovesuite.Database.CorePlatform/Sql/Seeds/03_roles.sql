@@ -47,7 +47,17 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-default-group', 'system-tenant-id', 'Default Role', 'Default system role for user profile management - allows users to view and update their own details', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Viewer Admin Role (read-only access to all Core Platform resources)
-('role-cp-viewer-admin', 'system-tenant-id', 'Core Platform Viewer Admin', 'Viewer Admin for Core Platform - can view all Core Platform resources with GET permissions only', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('role-cp-viewer-admin', 'system-tenant-id', 'Core Platform Viewer Admin', 'Viewer Admin for Core Platform - can view all Core Platform resources with GET permissions only', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Admin Role for Core Platform, the counterpart to the Viewer above and to each app's own
+-- admin (Mystoreguard Admin, Loandrift Admin, ZelosHR Admin). Every app had one; the platform
+-- itself did not, so running organizations, businesses, locations, users, groups and roles
+-- meant holding the system-wide Admin, which also carries every app.
+--
+-- rt-system-role on purpose: the resource-type trigger only ever grants the permissions of a
+-- role's OWN resource type, and this role spans twenty of them. Its grants are made
+-- explicitly in Seeds/04_others.sql instead.
+('role-cp-admin', 'system-tenant-id', 'Core Platform Admin', 'Administrator for Core Platform - full access to every Core Platform resource (organizations, businesses, locations, users, groups, roles, permissions, settings, billing), excluding deletion of activity logs. Carries no access to any subscribed app.', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     role_name        = EXCLUDED.role_name,
     description      = EXCLUDED.description,
