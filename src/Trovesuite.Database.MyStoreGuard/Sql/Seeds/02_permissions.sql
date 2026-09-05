@@ -93,6 +93,14 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-customers-update', 'Mystoreguard Customers Update', 'rt-customers', 'Can update customers, restore soft-deleted customers, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-customers-delete', 'Mystoreguard Customers Delete', 'rt-customers', 'Can delete customers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
+-- Loyalty permissions. One set covers points, tiers, point rules, segments, campaigns and
+-- analytics: they are one programme, administered by the same person, and splitting them
+-- would produce four permissions only ever granted together.
+('permission-msg-loyalty-create', 'Mystoreguard Loyalty Create', 'rt-loyalty', 'Can create loyalty tiers and customer segments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-loyalty-get', 'Mystoreguard Loyalty Get', 'rt-loyalty', 'Can view points, tiers, point rules, segments, campaigns and loyalty analytics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-loyalty-update', 'Mystoreguard Loyalty Update', 'rt-loyalty', 'Can adjust points, change tiers and point rules, and run segment campaigns', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-loyalty-delete', 'Mystoreguard Loyalty Delete', 'rt-loyalty', 'Can delete loyalty tiers, point rules and customer segments', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
 -- File Manager permissions
 ('permission-msg-file-upload-multiple', 'Mystoreguard File Upload Multiple', 'rt-file-manager', 'Can upload multiple files', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-file-update', 'Mystoreguard File Update', 'rt-file-manager', 'Can update files', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

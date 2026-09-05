@@ -29,6 +29,9 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-msg-product-prices-admin', 'system-tenant-id', 'Mystoreguard Product Prices Admin', 'Administrator for product prices management', 'rt-product-prices', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-pricing-rules-admin', 'system-tenant-id', 'Mystoreguard Pricing Rules Admin', 'Administrator for pricing rules management', 'rt-pricing-rules', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-customers-admin', 'system-tenant-id', 'Mystoreguard Customers Admin', 'Administrator for customers management', 'rt-customers', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Deliberately separate from the Customers Admin above: reading a customer record and
+-- running the loyalty programme are different jobs, and until now they were the same right.
+('role-msg-loyalty-admin', 'system-tenant-id', 'Mystoreguard Loyalty Admin', 'Administrator for the loyalty programme: points, tiers, point rules, customer segments and campaigns', 'rt-loyalty', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-file-manager-admin', 'system-tenant-id', 'Mystoreguard File Manager Admin', 'Administrator for file manager', 'rt-file-manager', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-taxes-admin', 'system-tenant-id', 'Mystoreguard Taxes Admin', 'Administrator for taxes management', 'rt-taxes', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-tax-rules-admin', 'system-tenant-id', 'Mystoreguard Tax Rules Admin', 'Administrator for tax rules management', 'rt-tax-rules', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

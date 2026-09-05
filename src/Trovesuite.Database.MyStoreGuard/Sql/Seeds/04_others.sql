@@ -115,6 +115,18 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-customers-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-msg-customers-admin', 'permission-user-get-locations'),
 
+('system-tenant-id', 'role-msg-loyalty-admin', 'permission-app-get'),
+('system-tenant-id', 'role-msg-loyalty-admin', 'permission-business-get'),
+('system-tenant-id', 'role-msg-loyalty-admin', 'permission-organization-get'),
+('system-tenant-id', 'role-msg-loyalty-admin', 'permission-business-app-get'),
+('system-tenant-id', 'role-msg-loyalty-admin', 'permission-business-app-get-locations'),
+('system-tenant-id', 'role-msg-loyalty-admin', 'permission-user-get-locations'),
+
+-- The loyalty screens list customers by name — a segment is a set of them, a points balance
+-- belongs to one. Read-only, and the same reason the roles above are given
+-- product-metadata-get: without it the screens render rows with nobody in them.
+('system-tenant-id', 'role-msg-loyalty-admin', 'permission-msg-customers-get'),
+
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-app-get'),
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-file-manager-admin', 'permission-organization-get'),

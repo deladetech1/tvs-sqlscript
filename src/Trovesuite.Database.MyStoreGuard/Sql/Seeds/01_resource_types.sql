@@ -30,6 +30,11 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-product-prices', 'Product Prices', 'Product Prices management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-pricing-rules', 'Pricing Rules', 'Pricing Rules management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-customers', 'Customers', 'Customers management for Mystoreguard', 'rt-subscribed-app-msg'),
+-- Loyalty was built with tables, services and five screens, and never given permissions of
+-- its own — every one of its endpoints checked permission-msg-customers-*, so anyone who
+-- could read a customer could read the whole loyalty programme, and there was no way to
+-- separate the two because the distinction did not exist.
+('rt-loyalty', 'Loyalty', 'Loyalty programme (points, tiers, rules, segments and campaigns) for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-file-manager', 'File Manager', 'File Manager for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-taxes', 'Taxes', 'Taxes management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-tax-rules', 'Tax Rules', 'Tax Rules management for Mystoreguard', 'rt-subscribed-app-msg'),
