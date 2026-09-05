@@ -75,6 +75,15 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-product-price-update', 'Mystoreguard Product Price Update', 'rt-product-prices', 'Can update product prices, restore soft-deleted product prices, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-product-price-delete', 'Mystoreguard Product Price Delete', 'rt-product-prices', 'Can delete product prices', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
+-- Expenses permissions. MyStoreGuard's own, so that granting them here says nothing about
+-- LoanDrift, which has its own set. Both apps checked permission-expense-* until now, which
+-- is a Core Platform permission that core platform itself enforces nowhere.
+('permission-msg-expenses-create', 'Mystoreguard Expenses Create', 'rt-msg-expenses', 'Can record new expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-expenses-get', 'Mystoreguard Expenses Get', 'rt-msg-expenses', 'Can view, list and read expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-expenses-update', 'Mystoreguard Expenses Update', 'rt-msg-expenses', 'Can update expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-expenses-delete', 'Mystoreguard Expenses Delete', 'rt-msg-expenses', 'Can delete expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-expenses-get-statistics', 'Mystoreguard Expenses Get Statistics', 'rt-msg-expenses', 'Can view expense statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
 -- Purchase Orders permissions
 ('permission-msg-purchase-orders-create', 'Mystoreguard Purchase Orders Create', 'rt-purchase-orders', 'Can create new purchase orders', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-purchase-orders-get', 'Mystoreguard Purchase Orders Get', 'rt-purchase-orders', 'Can view, list, read purchase orders, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

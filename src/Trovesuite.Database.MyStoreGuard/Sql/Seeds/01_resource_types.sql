@@ -15,7 +15,11 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-subscribed-app-msg', 'MSG APP', 'MSG Subscribed APP', null),
 ('rt-warehouse', 'Warehouse', 'Warehouse management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-shop', 'Store', 'Store management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-expenses', 'Expenses', 'Expenses management for Mystoreguard', 'rt-subscribed-app-msg'),
+-- Expenses is MyStoreGuard's own, not a claim on the Core Platform resource type.
+-- rt-expenses belongs to core, and both this app and LoanDrift used to re-parent it under
+-- themselves — so whichever seeded last won, all three shared one set of permissions, and
+-- granting someone expense access in MyStoreGuard silently gave it to them in LoanDrift too.
+('rt-msg-expenses', 'Expenses', 'Expenses management for Mystoreguard', 'rt-subscribed-app-msg'),
 -- Removed rt-creditors / rt-depositors / rt-returns: placeholder resource types for features that were never built (cleaned up in Seeds/04_others.sql)
 -- Removed rt-clients for the same reason, one step further along: clients got as far as a
 -- controller and a service, but the router was never mounted, no msg_clients table was ever

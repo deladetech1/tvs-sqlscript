@@ -13,7 +13,7 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-loandrift-capturing-admin', 'system-tenant-id', 'Loandrift Capturing Admin', 'Loandrift Capturing Admin can manage all aspects of capturing a loan', 'rt-capturing', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-disbursement-admin', 'system-tenant-id', 'Loandrift Disbursement Admin', 'Administrator for Disbursement', 'rt-disbursement', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-settings-admin', 'system-tenant-id', 'Loandrift Settings Admin', 'Administrator for Settings', 'rt-settings', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-loandrift-expense-admin', 'system-tenant-id', 'Loandrift Expense Admin', 'Administrator for Expense', 'rt-expenses', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-expense-admin', 'system-tenant-id', 'Loandrift Expense Admin', 'Administrator for Expense', 'rt-loandrift-expenses', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-repayment-admin', 'system-tenant-id', 'Loandrift Repayment Admin', 'Administrator for Repayment', 'rt-repayment', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-client-admin', 'system-tenant-id', 'Loandrift Client Admin', 'Administrator for Client', 'rt-client', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-loan-registration-admin', 'system-tenant-id', 'Loandrift Loan Registration Admin', 'Administrator for Loan Registration', 'rt-loan-registration', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

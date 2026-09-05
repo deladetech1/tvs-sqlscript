@@ -32,11 +32,11 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-reports-get'),
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-logs-get'),
 ('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-logs-delete'),
-('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-expense-create'),
-('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-expense-get'),
-('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-expense-update'),
-('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-expense-delete'),
-('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-expense-get-statistics'),
+('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-expenses-create'),
+('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-expenses-get'),
+('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-expenses-update'),
+('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-expenses-delete'),
+('system-tenant-id', 'role-subscribed-app-msg-admin', 'permission-msg-expenses-get-statistics'),
 
 -- role-msg-admin (Admin) is only in cp_roles if 5_insert_role.sql was run; add same permissions for it via separate INSERT when that role exists
 

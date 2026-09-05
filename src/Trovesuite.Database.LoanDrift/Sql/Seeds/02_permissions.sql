@@ -9,6 +9,17 @@ SET search_path TO core_platform;
 
 INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES
 
+-- Expenses permissions. LoanDrift's own, so granting them says nothing about MyStoreGuard.
+-- get-activity-logs is included because the controller checks it: it was checking a
+-- permission that had never been created, so that endpoint refused everyone but Owner.
+('permission-loandrift-expenses-create', 'Loandrift Expenses Create', 'rt-loandrift-expenses', 'Can record new expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-expenses-get', 'Loandrift Expenses Get', 'rt-loandrift-expenses', 'Can view, list and read expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-expenses-update', 'Loandrift Expenses Update', 'rt-loandrift-expenses', 'Can update expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-expenses-delete', 'Loandrift Expenses Delete', 'rt-loandrift-expenses', 'Can delete expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-expenses-get-statistics', 'Loandrift Expenses Get Statistics', 'rt-loandrift-expenses', 'Can view expense statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-expenses-get-activity-logs', 'Loandrift Expenses Get Activity Logs', 'rt-loandrift-expenses', 'Can view the activity log for expenses', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+
 -- Approval permissions
 ('permission-loandrift-approval-get', 'Loandrift Approval Get', 'rt-approval', 'Can view, list, read approvals, access activity logs, view statistics, view deletion chat history, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-loandrift-approval-update', 'Loandrift Approval Update', 'rt-approval', 'Can update approvals, restore soft-deleted approvals, approve or reject deletion requests', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
