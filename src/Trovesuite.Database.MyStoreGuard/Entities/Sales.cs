@@ -200,6 +200,18 @@ public class StoreConfig
     public string? OutOfStockNotificationEmail { get; set; }
     public int? OutOfStockNotificationOccurrence { get; set; }
     public string? SalesNotificationEmails { get; set; }
+
+    /// <summary>
+    /// What to do when stock is physically present but already promised to a sale
+    /// that has not released it yet — a plan awaiting its deposit, an on-hold sale.
+    /// WARN tells the cashier and lets them go on; BLOCK refuses.
+    ///
+    /// WARN by default because until now nothing counted commitments at all, and a
+    /// shop that has been quietly overselling should be shown the problem before it
+    /// starts losing sales at the till over it.
+    /// </summary>
+    public string CommittedStockAction { get; set; } = "WARN";
+
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }

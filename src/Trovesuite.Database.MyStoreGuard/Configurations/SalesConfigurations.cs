@@ -173,6 +173,8 @@ public sealed class StoreConfigConfiguration : IEntityTypeConfiguration<StoreCon
         b.Property(x => x.EnableDailySalesReports).HasDefaultValue(false);
         b.Property(x => x.LockBasedOnClosingTime).HasDefaultValue(false);
         b.Property(x => x.ChangeToCard).HasDefaultValue(false);
+        b.Property(x => x.CommittedStockAction).HasDefaultValue("WARN");
+        b.HasInCheck("committed_stock_action", "WARN", "BLOCK");
         b.Property(x => x.EnableOutOfStockNotification).HasDefaultValue(false);
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
         b.WithTenantOrgBusLocFks();

@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260905223931_AllowReleaseGoodsOnSale")]
+    partial class AllowReleaseGoodsOnSale
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -10007,13 +10010,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnType("time without time zone")
                         .HasColumnName("closing_time");
 
-                    b.Property<string>("CommittedStockAction")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("WARN")
-                        .HasColumnName("committed_stock_action");
-
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
@@ -10130,10 +10126,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_msg_store_configs_updated_by_tenant_id");
 
-                    b.ToTable("msg_store_configs", "mystoreguard", t =>
-                        {
-                            t.HasCheckConstraint("ck_msg_store_configs_committed_stock_action", "committed_stock_action IN ('WARN','BLOCK')");
-                        });
+                    b.ToTable("msg_store_configs", "mystoreguard");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.StoreProduct", b =>
