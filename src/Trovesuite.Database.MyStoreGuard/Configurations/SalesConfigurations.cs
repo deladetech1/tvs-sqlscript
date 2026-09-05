@@ -179,7 +179,7 @@ public sealed class StoreConfigConfiguration : IEntityTypeConfiguration<StoreCon
         b.WithCrossSchemaAuditUserFks();
         // (tenant_id, manager_id) → cp_users(id, tenant_id) SET NULL
         b.HasOne<User>().WithMany().HasForeignKey("ManagerId", "TenantId")
-            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.SetNull);
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -197,7 +197,7 @@ public sealed class WarehouseConfigConfiguration : IEntityTypeConfiguration<Ware
         b.WithTenantOrgBusLocFks();
         b.WithCrossSchemaAuditUserFks();
         b.HasOne<User>().WithMany().HasForeignKey("ManagerId", "TenantId")
-            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.SetNull);
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -372,7 +372,7 @@ public sealed class GiftCardConfiguration : IEntityTypeConfiguration<GiftCard>
         b.WithCrossSchemaAuditUserFks();
         // (tenant_id, purchased_by_user_id) → cp_users SET NULL
         b.HasOne<User>().WithMany().HasForeignKey("PurchasedByUserId", "TenantId")
-            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.SetNull);
+            .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
     }
 }
 
@@ -389,7 +389,7 @@ public sealed class SalePaymentConfiguration : IEntityTypeConfiguration<SalePaym
         b.HasInCheck("payment_status", "SUCCESS", "FAILED", "PENDING", "REFUNDED");
         b.WithTenantFk();
         b.WithSaleFk();
-        b.WithGiftCardFk();
+        b.WithGiftCardFk(DeleteBehavior.Restrict);
     }
 }
 
@@ -556,7 +556,7 @@ public sealed class InvoicePaymentConfiguration : IEntityTypeConfiguration<Invoi
         b.HasInCheck("payment_status", "SUCCESS", "FAILED", "PENDING", "REFUNDED");
         b.WithTenantFk();
         b.WithInvoiceFk();
-        b.WithGiftCardFk();
+        b.WithGiftCardFk(DeleteBehavior.Restrict);
     }
 }
 
@@ -655,10 +655,10 @@ public sealed class GiftCardTransactionConfiguration : IEntityTypeConfiguration<
         b.HasOne<Sale>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "SaleId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         // (tenant_id, loc_id) → cp_locations SET NULL
         b.HasOne<Location>().WithMany().HasForeignKey("LocId", "TenantId")
-            .HasPrincipalKey("Id", "TenantId").OnDelete(DeleteBehavior.SetNull);
+            .HasPrincipalKey("Id", "TenantId").OnDelete(DeleteBehavior.Restrict);
         // created_by → cp_users RESTRICT
         b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId)).OnDelete(DeleteBehavior.Restrict);
@@ -731,15 +731,15 @@ public sealed class AffiliateCommissionConfiguration : IEntityTypeConfiguration<
         b.HasOne<AffiliateReferral>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ReferralId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         // (tenant_id, org_id, bus_id, loc_id, sale_id) → msg_sales SET NULL
         b.HasOne<Sale>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "SaleId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         // (tenant_id, loc_id) → cp_locations SET NULL
         b.HasOne<Location>().WithMany().HasForeignKey("LocId", "TenantId")
-            .HasPrincipalKey("Id", "TenantId").OnDelete(DeleteBehavior.SetNull);
+            .HasPrincipalKey("Id", "TenantId").OnDelete(DeleteBehavior.Restrict);
         b.WithCrossSchemaCreateUpdateUserFks();
     }
 }

@@ -188,7 +188,7 @@ public sealed class MsgDocumentPathConfiguration : IEntityTypeConfiguration<MsgD
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusLocFks();
         // bkup: audit FKs ON DELETE SET NULL for document_paths
-        b.WithCrossSchemaAuditUserFks(DeleteBehavior.SetNull);
+        b.WithCrossSchemaAuditUserFks(DeleteBehavior.Restrict);
     }
 }
 
@@ -542,7 +542,7 @@ public sealed class AssignMetadataToProductConfiguration : IEntityTypeConfigurat
             .OnDelete(DeleteBehavior.Cascade);
         b.WithProductFk();
         // bkup: audit FKs ON DELETE SET NULL for assign_metadata
-        b.WithCrossSchemaAuditUserFks(DeleteBehavior.SetNull);
+        b.WithCrossSchemaAuditUserFks(DeleteBehavior.Restrict);
     }
 }
 
