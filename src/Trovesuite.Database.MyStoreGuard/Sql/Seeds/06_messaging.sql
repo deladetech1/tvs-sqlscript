@@ -108,7 +108,15 @@ CREATE TABLE IF NOT EXISTS msg_message_recipients
 );
 
 
--- Meetings Table
+-- Meetings Tables
+--
+-- The meetings FEATURE is retired (see the cleanup block at the end of this file): its
+-- API is unmounted, its module deleted, and its role, permissions and resource type are
+-- dropped. These two tables stay. They are modelled in EF
+-- (Configurations/MessagingConfigurations.cs) and so are created by migrations whatever
+-- this file says; dropping them would mean a destructive migration for the sake of tidiness,
+-- and would throw away anything a tenant had already scheduled. Orphaned on purpose — if
+-- meetings is ever finished, the data and the shape are still here.
 CREATE TABLE IF NOT EXISTS msg_meetings
 (
     id TEXT DEFAULT gen_random_uuid()::TEXT,
@@ -219,8 +227,8 @@ CREATE TABLE IF NOT EXISTS msg_meeting_participants
 -- =====================================================
 
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
-('rt-messaging', 'Messaging', 'Messaging management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-meetings', 'Meetings', 'Meetings management for Mystoreguard', 'rt-subscribed-app-msg')
+('rt-messaging', 'Messaging', 'Messaging management for Mystoreguard', 'rt-subscribed-app-msg')
+-- rt-meetings retired: see the cleanup block at the end of this file.
 ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
     description        = EXCLUDED.description,
@@ -237,13 +245,9 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-msg-messaging-create', 'Mystoreguard Messaging Create', 'rt-messaging', 'Can compose and send messages to suppliers and customers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-messaging-get', 'Mystoreguard Messaging Get', 'rt-messaging', 'Can view, list, read messages, view statistics, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-messaging-update', 'Mystoreguard Messaging Update', 'rt-messaging', 'Can update draft messages and resend failed messages', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-messaging-delete', 'Mystoreguard Messaging Delete', 'rt-messaging', 'Can delete messages', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-messaging-delete', 'Mystoreguard Messaging Delete', 'rt-messaging', 'Can delete messages', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
--- Meeting permissions
-('permission-msg-meetings-create', 'Mystoreguard Meetings Create', 'rt-meetings', 'Can schedule meetings with suppliers and customers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-meetings-get', 'Mystoreguard Meetings Get', 'rt-meetings', 'Can view, list, read meetings, view statistics, and export data', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-meetings-update', 'Mystoreguard Meetings Update', 'rt-meetings', 'Can reschedule and update meetings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-msg-meetings-delete', 'Mystoreguard Meetings Delete', 'rt-meetings', 'Can cancel and delete meetings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- The four permission-msg-meetings-* permissions are retired: see the cleanup block below.
 
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
@@ -256,8 +260,8 @@ ON CONFLICT (id) DO UPDATE SET
 -- =====================================================
 
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
-('role-msg-messaging-admin', 'system-tenant-id', 'Mystoreguard Messaging Admin', 'Administrator for messaging management with full access to compose, send, and manage messages', 'rt-messaging', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-msg-meetings-admin', 'system-tenant-id', 'Mystoreguard Meetings Admin', 'Administrator for meetings management with full access to schedule and manage meetings', 'rt-meetings', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('role-msg-messaging-admin', 'system-tenant-id', 'Mystoreguard Messaging Admin', 'Administrator for messaging management with full access to compose, send, and manage messages', 'rt-messaging', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- role-msg-meetings-admin retired: see the cleanup block at the end of this file.
 ON CONFLICT (tenant_id, role_name) DO UPDATE SET
     description      = EXCLUDED.description,
     resource_type_id = EXCLUDED.resource_type_id,
@@ -274,15 +278,42 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-messaging-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-msg-messaging-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-msg-messaging-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-messaging-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-msg-messaging-admin', 'permission-business-app-get-locations'),
-('system-tenant-id', 'role-msg-messaging-admin', 'permission-user-get-locations'),
-
-('system-tenant-id', 'role-msg-meetings-admin', 'permission-app-get'),
-('system-tenant-id', 'role-msg-meetings-admin', 'permission-business-get'),
-('system-tenant-id', 'role-msg-meetings-admin', 'permission-organization-get'),
-('system-tenant-id', 'role-msg-meetings-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-msg-meetings-admin', 'permission-business-app-subscribe'),
-('system-tenant-id', 'role-msg-meetings-admin', 'permission-business-app-get-locations'),
-('system-tenant-id', 'role-msg-meetings-admin', 'permission-user-get-locations')
+('system-tenant-id', 'role-msg-messaging-admin', 'permission-user-get-locations')
 ON CONFLICT DO NOTHING;
+
+
+-- =====================================================
+-- 6. CLEANUP: retire the meetings feature
+-- =====================================================
+-- The API was complete — tables, router, service, permissions, a role — and mounted, but
+-- no client ever called it and no screen was ever built for it. It sat in the role picker
+-- offering an administrator's access to a module that has no front door.
+--
+-- The TABLES are deliberately not dropped (see the note above them): EF owns them, and
+-- anything already scheduled survives. What goes is the access control, so nothing
+-- advertises a feature that is not there.
+--
+-- Idempotent; a no-op on a database that never had it.
+-- Deleted child-first: assignments -> role_permissions -> roles -> permissions -> resource_types.
+DELETE FROM core_platform.cp_assign_roles
+WHERE role_id = 'role-msg-meetings-admin';
+
+-- Both directions, as with clients: the grants this role held, and the meetings permissions
+-- held by anybody else. Owner and Admin are given every permission by trigger, and a tenant
+-- may have put these on a custom role — cp_role_permissions.permission_id is RESTRICT onto
+-- cp_permissions, so every grant has to go before the permissions can.
+DELETE FROM core_platform.cp_role_permissions
+WHERE role_id = 'role-msg-meetings-admin'
+   OR permission_id IN ('permission-msg-meetings-create', 'permission-msg-meetings-get',
+                        'permission-msg-meetings-update', 'permission-msg-meetings-delete');
+
+DELETE FROM core_platform.cp_roles
+WHERE id = 'role-msg-meetings-admin';
+
+DELETE FROM core_platform.cp_permissions
+WHERE id IN ('permission-msg-meetings-create', 'permission-msg-meetings-get',
+             'permission-msg-meetings-update', 'permission-msg-meetings-delete');
+
+DELETE FROM core_platform.cp_resource_types
+WHERE id = 'rt-meetings';

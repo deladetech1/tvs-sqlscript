@@ -98,8 +98,14 @@ internal static class MsgDefaults
     }
 
     /// <summary>(TenantId, OrgId, BusId, CustomerId) → msg_customers.</summary>
+    /// <remarks>
+    /// Defaults to Restrict, NOT SetNull. The key is composite, so SET NULL nulls every
+    /// column in it — tenant_id, org_id and bus_id included, all of which are NOT NULL and
+    /// in the primary key. A SetNull default here is not a lenient choice, it is a delete
+    /// that always fails. Callers wanting the row to go with the customer pass Cascade.
+    /// </remarks>
     public static EntityTypeBuilder<T> WithCustomerFk<T>(this EntityTypeBuilder<T> b,
-        DeleteBehavior onDelete = DeleteBehavior.SetNull) where T : class
+        DeleteBehavior onDelete = DeleteBehavior.Restrict) where T : class
     {
         b.HasOne<Customer>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "CustomerId")
