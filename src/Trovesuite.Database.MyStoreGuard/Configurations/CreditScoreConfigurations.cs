@@ -51,7 +51,7 @@ public sealed class CreditScoreConfiguration : IEntityTypeConfiguration<CreditSc
         b.HasOne<InstallmentPlan>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "PlanId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         b.HasOne<User>().WithMany().HasForeignKey("CreatedBy", "TenantId")
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId))
             .OnDelete(DeleteBehavior.Restrict);

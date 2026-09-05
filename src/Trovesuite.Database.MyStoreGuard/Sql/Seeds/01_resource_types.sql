@@ -15,7 +15,11 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-subscribed-app-msg', 'MSG APP', 'MSG Subscribed APP', null),
 ('rt-warehouse', 'Warehouse', 'Warehouse management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-shop', 'Store', 'Store management for Mystoreguard', 'rt-subscribed-app-msg'),
-('rt-expenses', 'Expenses', 'Expenses management for Mystoreguard', 'rt-subscribed-app-msg'),
+-- Expenses is MyStoreGuard's own, not a claim on the Core Platform resource type.
+-- rt-expenses belongs to core, and both this app and LoanDrift used to re-parent it under
+-- themselves — so whichever seeded last won, all three shared one set of permissions, and
+-- granting someone expense access in MyStoreGuard silently gave it to them in LoanDrift too.
+('rt-msg-expenses', 'Expenses', 'Expenses management for Mystoreguard', 'rt-subscribed-app-msg'),
 -- Removed rt-creditors / rt-depositors / rt-returns: placeholder resource types for features that were never built (cleaned up in Seeds/04_others.sql)
 -- Removed rt-clients for the same reason, one step further along: clients got as far as a
 -- controller and a service, but the router was never mounted, no msg_clients table was ever
@@ -30,6 +34,11 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-product-prices', 'Product Prices', 'Product Prices management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-pricing-rules', 'Pricing Rules', 'Pricing Rules management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-customers', 'Customers', 'Customers management for Mystoreguard', 'rt-subscribed-app-msg'),
+-- Loyalty was built with tables, services and five screens, and never given permissions of
+-- its own — every one of its endpoints checked permission-msg-customers-*, so anyone who
+-- could read a customer could read the whole loyalty programme, and there was no way to
+-- separate the two because the distinction did not exist.
+('rt-loyalty', 'Loyalty', 'Loyalty programme (points, tiers, rules, segments and campaigns) for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-file-manager', 'File Manager', 'File Manager for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-taxes', 'Taxes', 'Taxes management for Mystoreguard', 'rt-subscribed-app-msg'),
 ('rt-tax-rules', 'Tax Rules', 'Tax Rules management for Mystoreguard', 'rt-subscribed-app-msg'),

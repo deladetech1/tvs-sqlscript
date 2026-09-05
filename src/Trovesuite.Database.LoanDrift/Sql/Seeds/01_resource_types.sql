@@ -23,7 +23,10 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-sector', 'Sector', 'Sector management for Loandrift', 'rt-subscribed-app-loandrift'),
 ('rt-client', 'Client', 'Client management for Loandrift', 'rt-subscribed-app-loandrift'),
 ('rt-settings', 'Settings', 'Settings management for Loandrift', 'rt-subscribed-app-loandrift'),
-('rt-expenses', 'Expense', 'Expense management for Loandrift', 'rt-subscribed-app-loandrift'),
+-- LoanDrift's own expenses, not a claim on the Core Platform resource type. rt-expenses
+-- belongs to core, and this app and MyStoreGuard both used to re-parent it under themselves,
+-- so all three shared one permission set and granting expenses in one app granted it in both.
+('rt-loandrift-expenses', 'Expense', 'Expense management for Loandrift', 'rt-subscribed-app-loandrift'),
 ('rt-calender', 'Calender', 'Calender management for Loandrift', 'rt-subscribed-app-loandrift'),
 ('rt-repayment', 'Repayment', 'Repayment management for Loandrift', 'rt-subscribed-app-loandrift'),
 ('rt-file', 'File', 'File management', 'rt-subscribed-app-loandrift'),

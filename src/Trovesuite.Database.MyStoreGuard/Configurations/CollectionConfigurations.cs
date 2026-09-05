@@ -54,7 +54,7 @@ public sealed class CollectionConfiguration : IEntityTypeConfiguration<Collectio
         b.HasOne<InstallmentPlan>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "PlanId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         b.WithCrossSchemaCreateUpdateUserFks();
         b.HasOne<User>().WithMany().HasForeignKey("ResolvedBy", "TenantId")
             .HasPrincipalKey(nameof(User.Id), nameof(User.TenantId))
