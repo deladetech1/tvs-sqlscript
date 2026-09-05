@@ -40,7 +40,12 @@ public sealed class CreditScoreConfiguration : IEntityTypeConfiguration<CreditSc
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Band });
 
         b.WithTenantOrgBusLocFks();
-        b.WithCustomerFk();
+        // Cascade, not the SetNull default. A credit score is a judgement about one
+        // customer and means nothing without them, so it goes when they go — the same
+        // choice guarantors make. SetNull cannot work here at all: the foreign key is
+        // composite, so Postgres nulls tenant_id, org_id and bus_id along with
+        // customer_id, and all three are NOT NULL and in the primary key.
+        b.WithCustomerFk(DeleteBehavior.Cascade);
         // plan_id → msg_installment_plans. Nullable: a score can be taken to
         // decide a plan, or just to look somebody up.
         b.HasOne<InstallmentPlan>().WithMany()

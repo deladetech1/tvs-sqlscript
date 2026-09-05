@@ -357,11 +357,17 @@ public sealed class GiftCardConfiguration : IEntityTypeConfiguration<GiftCard>
         b.HasInCheck("status", "ACTIVE", "USED", "EXPIRED", "CANCELLED");
         b.HasDeleteStatusCheck();
         b.WithTenantOrgBusFks();
-        // purchased_by_customer_id → msg_customers SET NULL
+        // purchased_by_customer_id → msg_customers. Restrict, though the column is
+        // nullable and forgetting the purchaser was plainly the intent: the key is
+        // composite, and SET NULL on a composite key nulls EVERY column in it, so
+        // Postgres also tries to null tenant_id, org_id and bus_id, which are NOT NULL
+        // and in the primary key. Deleting any customer who had bought a gift card failed
+        // outright. Restrict matches what sales and invoices already do with a customer
+        // who has a history worth money — the delete is refused and they are deactivated.
         b.HasOne<Customer>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "PurchasedByCustomerId")
             .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.Restrict);
         b.WithCurrencyFk("CurrencyId");
         b.WithCrossSchemaAuditUserFks();
         // (tenant_id, purchased_by_user_id) → cp_users SET NULL
