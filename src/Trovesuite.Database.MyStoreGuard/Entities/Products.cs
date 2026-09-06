@@ -90,6 +90,97 @@ public class Product : TenantScopedEntity
     public string Name { get; set; } = default!;
     public string? Sku { get; set; }
     public string? BarCode { get; set; }
+
+    /// <summary>
+    /// How this product is tracked in stock.
+    ///
+    /// COUNTED is what the system has always done and what every existing product
+    /// gets: stock is a number, and one unit is as good as another. SERIALISED
+    /// means every single unit is identified — a phone by its IMEI, a vehicle by
+    /// its VIN — and the shop needs to know which one it sold, transferred or took
+    /// back, not merely how many.
+    ///
+    /// It sits on the product rather than on each receipt of stock deliberately.
+    /// Decided per delivery, one consignment of iPhones would arrive with serials
+    /// and the next without, and nothing afterwards could tell you which half of
+    /// your stock was accounted for.
+    /// </summary>
+    public string TrackingType { get; set; } = "COUNTED";
+}
+
+/// <summary>
+/// Which stock tracking types a business has switched on.
+///
+/// Separate from the subscription's feature catalog, which answers whether a
+/// business MAY use something. This answers whether it WANTS to: a phone shop and
+/// a pharmacy can sit on the same plan and need entirely different things, and
+/// the product form should only offer what the shop actually deals in.
+///
+/// Business-scoped, with no loc_id, because products themselves are — a product
+/// is not tracked one way at one branch and another way at the next.
+/// </summary>
+public class InventorySettings
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+
+    /// <summary>Off by default, so nothing changes for a business that never opens the setting.</summary>
+    public bool SerialisedEnabled { get; set; }
+
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>
+/// One physical unit of a serialised product — one handset, one vehicle.
+///
+/// The row is created when stock is received and lives as long as the unit does,
+/// changing status and location as it moves. It is deliberately not deleted when
+/// sold: the whole reason for recording an IMEI is to be able to answer, months
+/// later, who bought this one and is it still under warranty.
+/// </summary>
+public class ProductUnit
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+
+    public string ProductId { get; set; } = default!;
+    /// <summary>The consignment this unit arrived in. One batch holds many units.</summary>
+    public string BatchId { get; set; } = default!;
+
+    /// <summary>IMEI, VIN, or whatever the trade calls its number. Unique per business.</summary>
+    public string SerialNumber { get; set; } = default!;
+
+    /// <summary>
+    /// Where the unit is now. Stock moves between branches, so the unit's location
+    /// is its own — a handset at Osu must not be sellable from Accra.
+    /// </summary>
+    public string LocId { get; set; } = default!;
+
+    /// <summary>
+    /// IN_STOCK is offered for sale; SOLD is not, but stays findable by serial for
+    /// warranty. RETURNED goes back to IN_STOCK when a customer brings it back —
+    /// hiding a unit forever the moment it sells would lose it on the first return.
+    /// FAULTY and WRITTEN_OFF are present but not sellable.
+    /// </summary>
+    public string Status { get; set; } = "IN_STOCK";
+
+    /// <summary>The sale that took it out, kept so a serial can be traced to a customer.</summary>
+    public string? SaleId { get; set; }
+    public DateTimeOffset? SoldAt { get; set; }
+
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class PurchaseOrder

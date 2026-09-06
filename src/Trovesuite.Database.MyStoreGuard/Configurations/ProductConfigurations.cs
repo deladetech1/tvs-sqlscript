@@ -228,8 +228,54 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         b.Property(x => x.Id).AsTextUuidDefault();
         // Non-unique index on name (product names are NOT required to be unique).
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Name });
+        // COUNTED by default, so every product that already exists keeps behaving
+        // exactly as it does and nothing has to be migrated.
+        b.Property(x => x.TrackingType).HasDefaultValue("COUNTED");
+        b.HasInCheck("tracking_type", "COUNTED", "SERIALISED");
         b.ApplyAuditDefaults();
         b.HasDeleteStatusCheck();
+        b.WithTenantOrgBusFks();
+        b.WithCrossSchemaAuditUserFks();
+    }
+}
+
+public sealed class InventorySettingsConfiguration : IEntityTypeConfiguration<InventorySettings>
+{
+    public void Configure(EntityTypeBuilder<InventorySettings> b)
+    {
+        b.ToTable("msg_inventory_settings");
+        // One row per business, so the key is the business — not id — and a second
+        // row for the same business cannot exist to disagree with the first.
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.SerialisedEnabled).HasDefaultValue(false);
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+        b.WithTenantOrgBusFks();
+        b.WithCrossSchemaAuditUserFks();
+    }
+}
+
+public sealed class ProductUnitConfiguration : IEntityTypeConfiguration<ProductUnit>
+{
+    public void Configure(EntityTypeBuilder<ProductUnit> b)
+    {
+        b.ToTable("msg_product_units");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Status).HasDefaultValue("IN_STOCK");
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+
+        // A serial identifies one physical thing, so the same one twice in a
+        // business is always an error — usually one box scanned twice. Enforced
+        // here rather than only in the API, because the API is not the only way
+        // rows arrive and a duplicate IMEI is unrecoverable once it is trusted.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.SerialNumber }).IsUnique();
+
+        // The two questions asked at the till and on the transfer screen: what is
+        // in stock, of this product, at this branch.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.ProductId, x.LocId, x.Status });
+
+        b.HasInCheck("status", "IN_STOCK", "SOLD", "RETURNED", "FAULTY", "WRITTEN_OFF");
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
     }
