@@ -239,22 +239,6 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     }
 }
 
-public sealed class InventorySettingsConfiguration : IEntityTypeConfiguration<InventorySettings>
-{
-    public void Configure(EntityTypeBuilder<InventorySettings> b)
-    {
-        b.ToTable("msg_inventory_settings");
-        // One row per business, so the key is the business — not id — and a second
-        // row for the same business cannot exist to disagree with the first.
-        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId });
-        b.Property(x => x.Id).AsTextUuidDefault();
-        b.Property(x => x.SerialisedEnabled).HasDefaultValue(false);
-        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.WithTenantOrgBusFks();
-        b.WithCrossSchemaAuditUserFks();
-    }
-}
-
 public sealed class ProductUnitConfiguration : IEntityTypeConfiguration<ProductUnit>
 {
     public void Configure(EntityTypeBuilder<ProductUnit> b)

@@ -109,34 +109,6 @@ public class Product : TenantScopedEntity
 }
 
 /// <summary>
-/// Which stock tracking types a business has switched on.
-///
-/// Separate from the subscription's feature catalog, which answers whether a
-/// business MAY use something. This answers whether it WANTS to: a phone shop and
-/// a pharmacy can sit on the same plan and need entirely different things, and
-/// the product form should only offer what the shop actually deals in.
-///
-/// Business-scoped, with no loc_id, because products themselves are — a product
-/// is not tracked one way at one branch and another way at the next.
-/// </summary>
-public class InventorySettings
-{
-    public string Id { get; set; } = default!;
-    public string TenantId { get; set; } = default!;
-    public string OrgId { get; set; } = default!;
-    public string BusId { get; set; } = default!;
-
-    /// <summary>Off by default, so nothing changes for a business that never opens the setting.</summary>
-    public bool SerialisedEnabled { get; set; }
-
-    public string? Cdate { get; set; }
-    public string? Ctime { get; set; }
-    public DateTimeOffset? Cdatetime { get; set; }
-    public string? CreatedBy { get; set; }
-    public string? UpdatedBy { get; set; }
-}
-
-/// <summary>
 /// One physical unit of a serialised product — one handset, one vehicle.
 ///
 /// The row is created when stock is received and lives as long as the unit does,
