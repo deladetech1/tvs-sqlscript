@@ -131,10 +131,15 @@ public class ProductUnit
     public string SerialNumber { get; set; } = default!;
 
     /// <summary>
-    /// Where the unit is now. Stock moves between branches, so the unit's location
-    /// is its own — a handset at Osu must not be sellable from Accra.
+    /// Where the unit is now, or null while it is still in the unallocated pool.
+    ///
+    /// Stock does not arrive at a branch. A batch is received against the business
+    /// and distributed to a store or warehouse afterwards, which is why the batch
+    /// itself carries no location either. Null here means the same thing it means
+    /// for a batch: received, not yet anywhere. Once allocated it names the branch,
+    /// because a handset at Osu must not be sellable from Accra.
     /// </summary>
-    public string LocId { get; set; } = default!;
+    public string? LocId { get; set; }
 
     /// <summary>
     /// IN_STOCK is offered for sale; SOLD is not, but stays findable by serial for
