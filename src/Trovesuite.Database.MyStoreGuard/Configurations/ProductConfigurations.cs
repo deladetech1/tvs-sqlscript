@@ -285,7 +285,8 @@ public sealed class ProductUnitConfiguration : IEntityTypeConfiguration<ProductU
         // in stock, of this product, at this branch.
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.ProductId, x.LocId, x.Status });
 
-        b.HasInCheck("status", "IN_STOCK", "SOLD", "RETURNED", "FAULTY", "WRITTEN_OFF");
+        b.HasInCheck("status",
+            "IN_STOCK", "RESERVED", "SOLD", "RETURNED", "FAULTY", "WRITTEN_OFF");
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
     }

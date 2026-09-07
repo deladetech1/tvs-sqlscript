@@ -19,6 +19,10 @@
 --
 -- Counted stock — which is nearly everything — never reaches the check.
 --
+-- "On the shelf" means IN_STOCK, RETURNED or RESERVED. An item claimed by an
+-- instalment is reserved rather than sold: spoken for, physically still there,
+-- and still counted. It becomes SOLD when the stock actually leaves.
+--
 -- The consequence is deliberate and worth stating plainly: a path that moves a
 -- serialised product's stock without moving its items now FAILS. It does not
 -- warn. A shop that cannot cancel a sale is a problem somebody notices and
@@ -82,7 +86,11 @@ BEGIN
               FROM mystoreguard.msg_product_units u
              WHERE u.product_id = v_product_id AND u.tenant_id = v_tenant_id
                AND u.org_id = v_org_id AND u.bus_id = v_bus_id
-               AND u.status IN ('IN_STOCK', 'RETURNED')
+               -- RESERVED counts as present, and that is the crux: an item
+               -- spoken for by an instalment sits in the shop for months and the
+               -- shelf still includes it. Counting only IN_STOCK would make every
+               -- such sale look like drift and refuse it.
+               AND u.status IN ('IN_STOCK', 'RETURNED', 'RESERVED')
                AND u.loc_id IS NOT NULL
              GROUP BY u.loc_id
         )

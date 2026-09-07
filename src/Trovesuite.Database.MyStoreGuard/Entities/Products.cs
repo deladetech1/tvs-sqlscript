@@ -146,10 +146,19 @@ public class ProductUnit
     public string? LocId { get; set; }
 
     /// <summary>
-    /// IN_STOCK is offered for sale; SOLD is not, but stays findable by serial for
-    /// warranty. RETURNED goes back to IN_STOCK when a customer brings it back —
-    /// hiding a unit forever the moment it sells would lose it on the first return.
-    /// FAULTY and WRITTEN_OFF are present but not sellable.
+    /// IN_STOCK is offered for sale. RETURNED goes back to it when a customer
+    /// brings the item back — a unit hidden forever the moment it sold would be
+    /// lost on the first return.
+    ///
+    /// RESERVED is the one that is easy to miss: the item is spoken for but still
+    /// physically on the shelf. An instalment sale on a policy that releases at
+    /// full payment claims the handset at the till and leaves it in the shop for
+    /// months, so it is neither sellable nor gone, and the shelf count still
+    /// includes it. Without this state the item and the count disagree from the
+    /// moment such a sale is made.
+    ///
+    /// SOLD means it has actually left. FAULTY and WRITTEN_OFF are present but
+    /// not sellable.
     /// </summary>
     public string Status { get; set; } = "IN_STOCK";
 
