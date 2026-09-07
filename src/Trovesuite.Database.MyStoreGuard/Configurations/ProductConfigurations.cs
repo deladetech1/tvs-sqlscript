@@ -228,8 +228,65 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         b.Property(x => x.Id).AsTextUuidDefault();
         // Non-unique index on name (product names are NOT required to be unique).
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Name });
+        // COUNTED by default, so every product that already exists keeps behaving
+        // exactly as it does and nothing has to be migrated.
+        b.Property(x => x.TrackingType).HasDefaultValue("COUNTED");
+        b.HasInCheck("tracking_type", "COUNTED", "SERIALISED");
         b.ApplyAuditDefaults();
         b.HasDeleteStatusCheck();
+        b.WithTenantOrgBusFks();
+        b.WithCrossSchemaAuditUserFks();
+    }
+}
+
+public sealed class ProductUnitIdentifierConfiguration
+    : IEntityTypeConfiguration<ProductUnitIdentifier>
+{
+    public void Configure(EntityTypeBuilder<ProductUnitIdentifier> b)
+    {
+        b.ToTable("msg_product_unit_identifiers");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Label).HasDefaultValue("Serial number");
+        b.Property(x => x.IsPrimary).HasDefaultValue(false);
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+
+        // A number identifies one physical thing, whatever kind it is. Scanning
+        // anything must therefore land on exactly one unit, so the value is unique
+        // across the business rather than per kind or per unit — an IMEI that is
+        // also somebody else's chassis number is a mistyping, not a coincidence.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Value }).IsUnique();
+
+        // Reading every number of one unit, for its detail panel.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.UnitId });
+
+        // The unit is the thing; its numbers have no life without it.
+        b.HasOne<ProductUnit>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "UnitId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.WithTenantOrgBusFks();
+        b.WithCrossSchemaAuditUserFks();
+    }
+}
+
+public sealed class ProductUnitConfiguration : IEntityTypeConfiguration<ProductUnit>
+{
+    public void Configure(EntityTypeBuilder<ProductUnit> b)
+    {
+        b.ToTable("msg_product_units");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Status).HasDefaultValue("IN_STOCK");
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+
+        // The two questions asked at the till and on the transfer screen: what is
+        // in stock, of this product, at this branch.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.ProductId, x.LocId, x.Status });
+
+        b.HasInCheck("status",
+            "IN_STOCK", "RESERVED", "SOLD", "RETURNED", "FAULTY", "WRITTEN_OFF");
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
     }

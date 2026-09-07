@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260906210728_ProductUnitLocationOptional")]
+    partial class ProductUnitLocationOptional
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -7942,6 +7945,11 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnType("text")
                         .HasColumnName("sale_id");
 
+                    b.Property<string>("SerialNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("serial_number");
+
                     b.Property<DateTimeOffset?>("SoldAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("sold_at");
@@ -7972,103 +7980,17 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_msg_product_units_updated_by_tenant_id");
 
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SerialNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_msg_product_units_tenant_id_org_id_bus_id_serial_number");
+
                     b.HasIndex("TenantId", "OrgId", "BusId", "ProductId", "LocId", "Status")
                         .HasDatabaseName("ix_msg_product_units_tenant_id_org_id_bus_id_product_id_loc_id");
 
                     b.ToTable("msg_product_units", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_product_units_status", "status IN ('IN_STOCK','RESERVED','SOLD','RETURNED','FAULTY','WRITTEN_OFF')");
+                            t.HasCheckConstraint("ck_msg_product_units_status", "status IN ('IN_STOCK','SOLD','RETURNED','FAULTY','WRITTEN_OFF')");
                         });
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.ProductUnitIdentifier", b =>
-                {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("OrgId")
-                        .HasColumnType("text")
-                        .HasColumnName("org_id");
-
-                    b.Property<string>("BusId")
-                        .HasColumnType("text")
-                        .HasColumnName("bus_id");
-
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cdatetime")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<bool>("IsPrimary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_primary");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("Serial number")
-                        .HasColumnName("label");
-
-                    b.Property<string>("UnitId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("unit_id");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("value");
-
-                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
-                        .HasName("pk_msg_product_unit_identifiers");
-
-                    b.HasIndex("BusId", "TenantId")
-                        .HasDatabaseName("ix_msg_product_unit_identifiers_bus_id_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_product_unit_identifiers_created_by_tenant_id");
-
-                    b.HasIndex("OrgId", "TenantId")
-                        .HasDatabaseName("ix_msg_product_unit_identifiers_org_id_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_msg_product_unit_identifiers_updated_by_tenant_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "UnitId")
-                        .HasDatabaseName("ix_msg_product_unit_identifiers_tenant_id_org_id_bus_id_unit_id");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Value")
-                        .IsUnique()
-                        .HasDatabaseName("ix_msg_product_unit_identifiers_tenant_id_org_id_bus_id_value");
-
-                    b.ToTable("msg_product_unit_identifiers", "mystoreguard");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", b =>
@@ -10205,7 +10127,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")
-                        .HasDefaultValue("OFF")
+                        .HasDefaultValue("WARN")
                         .HasColumnName("committed_stock_action");
 
                     b.Property<string>("CreatedBy")
@@ -10326,7 +10248,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_store_configs", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_store_configs_committed_stock_action", "committed_stock_action IN ('OFF','WARN','BLOCK')");
+                            t.HasCheckConstraint("ck_msg_store_configs_committed_stock_action", "committed_stock_action IN ('WARN','BLOCK')");
                         });
                 });
 
@@ -14124,49 +14046,6 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasForeignKey("UpdatedBy", "TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_msg_product_units_cp_users_updated_by_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.ProductUnitIdentifier", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_product_unit_identifiers_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
-                        .WithMany()
-                        .HasForeignKey("BusId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_product_unit_identifiers_cp_businesses_bus_id_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_product_unit_identifiers_cp_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
-                        .WithMany()
-                        .HasForeignKey("OrgId", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_product_unit_identifiers_cp_organizations_org_id_tenant");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_msg_product_unit_identifiers_cp_users_updated_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.MyStoreGuard.Entities.ProductUnit", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "UnitId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_msg_product_unit_identifiers_msg_product_units_tenant_id_or");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.PromoCode", b =>

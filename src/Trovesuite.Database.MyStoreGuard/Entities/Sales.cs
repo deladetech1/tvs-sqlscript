@@ -200,6 +200,19 @@ public class StoreConfig
     public string? OutOfStockNotificationEmail { get; set; }
     public int? OutOfStockNotificationOccurrence { get; set; }
     public string? SalesNotificationEmails { get; set; }
+
+    /// <summary>
+    /// What to do when stock is physically present but already promised to a sale
+    /// that has not released it yet — a plan awaiting its deposit, an on-hold sale.
+    /// WARN tells the cashier and lets them go on; BLOCK refuses.
+    ///
+    /// OFF by default: both sides of the comparison come from the sales history,
+    /// so a shop carrying imported or historic sales that never recorded a stock
+    /// movement is warned on almost every sale. It is switched on once that
+    /// history is worth comparing against.
+    /// </summary>
+    public string CommittedStockAction { get; set; } = "OFF";
+
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }
     public DateTimeOffset? Cdatetime { get; set; }

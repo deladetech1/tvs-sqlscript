@@ -90,6 +90,135 @@ public class Product : TenantScopedEntity
     public string Name { get; set; } = default!;
     public string? Sku { get; set; }
     public string? BarCode { get; set; }
+
+    /// <summary>
+    /// How this product is tracked in stock.
+    ///
+    /// COUNTED is what the system has always done and what every existing product
+    /// gets: stock is a number, and one unit is as good as another. SERIALISED
+    /// means every single unit is identified — a phone by its IMEI, a vehicle by
+    /// its VIN — and the shop needs to know which one it sold, transferred or took
+    /// back, not merely how many.
+    ///
+    /// It sits on the product rather than on each receipt of stock deliberately.
+    /// Decided per delivery, one consignment of iPhones would arrive with serials
+    /// and the next without, and nothing afterwards could tell you which half of
+    /// your stock was accounted for.
+    /// </summary>
+    public string TrackingType { get; set; } = "COUNTED";
+
+}
+
+/// <summary>
+/// One physical unit of a serialised product — one handset, one vehicle.
+///
+/// The row is created when stock is received and lives as long as the unit does,
+/// changing status and location as it moves. It is deliberately not deleted when
+/// sold: the whole reason for recording an IMEI is to be able to answer, months
+/// later, who bought this one and is it still under warranty.
+/// </summary>
+public class ProductUnit
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+
+    public string ProductId { get; set; } = default!;
+    /// <summary>The consignment this unit arrived in. One batch holds many units.</summary>
+    public string BatchId { get; set; } = default!;
+
+    // The numbers themselves live in ProductUnitIdentifier, one row each. A unit
+    // does not have a number, it has a set of them: a dual-SIM handset carries two
+    // IMEIs and a serial that is none of them, and a vehicle carries a VIN, an
+    // engine number and a chassis number. A column, or two columns, is a guess at
+    // how many — and the guess is wrong for most of what this shop sells.
+
+    /// <summary>
+    /// Where the unit is now, or null while it is still in the unallocated pool.
+    ///
+    /// Stock does not arrive at a branch. A batch is received against the business
+    /// and distributed to a store or warehouse afterwards, which is why the batch
+    /// itself carries no location either. Null here means the same thing it means
+    /// for a batch: received, not yet anywhere. Once allocated it names the branch,
+    /// because a handset at Osu must not be sellable from Accra.
+    /// </summary>
+    public string? LocId { get; set; }
+
+    /// <summary>
+    /// IN_STOCK is offered for sale. RETURNED goes back to it when a customer
+    /// brings the item back — a unit hidden forever the moment it sold would be
+    /// lost on the first return.
+    ///
+    /// RESERVED is the one that is easy to miss: the item is spoken for but still
+    /// physically on the shelf. An instalment sale on a policy that releases at
+    /// full payment claims the handset at the till and leaves it in the shop for
+    /// months, so it is neither sellable nor gone, and the shelf count still
+    /// includes it. Without this state the item and the count disagree from the
+    /// moment such a sale is made.
+    ///
+    /// SOLD means it has actually left. FAULTY and WRITTEN_OFF are present but
+    /// not sellable.
+    /// </summary>
+    public string Status { get; set; } = "IN_STOCK";
+
+    /// <summary>The sale that took it out, kept so a serial can be traced to a customer.</summary>
+    public string? SaleId { get; set; }
+    public DateTimeOffset? SoldAt { get; set; }
+
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>
+/// One number printed on one physical unit.
+///
+/// A phone carries two IMEIs and a serial number that is neither of them; a
+/// vehicle carries a VIN, an engine number and a chassis number. Any of them may
+/// be the one a customer quotes, a warranty claim cites or the police check, so
+/// each is a row and any of them finds the unit.
+///
+/// Unique on the value across the business, whatever kind it is: a number
+/// identifies one physical thing, and the same string turning up on two units
+/// means somebody has mistyped or the box was scanned twice.
+/// </summary>
+public class ProductUnitIdentifier
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+
+    public string UnitId { get; set; } = default!;
+
+    /// <summary>
+    /// What this number is called on the item itself — "IMEI 1", "IMEI 2",
+    /// "Serial number", "VIN", "Engine number".
+    ///
+    /// Free text rather than a fixed list, because the list is never finished. A
+    /// phone shop, a car dealer and a pharmacy print different things on their
+    /// stock, and a shop that sells something nobody anticipated should type the
+    /// label rather than wait for it to be added to an enum.
+    /// </summary>
+    public string Label { get; set; } = "Serial number";
+
+    public string Value { get; set; } = default!;
+
+    /// <summary>
+    /// The one shown in lists and on the till, where there is room for a single
+    /// number. Exactly one per unit — a unit with none would appear nameless, and
+    /// a unit with two would appear differently depending on which was read first.
+    /// </summary>
+    public bool IsPrimary { get; set; }
+
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class PurchaseOrder

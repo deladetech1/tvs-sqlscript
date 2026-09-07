@@ -73,6 +73,11 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 -- the auto-assign triggers would otherwise hand it to every Store Sales role. Its own
 -- resource type keeps it grantable to one named person via role-msg-store-sales-backdate.
 ('rt-store-sales-backdate', 'Store Sales Backdate', 'Permission to set a past occurrence date when creating a sale in Mystoreguard', 'rt-subscribed-app-msg'),
+-- Handing an installment customer their goods ahead of the policy is a manager's
+-- decision, not a till one: the cashier rings the sale up, someone senior decides the
+-- item leaves the shop. Kept out of rt-store-sales so the auto-assign triggers reach
+-- only Owner, Admin and the MSG app admins.
+('rt-store-sales-release-goods', 'Store Sales Release Goods', 'Permission to hand an installment customer their goods before the policy would release them in Mystoreguard', 'rt-subscribed-app-msg'),
 -- Same reasoning for receiving stock against a past date: kept out of rt-purchase-orders
 -- so the auto-assign triggers do not hand it to everyone who can receive a delivery.
 ('rt-purchase-orders-backdate', 'Purchase Orders Backdate', 'Permission to date received stock to the day it actually arrived in Mystoreguard', 'rt-subscribed-app-msg'),

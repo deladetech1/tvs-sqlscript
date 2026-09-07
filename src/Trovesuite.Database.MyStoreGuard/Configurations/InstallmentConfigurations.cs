@@ -81,7 +81,14 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
         b.HasInCheck("penalty_basis",
             "INSTALLMENT_AMOUNT", "OUTSTANDING_BALANCE", "SALE_TOTAL");
         b.HasInCheck("penalty_recurrence", "ONCE_PER_PERIOD", "DAILY_WHILE_LATE");
-        b.HasInCheck("release_goods_on", "FULL_PAYMENT", "INITIAL_PAYMENT", "APPROVAL");
+        // ON_SALE hands the goods over the moment the sale is rung up, before any
+        // deposit and without waiting on an approver. It is the plainest setting a
+        // shop can pick: the customer walks out with the item, so the stock leaves
+        // with them. A policy cannot both pick it and require approval — that pair
+        // says the goods go before anyone has agreed the plan — and the API refuses
+        // the combination.
+        b.HasInCheck("release_goods_on",
+            "FULL_PAYMENT", "INITIAL_PAYMENT", "APPROVAL", "ON_SALE");
 
         // Shape rules the API must not be the only thing enforcing.
         b.ToTable(t =>

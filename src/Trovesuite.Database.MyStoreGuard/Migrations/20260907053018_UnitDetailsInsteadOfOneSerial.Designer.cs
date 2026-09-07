@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.MyStoreGuard;
@@ -12,9 +13,11 @@ using Trovesuite.Database.MyStoreGuard;
 namespace Trovesuite.Database.MyStoreGuard.Migrations
 {
     [DbContext(typeof(MyStoreGuardDbContext))]
-    partial class MyStoreGuardDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260907053018_UnitDetailsInsteadOfOneSerial")]
+    partial class UnitDetailsInsteadOfOneSerial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -7977,7 +7980,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_product_units", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_product_units_status", "status IN ('IN_STOCK','RESERVED','SOLD','RETURNED','FAULTY','WRITTEN_OFF')");
+                            t.HasCheckConstraint("ck_msg_product_units_status", "status IN ('IN_STOCK','SOLD','RETURNED','FAULTY','WRITTEN_OFF')");
                         });
                 });
 
@@ -10205,7 +10208,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("text")
-                        .HasDefaultValue("OFF")
+                        .HasDefaultValue("WARN")
                         .HasColumnName("committed_stock_action");
 
                     b.Property<string>("CreatedBy")
@@ -10326,7 +10329,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_store_configs", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_store_configs_committed_stock_action", "committed_stock_action IN ('OFF','WARN','BLOCK')");
+                            t.HasCheckConstraint("ck_msg_store_configs_committed_stock_action", "committed_stock_action IN ('WARN','BLOCK')");
                         });
                 });
 
