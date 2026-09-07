@@ -206,11 +206,12 @@ public class StoreConfig
     /// that has not released it yet — a plan awaiting its deposit, an on-hold sale.
     /// WARN tells the cashier and lets them go on; BLOCK refuses.
     ///
-    /// WARN by default because until now nothing counted commitments at all, and a
-    /// shop that has been quietly overselling should be shown the problem before it
-    /// starts losing sales at the till over it.
+    /// OFF by default: both sides of the comparison come from the sales history,
+    /// so a shop carrying imported or historic sales that never recorded a stock
+    /// movement is warned on almost every sale. It is switched on once that
+    /// history is worth comparing against.
     /// </summary>
-    public string CommittedStockAction { get; set; } = "WARN";
+    public string CommittedStockAction { get; set; } = "OFF";
 
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }

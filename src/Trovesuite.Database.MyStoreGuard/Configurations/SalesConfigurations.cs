@@ -173,8 +173,15 @@ public sealed class StoreConfigConfiguration : IEntityTypeConfiguration<StoreCon
         b.Property(x => x.EnableDailySalesReports).HasDefaultValue(false);
         b.Property(x => x.LockBasedOnClosingTime).HasDefaultValue(false);
         b.Property(x => x.ChangeToCard).HasDefaultValue(false);
-        b.Property(x => x.CommittedStockAction).HasDefaultValue("WARN");
-        b.HasInCheck("committed_stock_action", "WARN", "BLOCK");
+        // OFF by default. The check compares what is promised against what is on
+        // the shelf, and both numbers come from the sales history — so a shop
+        // carrying imported or historic sales that never recorded a stock
+        // movement gets warned on almost every sale. A warning that fires on
+        // everything is read as noise, and then the one that matters is read as
+        // noise too. A shop turns it on when its history is worth comparing
+        // against.
+        b.Property(x => x.CommittedStockAction).HasDefaultValue("OFF");
+        b.HasInCheck("committed_stock_action", "OFF", "WARN", "BLOCK");
         b.Property(x => x.EnableOutOfStockNotification).HasDefaultValue(false);
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
         b.WithTenantOrgBusLocFks();
