@@ -106,6 +106,7 @@ public class Product : TenantScopedEntity
     /// your stock was accounted for.
     /// </summary>
     public string TrackingType { get; set; } = "COUNTED";
+
 }
 
 /// <summary>
@@ -127,8 +128,11 @@ public class ProductUnit
     /// <summary>The consignment this unit arrived in. One batch holds many units.</summary>
     public string BatchId { get; set; } = default!;
 
-    /// <summary>IMEI, VIN, or whatever the trade calls its number. Unique per business.</summary>
-    public string SerialNumber { get; set; } = default!;
+    // The numbers themselves live in ProductUnitIdentifier, one row each. A unit
+    // does not have a number, it has a set of them: a dual-SIM handset carries two
+    // IMEIs and a serial that is none of them, and a vehicle carries a VIN, an
+    // engine number and a chassis number. A column, or two columns, is a guess at
+    // how many — and the guess is wrong for most of what this shop sells.
 
     /// <summary>
     /// Where the unit is now, or null while it is still in the unallocated pool.
@@ -152,6 +156,54 @@ public class ProductUnit
     /// <summary>The sale that took it out, kept so a serial can be traced to a customer.</summary>
     public string? SaleId { get; set; }
     public DateTimeOffset? SoldAt { get; set; }
+
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>
+/// One number printed on one physical unit.
+///
+/// A phone carries two IMEIs and a serial number that is neither of them; a
+/// vehicle carries a VIN, an engine number and a chassis number. Any of them may
+/// be the one a customer quotes, a warranty claim cites or the police check, so
+/// each is a row and any of them finds the unit.
+///
+/// Unique on the value across the business, whatever kind it is: a number
+/// identifies one physical thing, and the same string turning up on two units
+/// means somebody has mistyped or the box was scanned twice.
+/// </summary>
+public class ProductUnitIdentifier
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+
+    public string UnitId { get; set; } = default!;
+
+    /// <summary>
+    /// What this number is called on the item itself — "IMEI 1", "IMEI 2",
+    /// "Serial number", "VIN", "Engine number".
+    ///
+    /// Free text rather than a fixed list, because the list is never finished. A
+    /// phone shop, a car dealer and a pharmacy print different things on their
+    /// stock, and a shop that sells something nobody anticipated should type the
+    /// label rather than wait for it to be added to an enum.
+    /// </summary>
+    public string Label { get; set; } = "Serial number";
+
+    public string Value { get; set; } = default!;
+
+    /// <summary>
+    /// The one shown in lists and on the till, where there is room for a single
+    /// number. Exactly one per unit — a unit with none would appear nameless, and
+    /// a unit with two would appear differently depending on which was read first.
+    /// </summary>
+    public bool IsPrimary { get; set; }
 
     public string? Cdate { get; set; }
     public string? Ctime { get; set; }

@@ -239,6 +239,38 @@ public sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     }
 }
 
+public sealed class ProductUnitIdentifierConfiguration
+    : IEntityTypeConfiguration<ProductUnitIdentifier>
+{
+    public void Configure(EntityTypeBuilder<ProductUnitIdentifier> b)
+    {
+        b.ToTable("msg_product_unit_identifiers");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Label).HasDefaultValue("Serial number");
+        b.Property(x => x.IsPrimary).HasDefaultValue(false);
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
+
+        // A number identifies one physical thing, whatever kind it is. Scanning
+        // anything must therefore land on exactly one unit, so the value is unique
+        // across the business rather than per kind or per unit — an IMEI that is
+        // also somebody else's chassis number is a mistyping, not a coincidence.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Value }).IsUnique();
+
+        // Reading every number of one unit, for its detail panel.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.UnitId });
+
+        // The unit is the thing; its numbers have no life without it.
+        b.HasOne<ProductUnit>().WithMany()
+            .HasForeignKey("TenantId", "OrgId", "BusId", "UnitId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.WithTenantOrgBusFks();
+        b.WithCrossSchemaAuditUserFks();
+    }
+}
+
 public sealed class ProductUnitConfiguration : IEntityTypeConfiguration<ProductUnit>
 {
     public void Configure(EntityTypeBuilder<ProductUnit> b)
@@ -248,12 +280,6 @@ public sealed class ProductUnitConfiguration : IEntityTypeConfiguration<ProductU
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.Status).HasDefaultValue("IN_STOCK");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-
-        // A serial identifies one physical thing, so the same one twice in a
-        // business is always an error — usually one box scanned twice. Enforced
-        // here rather than only in the API, because the API is not the only way
-        // rows arrive and a duplicate IMEI is unrecoverable once it is trusted.
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.SerialNumber }).IsUnique();
 
         // The two questions asked at the till and on the transfer screen: what is
         // in stock, of this product, at this branch.
