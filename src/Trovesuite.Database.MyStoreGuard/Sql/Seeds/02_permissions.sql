@@ -160,12 +160,22 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 
 
 
+-- CUSTOM FIELDS
+-- Answering the questions, which is not the same right as deciding what they
+-- are. Creating, editing and deleting a field stay on the store settings
+-- permission, and so does the report of the answers people have given.
+('permission-msg-custom-fields-get', 'Mystoreguard Custom Fields Get', 'rt-msg-custom-fields', 'Can see the questions this business has added to its forms, in order to answer them', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
 -- STATISTICS
 -- One per area, all on rt-msg-statistics rather than inside each area's own
 -- resource type: there they would be auto-assigned to everyone who can open the
 -- area, and the whole point is that reading the figures is a separate decision
 -- from doing the work. Withheld by default; Owner, Admin and the MSG app admins
 -- receive them through the triggers, everyone else is granted them deliberately.
+('permission-msg-customers-statistics', 'Mystoreguard Customers Statistics', 'rt-msg-statistics', 'Can view customer statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-suppliers-statistics', 'Mystoreguard Suppliers Statistics', 'rt-msg-statistics', 'Can view supplier statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-installment-plan-statistics', 'Mystoreguard Installment Plan Statistics', 'rt-msg-statistics', 'Can view installment plan statistics — what the whole book is worth', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-msg-installment-policy-statistics', 'Mystoreguard Installment Policy Statistics', 'rt-msg-statistics', 'Can view installment policy statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-affiliates-statistics', 'Mystoreguard Affiliates Statistics', 'rt-msg-statistics', 'Can view affiliates statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-deliveries-statistics', 'Mystoreguard Deliveries Statistics', 'rt-msg-statistics', 'Can view deliveries statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-msg-estimate-templates-statistics', 'Mystoreguard Estimate Templates Statistics', 'rt-msg-statistics', 'Can view estimate templates statistics', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

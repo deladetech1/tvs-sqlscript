@@ -78,6 +78,12 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 -- each area's own resource type they would be handed to everyone who can open
 -- that area — which is exactly the leak: a cashier who may ring up a sale could
 -- also read the day's takings, and shops asked for those to be separable.
+-- Seeing the questions a business has added to its forms, so they can be
+-- answered. Its own resource type because it belongs to no one area: the same
+-- right is needed on the customer form, the product form and the till. Inside
+-- rt-store-configs it meant only someone who could edit the shop's settings
+-- could fill in a field the shop had added.
+('rt-msg-custom-fields', 'Custom Fields', 'Permission to see and answer the questions a business has added to its forms', 'rt-subscribed-app-msg'),
 ('rt-msg-statistics', 'Statistics', 'Permission to view the statistics on each Mystoreguard screen, granted per area', 'rt-subscribed-app-msg'),
 -- Handing an installment customer their goods ahead of the policy is a manager's
 -- decision, not a till one: the cashier rings the sale up, someone senior decides the

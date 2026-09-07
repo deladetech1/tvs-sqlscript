@@ -492,3 +492,31 @@ WHERE permission_id = 'permission-msg-stock-takes-view';
 
 DELETE FROM core_platform.cp_permissions
 WHERE id = 'permission-msg-stock-takes-view';
+
+-- =============================================
+-- CUSTOM FIELDS: seeing the questions in order to answer them.
+--
+-- Granted by name rather than left to the auto-assign triggers, because the
+-- permission sits on its own resource type — it belongs to no one area, since
+-- the same right is needed on the customer form, the product form and the
+-- till. Every role here fills in a form that can carry the shop's own
+-- questions; none of them gains the right to change what those questions are,
+-- which stays with the store settings permission.
+-- =============================================
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id) VALUES
+('system-tenant-id', 'role-msg-store-sales-personnel', 'permission-msg-custom-fields-get'),  -- the till: customers, sales, guarantors
+('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-custom-fields-get'),  -- the till, plus the sales they manage
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-custom-fields-get'),  -- sales, transfers, stock takes, returns
+('system-tenant-id', 'role-msg-customers-admin', 'permission-msg-custom-fields-get'),  -- the customer form
+('system-tenant-id', 'role-msg-guarantors-admin', 'permission-msg-custom-fields-get'),  -- the guarantor form
+('system-tenant-id', 'role-msg-suppliers-admin', 'permission-msg-custom-fields-get'),  -- the supplier form
+('system-tenant-id', 'role-msg-product-admin', 'permission-msg-custom-fields-get'),  -- products, and the batches under them
+('system-tenant-id', 'role-msg-warehouse-admin', 'permission-msg-custom-fields-get'),  -- warehouse stock and transfers
+('system-tenant-id', 'role-msg-invoice-admin', 'permission-msg-custom-fields-get'),  -- invoices
+('system-tenant-id', 'role-msg-estimate-admin', 'permission-msg-custom-fields-get'),  -- estimates
+('system-tenant-id', 'role-msg-estimate-template-admin', 'permission-msg-custom-fields-get'),  -- estimate templates
+('system-tenant-id', 'role-msg-expenses-admin', 'permission-msg-custom-fields-get'),  -- expenses
+('system-tenant-id', 'role-msg-store-returns-admin', 'permission-msg-custom-fields-get'),  -- returns
+('system-tenant-id', 'role-msg-installment-plans-admin', 'permission-msg-custom-fields-get'),  -- plans, and the guarantors behind them
+('system-tenant-id', 'role-msg-tasks-admin', 'permission-msg-custom-fields-get')  -- jobs and appointments
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
