@@ -315,6 +315,9 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-update'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-cancel'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-delete'),
+-- Outside rt-store-sales, so it has to be named here: the Sales Admin decides the
+-- goods leave the shop, the Sales Personnel role deliberately does not.
+('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-sales-release-goods'),
 ('system-tenant-id', 'role-msg-store-sales-admin', 'permission-msg-store-products-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -380,6 +383,7 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-update'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-cancel'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-delete'),
+('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-sales-release-goods'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-create'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-get'),
 ('system-tenant-id', 'role-msg-store-admin', 'permission-msg-store-returns-update'),
