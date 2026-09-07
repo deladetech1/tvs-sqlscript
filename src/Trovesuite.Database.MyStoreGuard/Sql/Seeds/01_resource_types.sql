@@ -73,6 +73,12 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 -- the auto-assign triggers would otherwise hand it to every Store Sales role. Its own
 -- resource type keeps it grantable to one named person via role-msg-store-sales-backdate.
 ('rt-store-sales-backdate', 'Store Sales Backdate', 'Permission to set a past occurrence date when creating a sale in Mystoreguard', 'rt-subscribed-app-msg'),
+-- Every statistics screen in the app, on one resource type of its own so the
+-- auto-assign triggers reach only Owner, Admin and the MSG app admins. Inside
+-- each area's own resource type they would be handed to everyone who can open
+-- that area — which is exactly the leak: a cashier who may ring up a sale could
+-- also read the day's takings, and shops asked for those to be separable.
+('rt-msg-statistics', 'Statistics', 'Permission to view the statistics on each Mystoreguard screen, granted per area', 'rt-subscribed-app-msg'),
 -- Handing an installment customer their goods ahead of the policy is a manager's
 -- decision, not a till one: the cashier rings the sale up, someone senior decides the
 -- item leaves the shop. Kept out of rt-store-sales so the auto-assign triggers reach
