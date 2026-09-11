@@ -94,7 +94,7 @@ public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
         // Defaulted rather than nullable: every row already means "the old look",
         // so the backfill is the default and no reader has to treat null as a
         // fourth case.
-        b.HasInCheck("dark_scheme", "CHARCOAL", "MIDNIGHT", "OBSIDIAN");
+        b.HasInCheck("dark_scheme", "CHARCOAL", "MIDNIGHT", "OBSIDIAN", "GRAPHITE", "HARBOR");
         b.HasInCheck("accent_color", "ORANGE", "PURPLE", "BLUE", "GREEN");
         b.HasDeleteStatusCheck();
         b.WithAuditUserFks();
