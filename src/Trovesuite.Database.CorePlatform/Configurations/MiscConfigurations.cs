@@ -88,7 +88,14 @@ public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
         b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne<User>().WithMany().HasForeignKey(x => new { x.UserId, x.TenantId })
             .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Restrict);
+        b.Property(x => x.DarkScheme).HasDefaultValue("CHARCOAL");
+        b.Property(x => x.AccentColor).HasDefaultValue("ORANGE");
         b.HasInCheck("theme_name", "light", "dark", "system");
+        // Defaulted rather than nullable: every row already means "the old look",
+        // so the backfill is the default and no reader has to treat null as a
+        // fourth case.
+        b.HasInCheck("dark_scheme", "CHARCOAL", "MIDNIGHT", "OBSIDIAN");
+        b.HasInCheck("accent_color", "ORANGE", "PURPLE", "BLUE", "GREEN");
         b.HasDeleteStatusCheck();
         b.WithAuditUserFks();
     }
