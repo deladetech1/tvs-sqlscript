@@ -113,3 +113,39 @@ ALTER TABLE mystoreguard.msg_message_recipients
 ALTER TABLE mystoreguard.msg_message_recipients
     ADD CONSTRAINT ck_msg_message_recipients_recipient_type
     CHECK (recipient_type IN ('SUPPLIER', 'CUSTOMER', 'CUSTOM'));
+
+
+-- Repeating every so many days ----------------------------------------------
+--
+-- The fixed rules — daily, weekly, monthly, quarterly, yearly — cover what most
+-- reminders want and not what shops keep asking for: every ten days, every 45
+-- days. A follow-up cycle rarely lands neatly on a week or a month.
+--
+-- The gap lives on the message rather than being encoded into the recurrence
+-- name, so "every 10 days" and "every 45 days" are the same rule with different
+-- numbers instead of two more values to handle everywhere.
+
+ALTER TABLE mystoreguard.msg_messages
+    ADD COLUMN IF NOT EXISTS recurrence_interval_days integer;
+
+ALTER TABLE mystoreguard.msg_messages
+    DROP CONSTRAINT IF EXISTS ck_msg_messages_recurrence;
+ALTER TABLE mystoreguard.msg_messages
+    ADD CONSTRAINT ck_msg_messages_recurrence
+    CHECK (recurrence IN ('NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY',
+                          'YEARLY', 'EVERY_N_DAYS'));
+
+-- The two halves belong together. EVERY_N_DAYS with no gap would repeat
+-- immediately and for ever; a gap on any other rule is a number nobody reads
+-- and the next person to open the record believes.
+ALTER TABLE mystoreguard.msg_messages
+    DROP CONSTRAINT IF EXISTS ck_msg_messages_interval_shape;
+ALTER TABLE mystoreguard.msg_messages
+    ADD CONSTRAINT ck_msg_messages_interval_shape
+    CHECK (
+        (recurrence = 'EVERY_N_DAYS' AND recurrence_interval_days > 0)
+        OR (recurrence <> 'EVERY_N_DAYS' AND recurrence_interval_days IS NULL)
+    );
+
+COMMENT ON COLUMN mystoreguard.msg_messages.recurrence_interval_days IS
+    'Days between sends when recurrence is EVERY_N_DAYS. NULL for every other rule.';
