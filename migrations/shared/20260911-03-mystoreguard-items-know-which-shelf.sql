@@ -35,6 +35,20 @@ ALTER TABLE mystoreguard.msg_product_units
     ADD CONSTRAINT ck_msg_product_units_location_type
     CHECK (location_type IS NULL OR location_type IN ('STORE', 'WAREHOUSE'));
 
+-- Asked on every till read: "the items on THIS shelf, at this branch".
+--
+-- Built BEFORE the backfill below, and that order is load-bearing.
+--
+-- msg_product_units is watched by a DEFERRED constraint trigger, so any write
+-- to it queues an event that does not fire until COMMIT — and PostgreSQL will
+-- not build an index on a table with trigger events pending (55006). Creating
+-- the index after the UPDATE therefore worked on an empty database, where the
+-- UPDATE matched no rows and queued nothing, and failed on the first one with
+-- real stock in it.
+CREATE INDEX IF NOT EXISTS ix_msg_product_units_shelf
+    ON mystoreguard.msg_product_units (tenant_id, org_id, bus_id, product_id,
+                                       loc_id, location_type);
+
 -- Where a delivery sits on exactly one kind of shelf at a branch, its items are
 -- on that shelf — there is nowhere else they could be. Where a delivery
 -- straddles both, nothing is guessed and the items keep their null.
@@ -51,11 +65,6 @@ UPDATE mystoreguard.msg_product_units u
  WHERE u.batch_id = shelf.purchase_batche_id
    AND u.loc_id = shelf.loc_id
    AND u.location_type IS NULL;
-
--- Asked on every till read: "the items on THIS shelf, at this branch".
-CREATE INDEX IF NOT EXISTS ix_msg_product_units_shelf
-    ON mystoreguard.msg_product_units (tenant_id, org_id, bus_id, product_id,
-                                       loc_id, location_type);
 
 -- ---------------------------------------------------------------------------
 -- The invariant has to count the same way.
