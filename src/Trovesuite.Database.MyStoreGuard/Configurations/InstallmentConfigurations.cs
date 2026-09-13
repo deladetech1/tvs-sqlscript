@@ -90,6 +90,14 @@ public sealed class InstallmentPolicyConfiguration : IEntityTypeConfiguration<In
         b.HasInCheck("release_goods_on",
             "FULL_PAYMENT", "INITIAL_PAYMENT", "APPROVAL", "ON_SALE");
 
+        // What cancelling does, and whether it is allowed at all. Defaulted to
+        // PREVENT for every policy that already exists: cancelling used to be
+        // unconditional, and turning that into a refusal is the safe direction
+        // to change an existing shop's behaviour in — a plan wrongly refused is
+        // a conversation, a plan wrongly cancelled is money nobody is billing.
+        b.Property(x => x.CancellationAction).HasDefaultValue("PREVENT");
+        b.HasInCheck("cancellation_action", "PREVENT", "RESTOCK", "RELEASE_ONLY");
+
         // Shape rules the API must not be the only thing enforcing.
         b.ToTable(t =>
         {

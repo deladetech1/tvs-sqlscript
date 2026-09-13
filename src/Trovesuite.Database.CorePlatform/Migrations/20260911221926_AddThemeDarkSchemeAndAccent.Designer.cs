@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.CorePlatform;
@@ -12,9 +13,11 @@ using Trovesuite.Database.CorePlatform;
 namespace Trovesuite.Database.CorePlatform.Migrations
 {
     [DbContext(typeof(CorePlatformDbContext))]
-    partial class CorePlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260911221926_AddThemeDarkSchemeAndAccent")]
+    partial class AddThemeDarkSchemeAndAccent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3589,7 +3592,7 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         {
                             t.HasCheckConstraint("ck_cp_themes_accent_color", "accent_color IN ('ORANGE','PURPLE','BLUE','GREEN')");
 
-                            t.HasCheckConstraint("ck_cp_themes_dark_scheme", "dark_scheme IN ('CHARCOAL','MIDNIGHT','OBSIDIAN','GRAPHITE','HARBOR','INK','ABYSS','CARBON')");
+                            t.HasCheckConstraint("ck_cp_themes_dark_scheme", "dark_scheme IN ('CHARCOAL','MIDNIGHT','OBSIDIAN')");
 
                             t.HasCheckConstraint("ck_cp_themes_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 

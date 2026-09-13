@@ -63,6 +63,15 @@ public class Theme : TenantScopedEntity
     public string Id { get; set; } = default!;
     public string? UserId { get; set; }
     public string ThemeName { get; set; } = default!;
+
+    /// <summary>Which dark palette to use when the theme resolves to dark.
+    /// Separate from ThemeName because it answers a different question: that one
+    /// says whether it is dark, this says which dark. Ignored in light.</summary>
+    public string DarkScheme { get; set; } = "CHARCOAL";
+
+    /// <summary>The accent, which applies in light and dark alike — so it is not
+    /// part of the dark palette.</summary>
+    public string AccentColor { get; set; } = "ORANGE";
 }
 
 public class Expense : TenantScopedEntity

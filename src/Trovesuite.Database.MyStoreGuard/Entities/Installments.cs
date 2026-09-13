@@ -148,6 +148,22 @@ public class InstallmentPolicy
     public bool GuarantorIdDocumentRequired { get; set; }
     public string ReleaseGoodsOn { get; set; } = "FULL_PAYMENT";
 
+    /// <summary>
+    /// What happens to a plan, and to the goods, when somebody tries to cancel it.
+    ///
+    /// PREVENT is the default and the safe one: a plan with money against it and
+    /// goods out of the door is not a mistake to be undone with a button. The
+    /// shop that wants that has to say so.
+    ///
+    /// RESTOCK gives the goods back to the shelf, for stock that comes home —
+    /// the customer changed their mind and brought the item in.
+    ///
+    /// RELEASE_ONLY cancels the plan and leaves the goods where they are: the
+    /// customer keeps the item and the shop stops billing for it, which is a
+    /// write-off rather than a return.
+    /// </summary>
+    public string CancellationAction { get; set; } = "PREVENT";
+
     public bool IsActive { get; set; } = true;
     public DateTime? StartDatetime { get; set; }
     public DateTime? EndDatetime { get; set; }
