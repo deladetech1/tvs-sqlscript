@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.LoanDrift;
@@ -12,9 +13,10 @@ using Trovesuite.Database.LoanDrift;
 namespace Trovesuite.Database.LoanDrift.Migrations
 {
     [DbContext(typeof(LoanDriftDbContext))]
-    partial class LoanDriftDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912120000_AddClientProfileForm")]
+    partial class AddClientProfileForm
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -990,13 +992,6 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("contact");
 
-                    b.PrimitiveCollection<string[]>("Contacts")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text[]")
-                        .HasColumnName("contacts")
-                        .HasDefaultValueSql("ARRAY[]::text[]");
-
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
@@ -1079,13 +1074,13 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("occupation");
 
-                    b.Property<string>("ProfilePhotoPath")
-                        .HasColumnType("text")
-                        .HasColumnName("profile_photo_path");
-
                     b.Property<DateTimeOffset?>("RegistrationDatetime")
                         .HasColumnType("timestamptz")
                         .HasColumnName("registration_datetime");
+
+                    b.Property<string>("ProfilePhotoPath")
+                        .HasColumnType("text")
+                        .HasColumnName("profile_photo_path");
 
                     b.Property<string>("ResidentialAddress")
                         .HasColumnType("text")
@@ -1765,12 +1760,6 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("other_id_label");
 
-                    b.Property<int>("SortOrder")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("sort_order");
-
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text")
                         .HasColumnName("updated_by");
@@ -2443,13 +2432,6 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.Property<string>("Contact")
                         .HasColumnType("text")
                         .HasColumnName("contact");
-
-                    b.PrimitiveCollection<string[]>("Contacts")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text[]")
-                        .HasColumnName("contacts")
-                        .HasDefaultValueSql("ARRAY[]::text[]");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")

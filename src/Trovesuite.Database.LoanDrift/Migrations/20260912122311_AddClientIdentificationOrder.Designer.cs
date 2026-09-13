@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.LoanDrift;
@@ -12,9 +13,11 @@ using Trovesuite.Database.LoanDrift;
 namespace Trovesuite.Database.LoanDrift.Migrations
 {
     [DbContext(typeof(LoanDriftDbContext))]
-    partial class LoanDriftDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912122311_AddClientIdentificationOrder")]
+    partial class AddClientIdentificationOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -989,13 +992,6 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("contact");
-
-                    b.PrimitiveCollection<string[]>("Contacts")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text[]")
-                        .HasColumnName("contacts")
-                        .HasDefaultValueSql("ARRAY[]::text[]");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
@@ -2443,13 +2439,6 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.Property<string>("Contact")
                         .HasColumnType("text")
                         .HasColumnName("contact");
-
-                    b.PrimitiveCollection<string[]>("Contacts")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text[]")
-                        .HasColumnName("contacts")
-                        .HasDefaultValueSql("ARRAY[]::text[]");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")

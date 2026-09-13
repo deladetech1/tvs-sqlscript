@@ -13,6 +13,7 @@ public class Client : TenantScopedEntity
     public string Fullname { get; set; } = default!;
     public string? Email { get; set; }
     public string Contact { get; set; } = default!;
+    public string[] Contacts { get; set; } = [];
     public string? ResidentialAddress { get; set; }
 
     public DateTimeOffset? RegistrationDatetime { get; set; }
@@ -35,6 +36,8 @@ public class Client : TenantScopedEntity
     public string? Surname { get; set; }
     public string? FirstName { get; set; }
     public string? MiddleNames { get; set; }
+
+    public string? ProfilePhotoPath { get; set; }
 
     /// <summary>ISO 3166-1 alpha-2. Required on every bureau submission.</summary>
     public string? Nationality { get; set; }
@@ -337,6 +340,7 @@ public class Guarantor : TenantScopedEntity
     public string? Title { get; set; }
     public string? Fullname { get; set; }
     public string? Contact { get; set; }
+    public string[] Contacts { get; set; } = Array.Empty<string>();
     public string? Dob { get; set; }
     public string? Gender { get; set; }
     public string? Address { get; set; }
@@ -418,8 +422,8 @@ public class Repayment
 public class ClientDocumentPath : TenantScopedEntity
 {
     public string Id { get; set; } = default!;
-    public string ClientId { get; set; } = default!;
-    public string LoanId { get; set; } = default!;
+    public string? ClientId { get; set; }
+    public string? LoanId { get; set; }
     public string OrgId { get; set; } = default!;
     public string BusId { get; set; } = default!;
     public string LocId { get; set; } = default!;

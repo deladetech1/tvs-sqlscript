@@ -126,6 +126,7 @@ public class ClientIdentification : TenantScopedEntity
     /// <summary>The document sighted at registration — mirrors the client's own
     /// id_type/id_number. At most one per client.</summary>
     public bool IsPrimary { get; set; }
+    public int SortOrder { get; set; }
 }
 
 /// <summary>
