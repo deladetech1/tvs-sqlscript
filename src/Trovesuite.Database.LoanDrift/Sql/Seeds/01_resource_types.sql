@@ -66,3 +66,8 @@ ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
     description        = EXCLUDED.description,
     parent_resource_id = EXCLUDED.parent_resource_id;
+
+-- Accounting belongs to LoanDrift, independently of other applications.
+INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id)
+VALUES ('rt-loandrift-accounting', 'LoanDrift Accounting', 'Accounts, journals, fixed assets and accounting reports', 'rt-subscribed-app-loandrift')
+ON CONFLICT (id) DO UPDATE SET resource_type_name=EXCLUDED.resource_type_name, description=EXCLUDED.description, parent_resource_id=EXCLUDED.parent_resource_id;

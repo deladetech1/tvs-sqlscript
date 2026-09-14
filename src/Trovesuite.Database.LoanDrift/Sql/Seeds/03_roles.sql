@@ -33,3 +33,21 @@ ON CONFLICT (id) DO UPDATE SET
     resource_type_id = EXCLUDED.resource_type_id,
     is_system        = EXCLUDED.is_system,
     is_active        = EXCLUDED.is_active;
+INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime)
+VALUES ('role-loandrift-accounting-admin', 'system-tenant-id', 'Loandrift Accounting Admin', 'Manage LoanDrift accounting subject to owner-only configuration restrictions', 'rt-loandrift-accounting', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET role_name=EXCLUDED.role_name, description=EXCLUDED.description, resource_type_id=EXCLUDED.resource_type_id;
+
+-- Core Platform resource types can be shared/reparented. App-wide roles must
+-- also receive this app's explicitly namespaced permissions, including locations.
+-- Currency is a shared read dependency, never currency administration.
+INSERT INTO core_platform.cp_role_permissions
+  (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
+SELECT r.tenant_id, r.id, p.id, r.role_name || ' can ' || lower(p.permission_name),
+       CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
+FROM core_platform.cp_roles r
+CROSS JOIN core_platform.cp_permissions p
+WHERE r.id IN ('role-subscribed-app-loandrift-admin', 'role-loandrift-viewer-admin')
+  AND r.is_system AND r.is_active AND r.delete_status='NOT_DELETED'
+  AND (p.id LIKE 'permission-loandrift-%' OR p.id='permission-currency-get')
+  AND (r.id='role-subscribed-app-loandrift-admin' OR p.id ~ '-get($|-)')
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;

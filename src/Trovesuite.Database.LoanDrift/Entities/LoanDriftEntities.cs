@@ -337,6 +337,8 @@ public class Guarantor : TenantScopedEntity
     public string ClientId { get; set; } = default!;
     public string LoanId { get; set; } = default!;
 
+    public string? ProfilePhotoPath { get; set; }
+    public string[] DocumentIds { get; set; } = [];
     public string? Title { get; set; }
     public string? Fullname { get; set; }
     public string? Contact { get; set; }
