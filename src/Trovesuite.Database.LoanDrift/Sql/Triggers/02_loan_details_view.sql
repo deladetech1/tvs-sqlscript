@@ -1,6 +1,11 @@
 -- =====================================================
 -- VIEW FOR BACKWARD COMPATIBILITY
 -- =====================================================
+-- Keep snapshot columns available when this view is rebuilt during every deploy.
+ALTER TABLE loandrift.ld_loan_calculations ADD COLUMN IF NOT EXISTS interest_formula text;
+ALTER TABLE loandrift.ld_loan_calculations ADD COLUMN IF NOT EXISTS repayment_method text;
+ALTER TABLE loandrift.ld_loan_calculations ADD COLUMN IF NOT EXISTS scheduled_payments jsonb;
+
 DROP VIEW IF EXISTS loandrift.ld_loan_details_view;
 
 CREATE VIEW loandrift.ld_loan_details_view AS
@@ -36,7 +41,8 @@ SELECT
 
     la.approved_by, la.approved_amount, la.approval_date, la.approval_time, la.approved_message,
 
-    ldis.mode, ldis.reference, ldis.disbursed_by, ldis.disbursement_date, ldis.disbursement_time
+    ldis.mode, ldis.reference, ldis.disbursed_by, ldis.disbursement_date, ldis.disbursement_time,
+    lc.interest_formula, lc.repayment_method, lc.scheduled_payments
 FROM loandrift.ld_loan_details ld
 LEFT JOIN loandrift.ld_loan_calculations lc
     ON ld.id = lc.loan_id AND ld.tenant_id = lc.tenant_id

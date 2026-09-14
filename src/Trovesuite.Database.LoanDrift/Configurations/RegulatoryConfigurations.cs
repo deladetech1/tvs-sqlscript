@@ -91,6 +91,7 @@ public sealed class ClientIdentificationConfiguration : IEntityTypeConfiguration
         b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Id });
         b.Property(x => x.Id).AsTextUuidDefault();
         b.ApplyAuditDefaults();
+        b.Property(x => x.SortOrder).HasDefaultValue(0);
         // The return has one column per ID type, so a client holding two Ghana
         // Cards has no way to report both — and no reason to.
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.ClientId, x.IdType })

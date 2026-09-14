@@ -66,6 +66,7 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Id });
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.RegistrationDatetime).HasColumnType("timestamptz");
+        b.Property(x => x.Contacts).HasColumnType("text[]").HasDefaultValueSql("ARRAY[]::text[]");
         b.ApplyAuditDefaults();
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Email }).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Contact }).IsUnique();
@@ -358,6 +359,7 @@ public sealed class GuarantorConfiguration : IEntityTypeConfiguration<Guarantor>
         b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Id });
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.CollateralDetails).HasColumnType("jsonb");
+        b.Property(x => x.Contacts).HasColumnType("text[]").HasDefaultValueSql("ARRAY[]::text[]");
         b.ApplyAuditDefaults();
         b.HasInCheck("title", "MR", "MRS", "MISS", "MS", "DR", "MADAM", null!);
         b.HasInCheck("gender", "MALE", "FEMALE", "OTHER", null!);
