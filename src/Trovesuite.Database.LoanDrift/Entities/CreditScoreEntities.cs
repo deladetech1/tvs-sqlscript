@@ -57,7 +57,7 @@ public class CreditScore
     public string ClientId { get; set; } = default!;
     public string LoanId { get; set; } = default!;
 
-    public int TotalScore { get; set; }
+    public int? TotalScore { get; set; }
     public string Band { get; set; } = "VERY_POOR";
     public string? Recommendation { get; set; }
 

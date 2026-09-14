@@ -61,7 +61,7 @@ public sealed class CreditScoreConfiguration : IEntityTypeConfiguration<CreditSc
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.LoanId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.ClientId });
-        b.HasInCheck("band", "EXCELLENT", "GOOD", "FAIR", "POOR", "VERY_POOR");
+        b.HasInCheck("band", "EXCELLENT", "GOOD", "FAIR", "POOR", "VERY_POOR", "INCOMPLETE");
         b.HasInCheck("trigger", "CAPTURE", "REPAYMENT", "DEFAULT", "COMPLETION", "MANUAL", "SCHEDULED");
         b.WithTenantOrgBusLocFks();
         b.WithClientFk();
