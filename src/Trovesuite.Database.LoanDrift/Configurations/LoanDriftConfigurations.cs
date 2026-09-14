@@ -360,6 +360,7 @@ public sealed class GuarantorConfiguration : IEntityTypeConfiguration<Guarantor>
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.CollateralDetails).HasColumnType("jsonb");
         b.Property(x => x.Contacts).HasColumnType("text[]").HasDefaultValueSql("ARRAY[]::text[]");
+        b.Property(x => x.DocumentIds).HasColumnType("text[]").HasDefaultValueSql("ARRAY[]::text[]");
         b.ApplyAuditDefaults();
         b.HasInCheck("title", "MR", "MRS", "MISS", "MS", "DR", "MADAM", null!);
         b.HasInCheck("gender", "MALE", "FEMALE", "OTHER", null!);

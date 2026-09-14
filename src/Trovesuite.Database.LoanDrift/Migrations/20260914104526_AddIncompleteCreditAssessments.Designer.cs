@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.LoanDrift;
@@ -12,9 +13,11 @@ using Trovesuite.Database.LoanDrift;
 namespace Trovesuite.Database.LoanDrift.Migrations
 {
     [DbContext(typeof(LoanDriftDbContext))]
-    partial class LoanDriftDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260914104526_AddIncompleteCreditAssessments")]
+    partial class AddIncompleteCreditAssessments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2482,13 +2485,6 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("text")
                         .HasColumnName("dob");
 
-                    b.PrimitiveCollection<string[]>("DocumentIds")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text[]")
-                        .HasColumnName("document_ids")
-                        .HasDefaultValueSql("ARRAY[]::text[]");
-
                     b.Property<string>("FirstName")
                         .HasColumnType("text")
                         .HasColumnName("first_name");
@@ -2547,10 +2543,6 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.Property<string>("Occupation")
                         .HasColumnType("text")
                         .HasColumnName("occupation");
-
-                    b.Property<string>("ProfilePhotoPath")
-                        .HasColumnType("text")
-                        .HasColumnName("profile_photo_path");
 
                     b.Property<string>("RelationshipToBorrower")
                         .HasColumnType("text")

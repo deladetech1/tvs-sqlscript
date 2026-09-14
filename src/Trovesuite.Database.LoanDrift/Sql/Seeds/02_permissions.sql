@@ -157,3 +157,12 @@ ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
     resource_type_id = EXCLUDED.resource_type_id,
     description      = EXCLUDED.description;
+
+-- Permissions checked by the accounting and credit bureau endpoints.
+INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES
+('permission-loandrift-accounting-get', 'Loandrift Accounting Get', 'rt-loandrift-accounting', 'Can read accounts, journals, assets and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-accounting-create', 'Loandrift Accounting Create', 'rt-loandrift-accounting', 'Can create journals and assets and run depreciation; administrator restrictions still apply where required', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-accounting-update', 'Loandrift Accounting Update', 'rt-loandrift-accounting', 'Can update accounting records; administrator restrictions still apply where required', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-accounting-delete', 'Loandrift Accounting Delete', 'rt-loandrift-accounting', 'Can delete accounting records; administrator restrictions still apply where required', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-loandrift-credit-score-create', 'Loandrift Credit Score Create', 'rt-credit-score', 'Can request credit bureau enquiries', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET permission_name=EXCLUDED.permission_name, resource_type_id=EXCLUDED.resource_type_id, description=EXCLUDED.description;
