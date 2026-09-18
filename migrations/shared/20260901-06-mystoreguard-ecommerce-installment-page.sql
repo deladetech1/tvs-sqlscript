@@ -104,8 +104,13 @@ ALTER TABLE mystoreguard.msg_ecommerce_pages
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_pages_keys;
 ALTER TABLE mystoreguard.msg_ecommerce_pages
     ADD CONSTRAINT ck_msg_ecommerce_pages_keys CHECK (
-        page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
-        AND (page_key <> 'MARKET' OR is_enabled)
+    -- Pages are rows a business creates now, so their keys are the shop's
+    -- rather than a list here, and the Market is an ordinary page that may be
+    -- switched off or removed like any other. Left as it was, replaying this
+    -- file re-pinned both rules over rows that break them and the deploy
+    -- stopped here. The home page is the one that must stay on, and its own
+    -- row says so.
+        page_key IS NOT NULL
     );
 
 
