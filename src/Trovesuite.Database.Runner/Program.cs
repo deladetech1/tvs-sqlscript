@@ -287,10 +287,96 @@ internal static class Program
         {
             Info($"  Running {Path.GetFileName(file)}…");
             var sql = await File.ReadAllTextAsync(file);
-            await using var cmd = new NpgsqlCommand(sql, conn);
-            await cmd.ExecuteNonQueryAsync();
+            await RunSqlFile(conn, file, sql);
         }
         Success($"{label}: {files.Length} file(s) applied");
+    }
+
+
+    /// <summary>
+    /// How long a single migration file may take, and how long it may wait for
+    /// a lock before giving up and trying again.
+    ///
+    /// A deploy runs against a database with an application on it. Anything that
+    /// rewrites or re-locks a table — SET NOT NULL, ADD CONSTRAINT, ALTER COLUMN
+    /// — needs ACCESS EXCLUSIVE, which queues behind every open transaction
+    /// touching that table AND blocks every new one behind it. On a quiet
+    /// database it is instant; on a busy one it waits.
+    ///
+    /// Waiting was not the failure. The failure was that nothing bounded the
+    /// wait except Npgsql's 30-second command timeout, and a command timeout
+    /// fired at a blocked backend tears the connection down — which reaches the
+    /// deploy log as "Exception while reading from stream", on a random file,
+    /// saying nothing about locks. Two deploys in a row died in two different
+    /// places for this one reason.
+    ///
+    /// So the lock wait is bounded first and by a long way: a statement that
+    /// cannot get its lock in LockWaitSeconds is cancelled by POSTGRES, which
+    /// is a clean, named error on a healthy connection. It is then retried,
+    /// because lock contention is transient by nature — the transaction in the
+    /// way is a shopper checking out, and it will be gone in a moment.
+    /// </summary>
+    private const int LockWaitSeconds = 10;
+    private const int StatementTimeoutSeconds = 600;
+    private const int LockRetries = 5;
+
+    /// <summary>
+    /// Postgres error codes worth a second attempt: something else held the
+    /// lock (55P03), or two sessions deadlocked over one (40P01). Both mean
+    /// "not now", never "not ever".
+    /// </summary>
+    private static bool WorthRetrying(PostgresException e) =>
+        e.SqlState is "55P03" or "40P01";
+
+    private static async Task RunSqlFile(NpgsqlConnection conn, string file, string sql)
+    {
+        var name = Path.GetFileName(file);
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                // Per connection, not per statement: a file may hold many
+                // statements, and SET LOCAL inside one of them would not cover
+                // the rest. Re-applied each attempt because a torn-down
+                // connection comes back with the server's defaults.
+                await using (var settings = new NpgsqlCommand(
+                    $"SET lock_timeout = '{LockWaitSeconds}s'; " +
+                    $"SET statement_timeout = '{StatementTimeoutSeconds}s';", conn))
+                {
+                    await settings.ExecuteNonQueryAsync();
+                }
+
+                await using var cmd = new NpgsqlCommand(sql, conn)
+                {
+                    // Comfortably past the server-side statement timeout, so the
+                    // server is always the one that gives up first. A client
+                    // that times out on a blocked backend is precisely what
+                    // produced the unreadable stream error.
+                    CommandTimeout = StatementTimeoutSeconds + 60,
+                };
+                await cmd.ExecuteNonQueryAsync();
+                return;
+            }
+            catch (PostgresException e) when (WorthRetrying(e) && attempt <= LockRetries)
+            {
+                var pause = TimeSpan.FromSeconds(attempt * 5);
+                Warn($"  {name} could not get its lock ({e.SqlState}); "
+                     + $"waiting {pause.TotalSeconds:0}s and trying again "
+                     + $"({attempt}/{LockRetries}).");
+                await Task.Delay(pause);
+            }
+            catch (PostgresException e) when (WorthRetrying(e))
+            {
+                // Out of attempts. Said in full, because the useful part is
+                // which file wanted which lock — not a torn connection.
+                Error($"{name} gave up waiting for a lock after {LockRetries} "
+                      + "attempts. Something on this database is holding the "
+                      + "table it alters. Re-run the deploy when it is quieter, "
+                      + $"or find the blocking session.\n   {e.MessageText}");
+                throw;
+            }
+        }
     }
 
     /// <summary>
