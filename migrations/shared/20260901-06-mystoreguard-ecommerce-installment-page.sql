@@ -27,7 +27,12 @@ ALTER TABLE mystoreguard.msg_ecommerce_versions
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_versions_enums;
 ALTER TABLE mystoreguard.msg_ecommerce_versions
     ADD CONSTRAINT ck_msg_ecommerce_versions_enums CHECK (
-        page_key IN ('HOME', 'BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
+    -- A page key is the shop's own, so it is no longer a list here. The names
+    -- are kept because the migrations that created these constraints guard on
+    -- the NAME — dropping one un-guards its creator, which adds the old list
+    -- straight back over rows that now carry a shop's page keys, and the
+    -- deploy stops on this statement. Same rules as 20260918-02 settles on.
+        page_key IS NOT NULL
         AND status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')
         AND layout IN ('GRID', 'CAROUSEL', 'HERO', 'LIST')
     );
@@ -47,57 +52,56 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_home_sections_page;
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_page CHECK (
-        page_key IN ('HOME', 'BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
+    -- Opened with the rest; see the note on the versions constraint above.
+        page_key IS NOT NULL
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_home_sections_source;
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_source CHECK (
-        source_page_key IS NULL
-        OR source_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_home_sections_cta_page;
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_cta_page CHECK (
-        cta_page_key IS NULL
-        OR cta_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_home_sections_cta_secondary;
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_cta_secondary CHECK (
-        cta_secondary_page_key IS NULL
-        OR cta_secondary_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_banner_slides
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_banner_slides_cta;
 ALTER TABLE mystoreguard.msg_ecommerce_banner_slides
     ADD CONSTRAINT ck_msg_ecommerce_banner_slides_cta CHECK (
-        (cta_page_key IS NULL
-         OR cta_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT'))
-        AND (cta_secondary_page_key IS NULL
-             OR cta_secondary_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT'))
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_section_cards
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_section_cards_link;
 ALTER TABLE mystoreguard.msg_ecommerce_section_cards
     ADD CONSTRAINT ck_msg_ecommerce_section_cards_link CHECK (
-        link_page_key IS NULL
-        OR link_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_footer_links
     DROP CONSTRAINT IF EXISTS ck_msg_ecommerce_footer_links_link;
 ALTER TABLE mystoreguard.msg_ecommerce_footer_links
     ADD CONSTRAINT ck_msg_ecommerce_footer_links_link CHECK (
-        link_page_key IS NULL
-        OR link_page_key IN ('BIDDING', 'PRE_USED', 'MARKET', 'DAILY_OFFER', 'INSTALLMENT')
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_pages

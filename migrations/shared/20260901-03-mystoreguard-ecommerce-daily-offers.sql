@@ -9,11 +9,11 @@
 -- Switchable like Bidding and Pre-used, and off to begin with, because a shop
 -- that has never run a daily offer should not acquire an empty page for it.
 --
--- The page list appears in nine CHECK constraints across four migrations, so a
--- fifth page means nine more edits. That repetition is the cost of the database
--- knowing the rule rather than only the service; it is worth it, but it is worth
--- knowing about — everything that has to change is in this one file, which is
--- the template for whatever comes next.
+-- The page list USED to appear in nine CHECK constraints across four migrations,
+-- and this file was written as the template for adding a tenth. That was the
+-- wrong shape and it is gone: a page is a row a shop creates, so no list in the
+-- schema can know the keys. Do not add a page here — there is nothing to add it
+-- to. See 20260918-02.
 --
 -- Idempotent; safe to re-run on every deploy.
 
@@ -26,10 +26,12 @@ ALTER TABLE mystoreguard.msg_ecommerce_versions
 
 ALTER TABLE mystoreguard.msg_ecommerce_versions
     ADD CONSTRAINT ck_msg_ecommerce_versions_enums CHECK (
-        page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'HOME', 'INSTALLMENT', 'MARKET',
-            'PRE_USED'
-        )
+    -- A page key is the shop's own, so it is no longer a list here. The names
+    -- are kept because the migrations that created these constraints guard on
+    -- the NAME — dropping one un-guards its creator, which adds the old list
+    -- straight back over rows that now carry a shop's page keys, and the
+    -- deploy stops on this statement. Same rules as 20260918-02 settles on.
+        page_key IS NOT NULL
         AND status IN ('DRAFT', 'PUBLISHED', 'ARCHIVED')
         AND layout IN ('GRID', 'CAROUSEL', 'HERO', 'LIST')
     );
@@ -55,10 +57,8 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_page CHECK (
-        page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'HOME', 'INSTALLMENT', 'MARKET',
-            'PRE_USED'
-        )
+    -- Opened with the rest; see the note on the versions constraint above.
+        page_key IS NOT NULL
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
@@ -66,10 +66,8 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_source CHECK (
-        source_page_key IS NULL
-        OR source_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
@@ -77,10 +75,8 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_cta_page CHECK (
-        cta_page_key IS NULL
-        OR cta_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
@@ -88,10 +84,8 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
 
 ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_cta_secondary CHECK (
-        cta_secondary_page_key IS NULL
-        OR cta_secondary_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 
@@ -103,14 +97,8 @@ ALTER TABLE mystoreguard.msg_ecommerce_banner_slides
 
 ALTER TABLE mystoreguard.msg_ecommerce_banner_slides
     ADD CONSTRAINT ck_msg_ecommerce_banner_slides_cta CHECK (
-        (cta_page_key IS NULL
-         OR cta_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        ))
-        AND (cta_secondary_page_key IS NULL
-             OR cta_secondary_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        ))
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_section_cards
@@ -118,10 +106,8 @@ ALTER TABLE mystoreguard.msg_ecommerce_section_cards
 
 ALTER TABLE mystoreguard.msg_ecommerce_section_cards
     ADD CONSTRAINT ck_msg_ecommerce_section_cards_link CHECK (
-        link_page_key IS NULL
-        OR link_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 ALTER TABLE mystoreguard.msg_ecommerce_footer_links
@@ -129,10 +115,8 @@ ALTER TABLE mystoreguard.msg_ecommerce_footer_links
 
 ALTER TABLE mystoreguard.msg_ecommerce_footer_links
     ADD CONSTRAINT ck_msg_ecommerce_footer_links_link CHECK (
-        link_page_key IS NULL
-        OR link_page_key IN (
-            'BIDDING', 'DAILY_OFFER', 'INSTALLMENT', 'MARKET', 'PRE_USED'
-        )
+    -- Opened with the rest; see the note on the versions constraint above.
+        true
     );
 
 
