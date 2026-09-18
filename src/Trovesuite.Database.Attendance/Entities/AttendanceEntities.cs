@@ -91,8 +91,12 @@ public class AttDevice
     public string Name { get; set; } = default!;
     public string? Vendor { get; set; }
     public string? Model { get; set; }
+    /// <summary>ZKTeco device SN — used as ADMS identity (globally unique when set).</summary>
     public string? Serial { get; set; }
     public string? Location { get; set; }
+    /// <summary>When false, ADMS ingest ignores this device.</summary>
+    public bool IsEnabled { get; set; } = true;
+    public DateTimeOffset? LastSeenAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }

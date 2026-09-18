@@ -43,6 +43,9 @@ public sealed class AttPunchConfiguration : IEntityTypeConfiguration<AttPunch>
         b.Property(x => x.Source).HasDefaultValue("web");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.PunchedAt });
         b.HasIndex(x => x.AttendanceId);
+        b.HasIndex(x => new { x.DeviceId, x.EmployeeId, x.PunchedAt })
+            .IsUnique()
+            .HasFilter("device_id IS NOT NULL AND is_superseded = false");
     }
 }
 
@@ -62,6 +65,11 @@ public sealed class AttDeviceConfiguration : IEntityTypeConfiguration<AttDevice>
     {
         b.ToAttendanceTable("att_devices");
         b.HasKey(x => x.Id);
+        b.Property(x => x.IsEnabled).HasDefaultValue(true);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name });
+        // One physical device SN maps to one tenant/org registration.
+        b.HasIndex(x => x.Serial)
+            .IsUnique()
+            .HasFilter("serial IS NOT NULL AND serial <> ''");
     }
 }
