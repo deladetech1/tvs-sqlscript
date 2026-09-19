@@ -57,6 +57,21 @@ public sealed class LoginSettingConfiguration : IEntityTypeConfiguration<LoginSe
         b.Property(x => x.WorkingDays).HasColumnType("text[]");
         b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
         b.Property(x => x.IsActive).HasDefaultValue(true);
+        // A row belongs to one user or one group. The group side is read as "the
+        // group's settings", singular, so two live rows for one group would be a
+        // question nobody can answer at login time. Partial: the per-user rows are
+        // left alone.
+        // Group-first so EF keeps the plain tenant_id index: a filtered index cannot
+        // stand in for it, and leading with TenantId makes EF think it can.
+        b.HasIndex(x => new { x.GroupId, x.TenantId })
+            .IsUnique()
+            .HasDatabaseName("ix_cp_login_settings_group_tenant")
+            .HasFilter("group_id IS NOT NULL AND delete_status = 'NOT_DELETED'");
+        // The filtered index above would otherwise displace the conventional FK
+        // index on the same columns, leaving the RESTRICT check that runs when a
+        // group is deleted with nothing to use for soft-deleted rows.
+        b.HasIndex(x => new { x.GroupId, x.TenantId, x.DeleteStatus })
+            .HasDatabaseName("ix_cp_login_settings_group_id_tenant_id");
         b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne<Group>().WithMany().HasForeignKey(x => new { x.GroupId, x.TenantId })
             .HasPrincipalKey(x => new { x.Id, x.TenantId }).OnDelete(DeleteBehavior.Restrict);

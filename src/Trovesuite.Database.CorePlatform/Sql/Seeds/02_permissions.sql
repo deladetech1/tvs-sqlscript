@@ -45,6 +45,8 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-group-remove-locations', 'Group Remove Locations', 'rt-group', 'Remove locations from groups', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-group-locations-get', 'Group Locations Get', 'rt-group', 'View group locations', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-group-add-users', 'Group Add Users', 'rt-group', 'Add users to groups', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-group-login-settings-get', 'Group Login Settings Get', 'rt-group', 'Can see whether a group is suspended and whether it requires multi-factor authentication of its members', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-group-login-settings-update', 'Group Login Settings Update', 'rt-group', 'Can suspend a whole group at once, and require multi-factor authentication of every member. Held apart from Group Update because it locks people out rather than changing what is written about the group', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- =====================================================
 -- LOCATION PERMISSIONS
