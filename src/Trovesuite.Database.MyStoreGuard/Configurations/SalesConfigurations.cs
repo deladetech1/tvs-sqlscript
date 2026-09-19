@@ -25,8 +25,14 @@ public sealed class PricingRuleConfiguration : IEntityTypeConfiguration<PricingR
         b.HasInCheck("rule_category", "PRICE_ADJUSTMENT", "QUANTITY_BASED");
         b.HasInCheck("rule_type", "FIXED_AMOUNT", "PRICE_DISCOUNT", "PERCENTAGE_DISCOUNT",
                                   "PRICE_MARKUP", "PERCENTAGE_MARKUP", "BUNDLE", "BOGO", "QUANTITY_BREAK");
+        // BATCH and UNIT let a rule land on one delivery, or on one tracked item.
+        // A shop takes the same model in at two costs and prices them apart, and
+        // a rule that can only name the PRODUCT cannot express that — it moves
+        // both. UNIT is the same thing one step finer, for the serial-tracked
+        // goods where the ex-display handset is its own price.
         b.HasInCheck("rule_target_type", "PRODUCT", "ALL_PRODUCTS", "SKU", "LOCATION", "TAG",
-                                         "CATEGORY", "BRAND", "LABEL", "COLOR", "CONDITION");
+                                         "CATEGORY", "BRAND", "LABEL", "COLOR", "CONDITION",
+                                         "BATCH", "UNIT");
         b.WithTenantOrgBusFks();
         b.WithCrossSchemaAuditUserFks();
     }
@@ -104,7 +110,11 @@ public sealed class TaxRuleConfiguration : IEntityTypeConfiguration<TaxRule>
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.Priority).HasDefaultValue(0);
         b.Property(x => x.IsActive).HasDefaultValue(true);
-        b.HasInCheck("rule_type", "PRODUCT", "ALL_PRODUCTS", "CATEGORY", "TAG", "BRAND", "LABEL", "LOCATION", "SKU");
+        // As with pricing: a tax rule may name one delivery or one tracked item,
+        // not only the product. Goods of one model imported under different
+        // duty do not share a tax treatment just because they share a name.
+        b.HasInCheck("rule_type", "PRODUCT", "ALL_PRODUCTS", "CATEGORY", "TAG", "BRAND", "LABEL",
+                                  "LOCATION", "SKU", "BATCH", "UNIT");
         b.WithTenantOrgBusFks();
         b.HasOne<Tax>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "TaxId")
