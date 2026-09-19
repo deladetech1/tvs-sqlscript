@@ -82,6 +82,50 @@ public sealed class LoginSettingConfiguration : IEntityTypeConfiguration<LoginSe
     }
 }
 
+public sealed class LoginScheduleConfiguration : IEntityTypeConfiguration<LoginSchedule>
+{
+    public void Configure(EntityTypeBuilder<LoginSchedule> b)
+    {
+        b.ToTable("cp_login_schedules");
+        b.HasKey(x => new { x.Id, x.TenantId });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.DayOfWeek).HasMaxLength(9);
+        b.Property(x => x.StartTime).HasColumnType("time");
+        b.Property(x => x.EndTime).HasColumnType("time");
+        b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+
+        // A window has to end after it starts. Equal is not a window, and
+        // reversed silently means "never", which is the kind of setting that
+        // looks saved and locks somebody out on Monday morning.
+        b.ToTable(t => t.HasCheckConstraint(
+            "ck_cp_login_schedules_window", "end_time > start_time"));
+        b.ToTable(t => t.HasCheckConstraint(
+            "ck_cp_login_schedules_day",
+            "day_of_week IN ('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY')"));
+
+        // The resolver reads every window for a login setting on the auth hot
+        // path, so it looks them up by that and nothing else.
+        b.HasIndex(x => new { x.LoginSettingsId, x.TenantId })
+            .HasDatabaseName("ix_cp_login_schedules_settings_tenant");
+
+        b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
+        // Cascade, not Restrict: a window is part of the setting it hangs off,
+        // with no meaning once that row is gone.
+        //
+        // No HasPrincipalKey here, unlike the FKs above. cp_login_settings is
+        // keyed on exactly (id, tenant_id), so convention already targets the
+        // primary key; naming it explicitly makes EF register an alternate key
+        // over the same columns and rename the live table's primary key
+        // constraint to match — a destructive no-op on a table this one sits on.
+        b.HasOne<LoginSetting>().WithMany()
+            .HasForeignKey(x => new { x.LoginSettingsId, x.TenantId })
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasDeleteStatusCheck();
+        b.WithAuditUserFks();
+    }
+}
+
 public sealed class OrganizationConfiguration : IEntityTypeConfiguration<Organization>
 {
     public void Configure(EntityTypeBuilder<Organization> b)

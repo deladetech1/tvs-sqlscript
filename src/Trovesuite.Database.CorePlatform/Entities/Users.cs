@@ -74,6 +74,29 @@ public class MultiFactorSetting
     public string? UpdatedBy { get; set; }
 }
 
+/// <summary>
+/// The clock a tenant's login schedules are read against.
+///
+/// Everything else in this schema is an absolute instant, so it never needed
+/// one. A weekly window does: "Monday 02:30 to 17:50" is not a moment until you
+/// say whose 02:30. Stored as an IANA name (Africa/Accra, Europe/London) rather
+/// than an offset, so daylight saving is the zone database's problem and not a
+/// column somebody has to remember to change twice a year.
+/// </summary>
+public class TimezoneSetting
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string Timezone { get; set; } = "UTC";
+    public bool IsActive { get; set; } = true;
+    public string? Description { get; set; }
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 public class ChangePasswordPolicy
 {
     public string Id { get; set; } = default!;

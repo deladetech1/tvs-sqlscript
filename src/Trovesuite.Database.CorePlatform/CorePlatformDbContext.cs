@@ -20,6 +20,7 @@ public class CorePlatformDbContext : DbContext
     public DbSet<PasswordPolicy> PasswordPolicies => Set<PasswordPolicy>();
     public DbSet<MultiFactorSetting> MultiFactorSettings => Set<MultiFactorSetting>();
     public DbSet<ChangePasswordPolicy> ChangePasswordPolicies => Set<ChangePasswordPolicy>();
+    public DbSet<TimezoneSetting> TimezoneSettings => Set<TimezoneSetting>();
     public DbSet<UserLoginTracking> UserLoginTracking => Set<UserLoginTracking>();
     public DbSet<EnterpriseSubscription> EnterpriseSubscriptions => Set<EnterpriseSubscription>();
     public DbSet<ReferralPartner> ReferralPartners => Set<ReferralPartner>();
@@ -45,6 +46,7 @@ public class CorePlatformDbContext : DbContext
     public DbSet<Group> Groups => Set<Group>();
     public DbSet<UserGroup> UserGroups => Set<UserGroup>();
     public DbSet<LoginSetting> LoginSettings => Set<LoginSetting>();
+    public DbSet<LoginSchedule> LoginSchedules => Set<LoginSchedule>();
     public DbSet<Organization> Organizations => Set<Organization>();
     public DbSet<Business> Businesses => Set<Business>();
     public DbSet<BusinessApp> BusinessApps => Set<BusinessApp>();

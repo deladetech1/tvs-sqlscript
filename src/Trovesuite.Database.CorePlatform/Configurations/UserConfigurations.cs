@@ -101,6 +101,22 @@ public sealed class MultiFactorSettingConfiguration : IEntityTypeConfiguration<M
     }
 }
 
+public sealed class TimezoneSettingConfiguration : IEntityTypeConfiguration<TimezoneSetting>
+{
+    public void Configure(EntityTypeBuilder<TimezoneSetting> b)
+    {
+        b.ToTable("cp_timezone_settings");
+        b.HasKey(x => new { x.Id, x.TenantId });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.Timezone).HasDefaultValue("UTC");
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.HasIndex(x => x.TenantId).IsUnique();
+
+        b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
+        b.WithCreateUpdateUserFks();
+    }
+}
+
 public sealed class ChangePasswordPolicyConfiguration : IEntityTypeConfiguration<ChangePasswordPolicy>
 {
     public void Configure(EntityTypeBuilder<ChangePasswordPolicy> b)
