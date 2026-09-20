@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Trovesuite.Database.CorePlatform;
@@ -12,9 +13,11 @@ using Trovesuite.Database.CorePlatform;
 namespace Trovesuite.Database.CorePlatform.Migrations
 {
     [DbContext(typeof(CorePlatformDbContext))]
-    partial class CorePlatformDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260918233437_AddGroupLoginSettingsUniqueIndex")]
+    partial class AddGroupLoginSettingsUniqueIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2037,106 +2040,6 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.LoginSchedule", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("cdatetime");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("DayOfWeek")
-                        .IsRequired()
-                        .HasMaxLength(9)
-                        .HasColumnType("character varying(9)")
-                        .HasColumnName("day_of_week");
-
-                    b.Property<string>("DeleteStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("NOT_DELETED")
-                        .HasColumnName("delete_status");
-
-                    b.Property<string>("DeletedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("deleted_by");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<TimeOnly>("EndTime")
-                        .HasColumnType("time")
-                        .HasColumnName("end_time");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("LoginSettingsId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("login_settings_id");
-
-                    b.Property<TimeOnly>("StartTime")
-                        .HasColumnType("time")
-                        .HasColumnName("start_time");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_cp_login_schedules");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_cp_login_schedules_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_cp_login_schedules_created_by_tenant_id");
-
-                    b.HasIndex("DeletedBy", "TenantId")
-                        .HasDatabaseName("ix_cp_login_schedules_deleted_by_tenant_id");
-
-                    b.HasIndex("LoginSettingsId", "TenantId")
-                        .HasDatabaseName("ix_cp_login_schedules_settings_tenant");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_cp_login_schedules_updated_by_tenant_id");
-
-                    b.ToTable("cp_login_schedules", "core_platform", t =>
-                        {
-                            t.HasCheckConstraint("ck_cp_login_schedules_day", "day_of_week IN ('MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY')");
-
-                            t.HasCheckConstraint("ck_cp_login_schedules_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
-
-                            t.HasCheckConstraint("ck_cp_login_schedules_window", "end_time > start_time");
-                        });
-                });
-
             modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.LoginSetting", b =>
                 {
                     b.Property<string>("Id")
@@ -3702,71 +3605,6 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.TimezoneSetting", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasColumnName("id")
-                        .HasDefaultValueSql("gen_random_uuid()::text");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Cdate")
-                        .HasColumnType("text")
-                        .HasColumnName("cdate");
-
-                    b.Property<DateTimeOffset?>("Cdatetime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("cdatetime");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<string>("Ctime")
-                        .HasColumnType("text")
-                        .HasColumnName("ctime");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Timezone")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("UTC")
-                        .HasColumnName("timezone");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by");
-
-                    b.HasKey("Id", "TenantId")
-                        .HasName("pk_cp_timezone_settings");
-
-                    b.HasIndex("TenantId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_cp_timezone_settings_tenant_id");
-
-                    b.HasIndex("CreatedBy", "TenantId")
-                        .HasDatabaseName("ix_cp_timezone_settings_created_by_tenant_id");
-
-                    b.HasIndex("UpdatedBy", "TenantId")
-                        .HasDatabaseName("ix_cp_timezone_settings_updated_by_tenant_id");
-
-                    b.ToTable("cp_timezone_settings", "core_platform");
-                });
-
             modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.UnitOfMeasure", b =>
                 {
                     b.Property<string>("Id")
@@ -4915,41 +4753,6 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         .HasConstraintName("fk_cp_locations_users_updated_by_tenant_id");
                 });
 
-            modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.LoginSchedule", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_cp_login_schedules_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_cp_login_schedules_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("DeletedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_cp_login_schedules_users_deleted_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.LoginSetting", null)
-                        .WithMany()
-                        .HasForeignKey("LoginSettingsId", "TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_cp_login_schedules_cp_login_settings_login_settings_id_tena");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_cp_login_schedules_users_updated_by_tenant_id");
-                });
-
             modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.LoginSetting", b =>
                 {
                     b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
@@ -5326,28 +5129,6 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_cp_themes_users_user_id_tenant_id");
-                });
-
-            modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.TimezoneSetting", b =>
-                {
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_cp_timezone_settings_cp_tenants_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_cp_timezone_settings_users_created_by_tenant_id");
-
-                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy", "TenantId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_cp_timezone_settings_users_updated_by_tenant_id");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.CorePlatform.Entities.UnitOfMeasure", b =>

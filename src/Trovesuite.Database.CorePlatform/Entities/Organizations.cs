@@ -31,6 +31,29 @@ public class LoginSetting : TenantScopedEntity
     public bool CanAlwaysLogin { get; set; }
 }
 
+/// <summary>
+/// One allowed window on one weekday, hanging off a login setting.
+///
+/// The weekly schedule was two flat columns for years: WorkingDays said which
+/// days, LoginOn/LogoutOn said between which two absolute moments. Neither could
+/// express "Monday 02:30 to 17:50" — days carried no times, and the timestamps
+/// were a single fixed date range rather than something that repeats. Rows here
+/// carry the times, one per window, so a day can have more than one.
+///
+/// StartTime/EndTime are wall-clock <c>time</c>, not timestamps: they repeat
+/// every week and mean nothing without a date. The date comes from the clock at
+/// the moment of the check, read in the tenant's timezone.
+/// </summary>
+public class LoginSchedule : TenantScopedEntity
+{
+    public string Id { get; set; } = default!;
+    public string LoginSettingsId { get; set; } = default!;
+    /// MONDAY … SUNDAY, matching the strings already stored in WorkingDays.
+    public string DayOfWeek { get; set; } = default!;
+    public TimeOnly StartTime { get; set; }
+    public TimeOnly EndTime { get; set; }
+}
+
 public class Organization : TenantScopedEntity
 {
     public string Id { get; set; } = default!;
