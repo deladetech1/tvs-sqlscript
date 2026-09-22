@@ -5,7 +5,6 @@ using Npgsql;
 using Trovesuite.Database.Common.Abstractions;
 using Trovesuite.Database.CorePlatform;
 using Trovesuite.Database.Attendance;
-using Trovesuite.Database.Attendance;
 using Trovesuite.Database.HumanResource;
 using Trovesuite.Database.LoanDrift;
 using Trovesuite.Database.MyStoreGuard;
