@@ -519,6 +519,24 @@ jobs:
                 -v ON_ERROR_STOP=0 --no-psqlrc \
                 -c "SELECT tablename FROM pg_tables WHERE schemaname = 'attendance' ORDER BY 1;" \
                 2>&1 || echo "(psql probe failed)"
+              echo ""
+              echo "-- att_devices columns --"
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='attendance' AND table_name='att_devices' ORDER BY ordinal_position;" \
+                2>&1 || true
+              echo ""
+              echo "-- att_attendance_records columns --"
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='attendance' AND table_name='att_attendance_records' ORDER BY ordinal_position;" \
+                2>&1 || true
+              echo ""
+              echo "-- privileges on attendance schema --"
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT n.nspname, r.rolname, has_schema_privilege(r.oid, n.oid, 'USAGE') AS usage, has_schema_privilege(r.oid, n.oid, 'CREATE') AS create FROM pg_namespace n CROSS JOIN pg_roles r WHERE n.nspname='attendance' AND r.rolname NOT LIKE 'pg_%' AND (has_schema_privilege(r.oid, n.oid, 'USAGE') OR r.rolname LIKE '%zelos%' OR r.rolname LIKE '%app%' OR r.rolname LIKE '%migrat%') ORDER BY 2;" \
+                2>&1 || true
               echo '```'
             } | tee -a "$GITHUB_STEP_SUMMARY"
           fi
