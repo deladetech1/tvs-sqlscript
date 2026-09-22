@@ -507,6 +507,22 @@ jobs:
             done <<< "$ALL_MIGS"
           done
 
+          # Attendance is a newer module — surface whether the schema actually has
+          # tables (history can claim Applied while DDL never landed).
+          if echo "$MODULES" | grep -qw Attendance; then
+            {
+              echo ""
+              echo "### Attendance schema tables"
+              echo ""
+              echo '```'
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT tablename FROM pg_tables WHERE schemaname = 'attendance' ORDER BY 1;" \
+                2>&1 || echo "(psql probe failed)"
+              echo '```'
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
           # Trailing legend / hint.
           {
             echo ""
