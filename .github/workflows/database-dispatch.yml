@@ -90,6 +90,7 @@ on:
           - loandrift
           - mystoreguard
           - zeloshr
+          - attendance
       destructive_ack:
         description: 'For rollback only: type exactly YESDestructive'
         type: string
@@ -261,7 +262,9 @@ jobs:
             loandrift)      PROJ="src/Trovesuite.Database.LoanDrift";     PICK=2 ;;
             mystoreguard)   PROJ="src/Trovesuite.Database.MyStoreGuard";  PICK=3 ;;
             zeloshr)        PROJ="src/Trovesuite.Database.HumanResource"; PICK=4 ;;
+            attendance)     PROJ="src/Trovesuite.Database.Attendance";    PICK=5 ;;
             all)            PROJ="";                                       PICK=0 ;;
+            *) echo "::error::unknown module '${{ inputs.module }}'"; exit 1 ;;
           esac
           echo "proj=$PROJ" >> "$GITHUB_OUTPUT"
           echo "pick=$PICK" >> "$GITHUB_OUTPUT"
@@ -350,13 +353,13 @@ jobs:
           TVS_ENTERPRISE: ${{ steps.enterprise.outputs.slug }}
         run: |
           echo "::group::Starting ${{ inputs.command }} on ${{ inputs.scope }}-${{ inputs.environment }}"
-          echo "Module pick: ${{ steps.map.outputs.pick }} (0=ALL, 1=core_platform, 2=loandrift, 3=mystoreguard, 4=zeloshr)"
+          echo "Module pick: ${{ steps.map.outputs.pick }} (0=ALL, 1=core_platform, 2=loandrift, 3=mystoreguard, 4=zeloshr, 5=attendance)"
           [[ -n "$TVS_ENTERPRISE" ]] \
             && echo "TVS_ENTERPRISE=$TVS_ENTERPRISE → migrations/enterprise/$TVS_ENTERPRISE/*.sql will also run" \
             || echo "TVS_ENTERPRISE=(unset) → migrations/enterprise/ skipped"
           echo "::endgroup::"
 
-          # Pipe the module choice (0 for ALL, 1..4 for specific). The Runner
+          # Pipe the module choice (0 for ALL, 1..5 for specific). The Runner
           # already prints its own ===== banner per module; we collapse the
           # whole Runner output into a single ::group:: for readability.
           echo "::group::Runner output"
@@ -402,13 +405,15 @@ jobs:
 
           # Modules to query.
           if [[ "${{ inputs.module }}" == "all" ]]; then
-            MODULES="CorePlatform LoanDrift MyStoreGuard HumanResource"
+            MODULES="CorePlatform LoanDrift MyStoreGuard HumanResource Attendance"
           else
             case "${{ inputs.module }}" in
               core_platform)  MODULES="CorePlatform" ;;
               loandrift)      MODULES="LoanDrift" ;;
               mystoreguard)   MODULES="MyStoreGuard" ;;
               zeloshr)        MODULES="HumanResource" ;;
+              attendance)     MODULES="Attendance" ;;
+              *) echo "::error::unknown module '${{ inputs.module }}'"; exit 1 ;;
             esac
           fi
 
@@ -430,6 +435,7 @@ jobs:
             [LoanDrift]=loandrift
             [MyStoreGuard]=mystoreguard
             [HumanResource]=zeloshr
+            [Attendance]=attendance
           )
 
           DB_HOST="${{ steps.db.outputs.DB_HOST }}"
@@ -500,6 +506,40 @@ jobs:
               ANY_ROWS=1
             done <<< "$ALL_MIGS"
           done
+
+          # Attendance is a newer module — surface whether the schema actually has
+          # tables (history can claim Applied while DDL never landed).
+          if echo "$MODULES" | grep -qw Attendance; then
+            {
+              echo ""
+              echo "### Attendance schema tables"
+              echo ""
+              echo '```'
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT tablename FROM pg_tables WHERE schemaname = 'attendance' ORDER BY 1;" \
+                2>&1 || echo "(psql probe failed)"
+              echo ""
+              echo "-- att_devices columns --"
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='attendance' AND table_name='att_devices' ORDER BY ordinal_position;" \
+                2>&1 || true
+              echo ""
+              echo "-- att_attendance_records columns --"
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='attendance' AND table_name='att_attendance_records' ORDER BY ordinal_position;" \
+                2>&1 || true
+              echo ""
+              echo "-- privileges on attendance schema --"
+              psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+                -v ON_ERROR_STOP=0 --no-psqlrc \
+                -c "SELECT n.nspname, r.rolname, has_schema_privilege(r.oid, n.oid, 'USAGE') AS usage, has_schema_privilege(r.oid, n.oid, 'CREATE') AS create FROM pg_namespace n CROSS JOIN pg_roles r WHERE n.nspname='attendance' AND r.rolname NOT LIKE 'pg_%' AND (has_schema_privilege(r.oid, n.oid, 'USAGE') OR r.rolname LIKE '%zelos%' OR r.rolname LIKE '%app%' OR r.rolname LIKE '%migrat%') ORDER BY 2;" \
+                2>&1 || true
+              echo '```'
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
 
           # Trailing legend / hint.
           {
