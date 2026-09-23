@@ -51,3 +51,38 @@ WHERE r.id IN ('role-subscribed-app-loandrift-admin', 'role-loandrift-viewer-adm
   AND (p.id LIKE 'permission-loandrift-%' OR p.id='permission-currency-get')
   AND (r.id='role-subscribed-app-loandrift-admin' OR p.id ~ '-get($|-)')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- =====================================================
+-- Job roles
+-- =====================================================
+-- The roles a lending business actually staffs, as opposed to the per-module
+-- "X Admin" roles above. Each one is a hand-picked permission set in
+-- 04_others.sql, so they all hang off rt-loandrift-job-roles, which owns no
+-- permissions and therefore keeps the auto-assign triggers out of them.
+--
+-- The shape: Call Center and Sales bring people in, the Loan Officer builds the
+-- case, the Analyst and the Credit Manager judge it, the Branch Manager
+-- supervises locally, Finance and the Cashier handle money in both directions,
+-- Collections recovers what slips, and Compliance and Audit watch all of it.
+-- Every pair that could mark its own homework is split: the officer prepares,
+-- the manager decides.
+INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
+('role-loandrift-call-center-agent', 'system-tenant-id', 'Loandrift Call Center Agent', 'Answers inbound calls and enquiries: looks up a client''s loan status, balance and next payment date, captures new leads, and routes anything needing a decision to a Loan Officer. Talks to customers; does not move money or change records.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-sales-executive', 'system-tenant-id', 'Loandrift Sales Executive', 'Brings in business: sources and onboards new clients, collects their documents, and submits loan applications into the pipeline. Owns targets and conversion, not credit quality.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-loan-officer', 'system-tenant-id', 'Loandrift Loan Officer', 'Owns the client relationship end to end: completes the application file, verifies the client and their documents, visits if needed, and writes the recommendation. Prepares the case; cannot approve it.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-credit-risk-analyst', 'system-tenant-id', 'Loandrift Credit Risk Analyst', 'Assesses whether the loan is safe to write: runs the credit score, checks affordability and exposure, and produces the risk opinion. Advises the decision-maker; does not make the call.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-credit-manager', 'system-tenant-id', 'Loandrift Credit Manager', 'The approval authority: approves or declines applications, overrides or adjusts credit scores where justified, and owns the scoring rules and credit policy.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-branch-manager', 'system-tenant-id', 'Loandrift Branch Manager', 'Runs a branch: approves loans within a delegated limit, supervises the officers and cashiers at that location, and answers for the branch''s portfolio quality and targets.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-finance-officer', 'system-tenant-id', 'Loandrift Finance Officer', 'Prepares the money side: readies disbursements for authorisation, posts expenses, and reconciles receipts against the ledger. Prepares payments; cannot release them.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-finance-manager', 'system-tenant-id', 'Loandrift Finance Manager', 'Authorises money out: releases disbursements, signs off reconciliations, owns the chart of accounts and financial reporting. The second pair of eyes on every payment.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-cashier', 'system-tenant-id', 'Loandrift Cashier', 'Handles cash at the counter: receipts repayments, records savings deposits and withdrawals, issues receipts. Takes money in; cannot pay money out or unmake a receipt.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-collections-officer', 'system-tenant-id', 'Loandrift Collections Officer', 'Works the arrears list: contacts clients in default, records promises to pay, logs field visits and outcomes, and escalates hard cases. Chases; does not forgive.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-collections-manager', 'system-tenant-id', 'Loandrift Collections Manager', 'Owns the arrears book: approves or rejects collection actions, waives penalties where warranted, agrees restructures, and recommends write-offs.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-compliance-officer', 'system-tenant-id', 'Loandrift Compliance Officer', 'Keeps the business inside the rules: runs KYC/AML checks, prepares regulatory returns including the Bank of Ghana credit bureau submission, approves client data-erasure requests, and reviews activity logs for policy breaches.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-loandrift-internal-auditor', 'system-tenant-id', 'Loandrift Internal Auditor', 'Independent assurance: reviews every transaction, approval and log to confirm controls held and nothing was circumvented. Sees everything, changes nothing.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET
+    role_name        = EXCLUDED.role_name,
+    description      = EXCLUDED.description,
+    resource_type_id = EXCLUDED.resource_type_id,
+    is_system        = EXCLUDED.is_system,
+    is_active        = EXCLUDED.is_active;

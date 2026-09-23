@@ -254,3 +254,334 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-loandrift-penalty-admin', 'permission-user-get-locations')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- =============================================
+-- JOB ROLE PERMISSIONS
+-- =============================================
+-- Hand-picked sets for the roles seeded in 03_roles.sql. They hang off
+-- rt-loandrift-job-roles, which owns no permissions, so nothing here is
+-- supplied by the auto-assign triggers: this block is the whole grant.
+--
+-- Where the segregation lands:
+--   * the Loan Officer captures (capturing-create-update) but cannot
+--     approve (capturing-approve-reject goes to Credit and Branch Manager);
+--   * the Finance Officer sees and prepares disbursements but only the
+--     Finance Manager holds disbursement-disburse;
+--   * the Cashier has repayment-create and savings-transact but neither
+--     repayment-update nor repayment-delete, so a receipt cannot be unmade;
+--   * the Collections Officer may request a waiver (penalty-create); only the
+--     Collections Manager approves one (penalty-waive);
+--   * the Internal Auditor gets every read and no write.
+-- settings-get appears on most of them because the loan capture, savings and
+-- repayment screens read sectors, loan types, interest types, products and
+-- repayment channels through it. It grants no writes.
+
+-- Base block: core-platform navigation, the location list, the dashboard every
+-- role lands on, and the shared currency read. Same six navigation permissions
+-- the resource-admin roles above are given.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
+SELECT 'system-tenant-id', r.id, p.id, r.role_name || ' can ' || lower(p.permission_name),
+       CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
+FROM core_platform.cp_roles r
+CROSS JOIN core_platform.cp_permissions p
+WHERE r.resource_type_id = 'rt-loandrift-job-roles'
+  AND p.id IN (
+    'permission-app-get',
+    'permission-business-get',
+    'permission-organization-get',
+    'permission-business-app-get',
+    'permission-business-app-get-locations',
+    'permission-user-get-locations',
+    'permission-currency-get',
+    'permission-loandrift-locations-get',
+    'permission-loandrift-dashboard-get-statistics',
+    'permission-loandrift-dashboard-get-chart-data'
+  )
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Job-specific grants. The join on cp_permissions means a permission this app
+-- has not seeded is skipped rather than failing the deploy.
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
+SELECT 'system-tenant-id', r.id, p.id, r.role_name || ' can ' || lower(p.permission_name),
+       CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
+FROM (VALUES
+  -- Call Center Agent
+  ('role-loandrift-call-center-agent', 'permission-loandrift-calender-get'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-client-create'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-client-get'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-call-center-agent', 'permission-loandrift-repayment-get-payment-dates'),
+  -- Sales Executive
+  ('role-loandrift-sales-executive', 'permission-loandrift-calender-get'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-client-create'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-client-get'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-client-get-statistics'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-client-update'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-file-update'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-file-upload-multiple'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-loan-registration-create-existing-client'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-loan-registration-create-new-client'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-sales-executive', 'permission-loandrift-loan-registration-update'),
+  -- Loan Officer
+  ('role-loandrift-loan-officer', 'permission-loandrift-approval-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-calender-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-capturing-create-update'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-capturing-get-statistics'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-client-create'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-client-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-client-get-statistics'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-client-update'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-credit-score-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-disbursement-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-file-update'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-file-upload-multiple'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-loan-registration-create-existing-client'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-loan-registration-create-new-client'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-loan-registration-update'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-repayment-get-payment-dates'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-reports-get'),
+  ('role-loandrift-loan-officer', 'permission-loandrift-settings-get'),
+  -- Credit Risk Analyst
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-approval-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-calender-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-capturing-get-statistics'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-client-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-client-get-statistics'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-credit-score-calculate'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-credit-score-create'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-credit-score-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-credit-score-settings-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-disbursement-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-reports-get'),
+  ('role-loandrift-credit-risk-analyst', 'permission-loandrift-settings-get'),
+  -- Credit Manager
+  ('role-loandrift-credit-manager', 'permission-loandrift-approval-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-approval-update'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-calender-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-capturing-approve-reject'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-capturing-complete'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-capturing-get-statistics'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-client-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-client-get-statistics'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-credit-score-adjust'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-credit-score-calculate'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-credit-score-create'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-credit-score-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-credit-score-settings-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-credit-score-settings-update'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-disbursement-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-logs-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-reports-get'),
+  ('role-loandrift-credit-manager', 'permission-loandrift-settings-get'),
+  -- Branch Manager
+  ('role-loandrift-branch-manager', 'permission-loandrift-approval-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-approval-update'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-calender-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-capturing-approve-reject'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-capturing-complete'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-capturing-create-update'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-capturing-get-statistics'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-client-create'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-client-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-client-get-statistics'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-client-update'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-credit-score-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-disbursement-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-expenses-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-expenses-get-activity-logs'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-expenses-get-statistics'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-file-update'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-file-upload-multiple'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-investment-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-investment-get-statistics'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-loan-registration-create-existing-client'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-loan-registration-create-new-client'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-loan-registration-update'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-logs-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-penalty-create'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-repayment-get-payment-dates'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-reports-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-savings-get'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-savings-get-statistics'),
+  ('role-loandrift-branch-manager', 'permission-loandrift-settings-get'),
+  -- Finance Officer
+  ('role-loandrift-finance-officer', 'permission-loandrift-accounting-create'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-accounting-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-accounting-update'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-calender-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-client-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-disbursement-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-disbursement-update'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-expenses-create'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-expenses-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-expenses-get-activity-logs'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-expenses-get-statistics'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-expenses-update'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-investment-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-investment-get-statistics'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-reports-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-savings-get'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-savings-get-statistics'),
+  ('role-loandrift-finance-officer', 'permission-loandrift-settings-get'),
+  -- Finance Manager
+  ('role-loandrift-finance-manager', 'permission-loandrift-accounting-create'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-accounting-delete'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-accounting-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-accounting-update'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-calender-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-client-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-disbursement-disburse'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-disbursement-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-disbursement-update'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-expenses-delete'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-expenses-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-expenses-get-activity-logs'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-expenses-get-statistics'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-expenses-update'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-investment-complete'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-investment-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-investment-get-statistics'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-logs-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-reports-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-savings-get'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-savings-get-statistics'),
+  ('role-loandrift-finance-manager', 'permission-loandrift-settings-get'),
+  -- Cashier
+  ('role-loandrift-cashier', 'permission-loandrift-calender-get'),
+  ('role-loandrift-cashier', 'permission-loandrift-client-get'),
+  ('role-loandrift-cashier', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-cashier', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-cashier', 'permission-loandrift-repayment-create'),
+  ('role-loandrift-cashier', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-cashier', 'permission-loandrift-repayment-get-payment-dates'),
+  ('role-loandrift-cashier', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-cashier', 'permission-loandrift-savings-get'),
+  ('role-loandrift-cashier', 'permission-loandrift-savings-get-statistics'),
+  ('role-loandrift-cashier', 'permission-loandrift-savings-transact'),
+  ('role-loandrift-cashier', 'permission-loandrift-settings-get'),
+  -- Collections Officer
+  ('role-loandrift-collections-officer', 'permission-loandrift-calender-get'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-capturing-get-statistics'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-client-get'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-penalty-create'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-repayment-get-payment-dates'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-reports-get'),
+  ('role-loandrift-collections-officer', 'permission-loandrift-settings-get'),
+  -- Collections Manager
+  ('role-loandrift-collections-manager', 'permission-loandrift-approval-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-calender-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-capturing-get-statistics'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-client-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-loan-registration-update'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-logs-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-penalty-create'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-penalty-settings-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-penalty-waive'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-repayment-get-payment-dates'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-reports-get'),
+  ('role-loandrift-collections-manager', 'permission-loandrift-settings-get'),
+  -- Compliance Officer
+  ('role-loandrift-compliance-officer', 'permission-loandrift-accounting-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-approval-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-calender-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-capturing-get-loan-messages'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-capturing-get-statistics'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-client-approve-deletion'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-client-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-client-get-deletion-chat-history'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-client-get-statistics'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-credit-score-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-disbursement-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-file-list-documents'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-investment-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-investment-get-statistics'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-loan-registration-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-loan-registration-get-statistics'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-logs-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-penalty-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-penalty-settings-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-repayment-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-repayment-get-statistics'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-reports-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-savings-get'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-savings-get-statistics'),
+  ('role-loandrift-compliance-officer', 'permission-loandrift-settings-get')
+) AS g(role_id, permission_id)
+JOIN core_platform.cp_roles r ON r.id = g.role_id
+JOIN core_platform.cp_permissions p ON p.id = g.permission_id
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- Internal Auditor: every LoanDrift read and nothing else. Expressed as a
+-- select rather than a list so a read permission added later is picked up on
+-- the next deploy — an auditor who cannot see a new module is worse than
+-- useless. Same '-get' test the Viewer Admin role uses, plus the document list
+-- (whose name does not carry '-get') and the shared currency read (which is not
+-- in this app's namespace).
+INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
+SELECT r.tenant_id, r.id, p.id, r.role_name || ' can ' || lower(p.permission_name),
+       CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
+FROM core_platform.cp_roles r
+CROSS JOIN core_platform.cp_permissions p
+WHERE r.id = 'role-loandrift-internal-auditor'
+  AND (
+        (p.id LIKE 'permission-loandrift-%' AND p.id ~ '-get($|-)')
+     OR p.id IN ('permission-loandrift-file-list-documents', 'permission-currency-get')
+  )
+ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;

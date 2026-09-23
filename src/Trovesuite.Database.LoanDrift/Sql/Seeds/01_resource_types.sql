@@ -71,3 +71,21 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id)
 VALUES ('rt-loandrift-accounting', 'LoanDrift Accounting', 'Accounts, journals, fixed assets and accounting reports', 'rt-subscribed-app-loandrift')
 ON CONFLICT (id) DO UPDATE SET resource_type_name=EXCLUDED.resource_type_name, description=EXCLUDED.description, parent_resource_id=EXCLUDED.parent_resource_id;
+
+-- =====================================================
+-- Job roles
+-- =====================================================
+-- The resource type the named job roles (Loan Officer, Cashier, Credit Manager …)
+-- hang off. Deliberately owns no permissions of its own: the role-insert and
+-- permission-insert triggers in core_platform grant a role every permission of its
+-- resource type and of that type's children, which is exactly wrong for a job role
+-- whose whole point is a hand-picked set. With nothing parented here and no
+-- permission pointing at it, neither trigger can find anything to hand out, so the
+-- grants in 04_others.sql stay the only source. Parented under the app so the type
+-- still reads as LoanDrift's.
+INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id)
+VALUES ('rt-loandrift-job-roles', 'LoanDrift Job Roles', 'Grouping for LoanDrift''s named job roles; holds no permissions itself', 'rt-subscribed-app-loandrift')
+ON CONFLICT (id) DO UPDATE SET
+    resource_type_name = EXCLUDED.resource_type_name,
+    description        = EXCLUDED.description,
+    parent_resource_id = EXCLUDED.parent_resource_id;
