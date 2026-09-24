@@ -154,18 +154,26 @@ INSERT INTO core_platform.cp_platform_feature_catalog
 ('security.alerts',          'Security Alerts',           2, 'Email and SMS when something serious happens'),
 ('security.rate-limit',      'Sign-in Rate Limiting',     2, 'Throttle repeated sign-in attempts by address'),
 
--- ---- PREMIUM: decide who gets in, and notice when it is wrong ------------
+-- ---- PREMIUM: decide who gets in, notice when it is wrong, prove it ------
+--
+-- Nothing here is gated above rank 3, and nothing should be. ENTERPRISE is not
+-- a larger set of features — it is the SAME product, self-hosted. A feature
+-- placed at rank 4 would therefore be reachable by nobody on the hosted
+-- platform while appearing, from the catalog, to be something we sell.
+--
+-- So: if a capability is worth building, it belongs at PREMIUM or below. The
+-- rank 4 row in cp_subscription_platform_limits stays, because a self-hosted
+-- tenant still resolves to a tier and must resolve to at least PREMIUM — it
+-- just never gates a feature on its own.
 ('security.threat-detection','Threat Detection',          3, 'New device, new location and impossible-travel detection'),
 ('security.ip-rules',        'IP and Country Rules',      3, 'Allow or block sign-in by address range or country'),
 ('security.breach-check',    'Breached Password Check',   3, 'Refuse passwords known to have appeared in a breach'),
 ('security.step-up',         'Step-up Authentication',    3, 'Re-authenticate before privileged actions'),
 ('security.reports',         'Security Reports',          3, 'Sign-in, access review, password hygiene and threat reports'),
-
--- ---- ENTERPRISE: prove it to somebody else -------------------------------
-('security.webhooks',        'Security Webhooks',         4, 'Stream security events to a SIEM or endpoint'),
-('security.tamper-evident',  'Tamper-evident Audit Trail',4, 'Hash-chained security events with verification'),
-('security.api-keys',        'API Keys',                  4, 'Scoped service-account keys'),
-('security.compliance-pack', 'Compliance Evidence Pack',  4, 'Dated bundle of security reports and posture history')
+('security.webhooks',        'Security Webhooks',         3, 'Stream security events to a SIEM or endpoint'),
+('security.tamper-evident',  'Tamper-evident Audit Trail',3, 'Hash-chained security events with verification'),
+('security.api-keys',        'API Keys',                  3, 'Scoped service-account keys'),
+('security.compliance-pack', 'Compliance Evidence Pack',  3, 'Dated bundle of security reports and posture history')
 
 ON CONFLICT (feature_key) DO UPDATE SET
     title         = EXCLUDED.title,
