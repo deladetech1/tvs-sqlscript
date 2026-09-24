@@ -77,8 +77,16 @@ UPDATE core_platform.cp_subscription_platform_limits SET tier_rank = v.rank
 --    A subscription only counts toward the tier while it actually entitles the tenant:
 --    enterprise deals always, trials until the trial window closes, paid tiers until the
 --    period ends. Lapsed rows drop out and the tenant falls back to whatever is still
---    valid — BASIC if nothing is. This mirrors check_subscription_active() in auth.py,
---    minus the grace period: grace keeps you writing, it does not keep you on PREMIUM.
+--    valid — BASIC if nothing is. This mirrored check_subscription_active() in
+--    auth.py minus the grace period, on the reasoning that grace keeps you writing
+--    but does not keep you on PREMIUM.
+--
+--    THAT IS NO LONGER TRUE, and this view is no longer the definition. 20260924-03
+--    redefines it to include the same grace window as the write check, because
+--    splitting grace across the two meant a client who paid late lost their
+--    features hours before the system even billed them, while still being told
+--    they were inside grace. Read 20260924-03 for the current rule; the copy below
+--    is superseded on every deploy moments after it runs.
 -- =====================================================================================
 -- DROP before CREATE, not CREATE OR REPLACE.
 --
