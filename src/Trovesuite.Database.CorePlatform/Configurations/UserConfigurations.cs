@@ -77,8 +77,70 @@ public sealed class PasswordPolicyConfiguration : IEntityTypeConfiguration<Passw
         b.Property(x => x.RequireNumbers).HasDefaultValue(true);
         b.Property(x => x.RequireSpecialChars).HasDefaultValue(true);
         b.Property(x => x.SpecialCharsList).HasDefaultValue("!@#$%^&*()_+-=[]{}|;:,.<>?");
+        b.Property(x => x.AllowPasswordReuse).HasDefaultValue(true);
+        b.Property(x => x.PasswordHistoryCount).HasDefaultValue(5);
+        b.Property(x => x.ReuseAppliesToOwner).HasDefaultValue(false);
+        b.Property(x => x.EnforcePasswordExpiry).HasDefaultValue(false);
+        b.Property(x => x.PasswordExpiryValue).HasDefaultValue(90);
+        b.Property(x => x.PasswordExpiryUnit).HasDefaultValue("DAYS");
+        b.Property(x => x.ExpiryAppliesToOwner).HasDefaultValue(false);
         b.Property(x => x.IsActive).HasDefaultValue(true);
         b.HasIndex(x => x.TenantId).IsUnique();
+        // Remembering zero previous passwords is not "no history", it is a
+        // reuse rule that refuses nothing while claiming to be on.
+        b.ToTable(t => t.HasCheckConstraint(
+            "ck_cp_password_policies_history_count", "password_history_count >= 1"));
+        b.ToTable(t => t.HasCheckConstraint(
+            "ck_cp_password_policies_expiry_value", "password_expiry_value >= 1"));
+        b.HasInCheck("password_expiry_unit",
+            "DAYS", "WEEKS", "MONTHS", "QUARTERS", "SEMI_ANNUAL", "YEARS");
+
+        b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
+        b.WithCreateUpdateUserFks();
+    }
+}
+
+public sealed class SessionSettingConfiguration : IEntityTypeConfiguration<SessionSetting>
+{
+    public void Configure(EntityTypeBuilder<SessionSetting> b)
+    {
+        b.ToTable("cp_session_settings");
+        b.HasKey(x => new { x.Id, x.TenantId });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.SessionTimeoutMinutes).HasDefaultValue(1440);
+        b.Property(x => x.AppliesToOwner).HasDefaultValue(false);
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.HasIndex(x => x.TenantId).IsUnique();
+        // A zero-minute session is one that has expired by the time the token
+        // reaches the browser — every user locked out of a tenant at once.
+        b.ToTable(t => t.HasCheckConstraint(
+            "ck_cp_session_settings_timeout", "session_timeout_minutes >= 1"));
+
+        b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
+        b.WithCreateUpdateUserFks();
+    }
+}
+
+public sealed class AccountLockoutSettingConfiguration : IEntityTypeConfiguration<AccountLockoutSetting>
+{
+    public void Configure(EntityTypeBuilder<AccountLockoutSetting> b)
+    {
+        b.ToTable("cp_account_lockout_settings");
+        b.HasKey(x => new { x.Id, x.TenantId });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.IsEnabled).HasDefaultValue(false);
+        b.Property(x => x.MaxFailedAttempts).HasDefaultValue(5);
+        b.Property(x => x.ReleaseMode).HasDefaultValue("AUTOMATIC");
+        b.Property(x => x.LockoutDurationMinutes).HasDefaultValue(30);
+        b.Property(x => x.AppliesToOwner).HasDefaultValue(false);
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.HasIndex(x => x.TenantId).IsUnique();
+        // Locking after zero failures locks everybody on their first attempt.
+        b.ToTable(t => t.HasCheckConstraint(
+            "ck_cp_account_lockout_settings_attempts", "max_failed_attempts >= 1"));
+        b.ToTable(t => t.HasCheckConstraint(
+            "ck_cp_account_lockout_settings_duration", "lockout_duration_minutes >= 1"));
+        b.HasInCheck("release_mode", "AUTOMATIC", "MANUAL");
 
         b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
         b.WithCreateUpdateUserFks();
@@ -144,6 +206,12 @@ public sealed class UserLoginTrackingConfiguration : IEntityTypeConfiguration<Us
         b.Property(x => x.IsActive).HasDefaultValue(true);
         b.Property(x => x.PasswordHistory).HasColumnType("text[]");
         b.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
+        // The admin screen lists a tenant's locked accounts. Partial, because
+        // locked rows are the rare ones — the index stays small no matter how
+        // many people have ever signed in.
+        b.HasIndex(x => new { x.TenantId, x.IsLocked })
+            .HasDatabaseName("ix_cp_user_login_tracking_locked")
+            .HasFilter("is_locked = true");
 
         b.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne<User>().WithMany().HasForeignKey(x => new { x.UserId, x.TenantId })
