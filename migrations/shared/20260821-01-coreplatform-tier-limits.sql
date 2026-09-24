@@ -80,7 +80,21 @@ UPDATE core_platform.cp_subscription_platform_limits SET tier_rank = v.rank
 --    valid — BASIC if nothing is. This mirrors check_subscription_active() in auth.py,
 --    minus the grace period: grace keeps you writing, it does not keep you on PREMIUM.
 -- =====================================================================================
-CREATE OR REPLACE VIEW core_platform.cp_tenant_platform_limits AS
+-- DROP before CREATE, not CREATE OR REPLACE.
+--
+-- Every file in migrations/shared runs on every deploy, in filename order, and
+-- a later file may add a column to this view (20260924-02 adds
+-- security_dashboard_enabled). CREATE OR REPLACE cannot change a view's column
+-- set, so on the next deploy this file would be asked to drop that column and
+-- would fail with "cannot drop columns from view" — taking the whole deploy
+-- with it, because the runner rethrows anything that is not a lock conflict.
+--
+-- Dropping first makes this file's re-run unconditional. The later file
+-- recreates the view with its own column set moments afterwards, so the end
+-- state is the same whatever order the columns were added in.
+DROP VIEW IF EXISTS core_platform.cp_tenant_platform_limits;
+
+CREATE VIEW core_platform.cp_tenant_platform_limits AS
 WITH entitled AS (
     SELECT aps.tenant_id,
            aps.shared_subscription_id,
