@@ -45,57 +45,17 @@
 -- 20260821-01: a later file may add a column and CREATE OR REPLACE cannot.
 
 
-DROP VIEW IF EXISTS core_platform.cp_tenant_platform_limits;
-
-CREATE VIEW core_platform.cp_tenant_platform_limits AS
-WITH entitled AS (
-    SELECT aps.tenant_id,
-           aps.shared_subscription_id,
-           COALESCE(pl.tier_rank, 0) AS tier_rank
-    FROM core_platform.cp_app_subscriptions aps
-    JOIN core_platform.cp_subscriptions s
-      ON s.id = aps.shared_subscription_id
-     AND s.delete_status = 'NOT_DELETED'
-     AND s.is_active = true
-    LEFT JOIN core_platform.cp_subscription_platform_limits pl
-      ON pl.subscription_id = aps.shared_subscription_id
-    LEFT JOIN core_platform.cp_tenants t
-      ON t.id = aps.tenant_id
-    WHERE aps.delete_status = 'NOT_DELETED'
-      AND aps.is_active = true
-      AND (
-            aps.is_enterprise = true
-            -- In trial, or inside the grace window after it ended.
-         OR (aps.status = 'TRIALING'
-             AND (t.free_trial_ends_at IS NULL
-                  OR t.free_trial_ends_at + make_interval(days => 4) > now()))
-            -- Paid period still running, or inside the grace window after it
-            -- ended. PAST_DUE sits here with ACTIVE deliberately: it means "we
-            -- know this is unpaid", not "this is cut off", and the period end
-            -- plus grace is what decides either way.
-         OR (aps.status IN ('ACTIVE', 'PAST_DUE')
-             AND aps.current_period_end IS NOT NULL
-             AND aps.current_period_end + make_interval(days => 4) > now())
-      )
-),
-best AS (
-    SELECT DISTINCT ON (tenant_id) tenant_id, shared_subscription_id
-    FROM entitled
-    ORDER BY tenant_id, tier_rank DESC, shared_subscription_id
-)
-SELECT t.id                                                             AS tenant_id,
-       COALESCE(b.shared_subscription_id, 'shared-subscription-basic')  AS subscription_id,
-       COALESCE(upper(s.subscription_name), 'BASIC')                    AS subscription_name,
-       l.max_organizations,
-       l.max_businesses,
-       l.max_users,
-       l.max_locations,
-       COALESCE(l.groups_enabled, false)                                AS groups_enabled,
-       COALESCE(l.security_dashboard_enabled, false)                    AS security_dashboard_enabled
-FROM core_platform.cp_tenants t
-LEFT JOIN best b
-       ON b.tenant_id = t.id
-LEFT JOIN core_platform.cp_subscriptions s
-       ON s.id = COALESCE(b.shared_subscription_id, 'shared-subscription-basic')
-LEFT JOIN core_platform.cp_subscription_platform_limits l
-       ON l.subscription_id = COALESCE(b.shared_subscription_id, 'shared-subscription-basic');
+-- The cp_tenant_platform_limits view is NOT defined here any more.
+--
+-- It was redefined by three separate files, each dropping and recreating it to
+-- change its column set, and every one of them had to drop it because
+-- CREATE OR REPLACE cannot add or remove a view's columns. That was survivable
+-- until cp_tenant_platform_features started depending on it: a plain DROP then
+-- fails outright ("cannot drop view ... because other objects depend on it"),
+-- and DROP ... CASCADE would silently take the dependent view with it and leave
+-- it gone unless some later file happened to rebuild it.
+--
+-- So there is now exactly ONE definition, in
+-- 20260924-04-coreplatform-a-feature-catalog-for-the-hub.sql, which runs last
+-- and rebuilds the dependent view immediately afterwards. If you need to change
+-- the view, change it there. Do not reintroduce a copy here.
