@@ -207,7 +207,11 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 -- Unified logs permissions - replaces individual entity activity log permissions
 -- =====================================================
 ('permission-cp-logs-get', 'Core Platform Logs Get', 'rt-logs', 'Can view, list, and read activity logs', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-cp-logs-delete', 'Core Platform Logs Delete', 'rt-logs', 'Can delete activity logs', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-cp-logs-delete', 'Core Platform Logs Delete', 'rt-logs', 'Can delete activity logs', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Security dashboard. No -delete on purpose: somebody who can erase a security
+-- event is not somebody the events can be trusted about.
+('permission-security-get', 'Security Get', 'rt-security', 'Can view the security dashboard, its events and posture', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-security-update', 'Security Update', 'rt-security', 'Can acknowledge and resolve security events', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
