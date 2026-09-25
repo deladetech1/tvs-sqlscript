@@ -151,6 +151,27 @@ public sealed class ZhrCompanyOfficeConfiguration : IEntityTypeConfiguration<Zhr
     }
 }
 
+public sealed class ZhrOfficeNetworkConfiguration : IEntityTypeConfiguration<ZhrOfficeNetwork>
+{
+    public void Configure(EntityTypeBuilder<ZhrOfficeNetwork> b)
+    {
+        b.ToZelosHrTable("zhr_office_networks");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Label).HasMaxLength(150);
+        b.Property(x => x.Notation).HasMaxLength(100);
+        b.Property(x => x.StartAddress).HasMaxLength(45);
+        b.Property(x => x.EndAddress).HasMaxLength(45);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Notation }).IsUnique();
+    }
+}
+
 public sealed class ZhrEmployeePortalSubdomainConfiguration : IEntityTypeConfiguration<ZhrEmployeePortalSubdomain>
 {
     public void Configure(EntityTypeBuilder<ZhrEmployeePortalSubdomain> b)
