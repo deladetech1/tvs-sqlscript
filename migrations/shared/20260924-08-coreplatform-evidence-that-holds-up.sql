@@ -136,105 +136,18 @@ CREATE TRIGGER trg_cp_security_events_chain
     BEFORE INSERT ON core_platform.cp_security_events
     FOR EACH ROW EXECUTE FUNCTION core_platform.cp_chain_security_event();
 
-
--- Walk one tenant's chain and report the first break.
+-- The chain verifier USED to be defined here.
 --
--- Returns one row: how many were checked, whether it held, and where it did
--- not. Starting from the earliest SURVIVING row rather than from chain_seq 1,
--- because retention deletes old events and a verifier that demanded the
--- genesis row would report tampering on every tenant whose history has been
--- purged once. Its prev_hash is recorded as the anchor and not verified — that
--- is a real limit, and saying so is better than a green tick that means less
--- than the reader thinks.
-CREATE OR REPLACE FUNCTION core_platform.cp_verify_security_chain(
-    p_tenant_id text, p_limit integer DEFAULT 100000
-)
-RETURNS TABLE (
-    checked        bigint,
-    intact         boolean,
-    first_bad_id   text,
-    first_bad_seq  bigint,
-    reason         text,
-    anchor_seq     bigint
-) AS $$
-DECLARE
-    r              record;
-    v_expected     text;
-    v_prev         text := NULL;
-    v_prev_seq     bigint := NULL;
-    v_checked      bigint := 0;
-    v_anchor       bigint := NULL;
-BEGIN
-    intact := true;
-    FOR r IN
-        SELECT * FROM core_platform.cp_security_events
-         WHERE tenant_id = p_tenant_id AND chain_seq IS NOT NULL
-         ORDER BY chain_seq ASC
-         LIMIT p_limit
-    LOOP
-        v_checked := v_checked + 1;
-
-        IF v_prev IS NULL THEN
-            -- The first row we can see. Its predecessor may have been purged,
-            -- so its link is taken on trust and reported as the anchor.
-            v_anchor := r.chain_seq;
-        ELSE
-            -- Sequence continuity BEFORE the hash link, deliberately. Deleting
-            -- a row from the middle breaks both — the next row's prev_hash
-            -- points at something that is no longer there — and whichever
-            -- check runs first names the fault. "The sequence jumps here"
-            -- sends an investigator looking for a deletion; "this row does not
-            -- follow the one before it" sends them looking for an edit that
-            -- never happened.
-            IF r.chain_seq <> v_prev_seq + 1 THEN
-                checked := v_checked; intact := false;
-                first_bad_id := r.id; first_bad_seq := r.chain_seq;
-                reason := format(
-                    'missing row: the sequence jumps from %s to %s',
-                    v_prev_seq, r.chain_seq
-                );
-                anchor_seq := v_anchor;
-                RETURN NEXT; RETURN;
-            END IF;
-            IF r.prev_hash IS DISTINCT FROM v_prev THEN
-                checked := v_checked; intact := false;
-                first_bad_id := r.id; first_bad_seq := r.chain_seq;
-                reason := 'broken link: this row does not follow the one before it';
-                anchor_seq := v_anchor;
-                RETURN NEXT; RETURN;
-            END IF;
-        END IF;
-
-        v_expected := encode(
-            sha256(convert_to(
-                core_platform.cp_security_event_payload(
-                    r.id, r.tenant_id, r.app_id, r.category, r.event_type,
-                    r.severity, r.title, r.description, r.actor_user_id,
-                    r.subject_user_id, r.ip_address, r.user_agent,
-                    r.metadata, r.occurred_at
-                ) || E'\x1f' || r.prev_hash,
-                'UTF8'
-            )), 'hex'
-        );
-
-        IF v_expected IS DISTINCT FROM r.row_hash THEN
-            checked := v_checked; intact := false;
-            first_bad_id := r.id; first_bad_seq := r.chain_seq;
-            reason := 'altered content: this row no longer matches its own hash';
-            anchor_seq := v_anchor;
-            RETURN NEXT; RETURN;
-        END IF;
-
-        v_prev := r.row_hash;
-        v_prev_seq := r.chain_seq;
-    END LOOP;
-
-    checked := v_checked;
-    first_bad_id := NULL; first_bad_seq := NULL; reason := NULL;
-    anchor_seq := v_anchor;
-    RETURN NEXT;
-END;
-$$ LANGUAGE plpgsql;
+-- It now lives in 20260925-02-coreplatform-say-what-broke-in-english.sql,
+-- which changed its OUT columns to return a stable reason_code alongside the
+-- prose. Two files cannot both define it: shared migrations re-run in
+-- filename order on EVERY deploy, so this older file would recreate the older
+-- signature moments before the newer one replaced it — and `CREATE OR REPLACE`
+-- refuses to change a function's return type, which took a deploy down with
+-- "42P13: cannot change return type of existing function".
+--
+-- Removed rather than guarded: a function with one owner is the only version
+-- of this that stays true. See that file for the definition.
 
 
 -- =====================================================================
