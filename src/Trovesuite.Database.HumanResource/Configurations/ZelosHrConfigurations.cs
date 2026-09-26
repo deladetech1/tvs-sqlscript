@@ -172,6 +172,45 @@ public sealed class ZhrOfficeNetworkConfiguration : IEntityTypeConfiguration<Zhr
     }
 }
 
+public sealed class ZhrAttendanceEnforcementConfiguration : IEntityTypeConfiguration<ZhrAttendanceEnforcement>
+{
+    public void Configure(EntityTypeBuilder<ZhrAttendanceEnforcement> b)
+    {
+        b.ToZelosHrTable("zhr_attendance_enforcement");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.RequireOfficeNetwork).HasDefaultValue(false);
+        b.Property(x => x.TrackLocation).HasDefaultValue(false);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId }).IsUnique();
+    }
+}
+
+public sealed class ZhrOfficeLocationConfiguration : IEntityTypeConfiguration<ZhrOfficeLocation>
+{
+    public void Configure(EntityTypeBuilder<ZhrOfficeLocation> b)
+    {
+        b.ToZelosHrTable("zhr_office_locations");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Label).HasMaxLength(150);
+        b.Property(x => x.Latitude).HasColumnType("double precision");
+        b.Property(x => x.Longitude).HasColumnType("double precision");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Label }).IsUnique();
+    }
+}
+
 public sealed class ZhrEmployeePortalSubdomainConfiguration : IEntityTypeConfiguration<ZhrEmployeePortalSubdomain>
 {
     public void Configure(EntityTypeBuilder<ZhrEmployeePortalSubdomain> b)

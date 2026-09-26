@@ -19,6 +19,8 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrCompanyProfile> ZhrCompanyProfiles => Set<ZhrCompanyProfile>();
     public DbSet<ZhrCompanyOffice> ZhrCompanyOffices => Set<ZhrCompanyOffice>();
     public DbSet<ZhrOfficeNetwork> ZhrOfficeNetworks => Set<ZhrOfficeNetwork>();
+    public DbSet<ZhrAttendanceEnforcement> ZhrAttendanceEnforcements => Set<ZhrAttendanceEnforcement>();
+    public DbSet<ZhrOfficeLocation> ZhrOfficeLocations => Set<ZhrOfficeLocation>();
     public DbSet<ZhrCompanyLocalization> ZhrCompanyLocalizations => Set<ZhrCompanyLocalization>();
     public DbSet<ZhrEmployeeIdFormat> ZhrEmployeeIdFormats => Set<ZhrEmployeeIdFormat>();
     public DbSet<ZhrEmployeePortalSubdomain> ZhrEmployeePortalSubdomains => Set<ZhrEmployeePortalSubdomain>();

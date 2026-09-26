@@ -131,6 +131,36 @@ public class ZhrOfficeNetwork
     public string? UpdatedBy { get; set; }
 }
 
+/// <summary>Optional attendance checks. Both flags stay off until an admin turns them on.</summary>
+public class ZhrAttendanceEnforcement
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public bool RequireOfficeNetwork { get; set; }
+    public bool TrackLocation { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>Office point used when location tracking is enabled.</summary>
+public class ZhrOfficeLocation
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Label { get; set; } = default!;
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public int RadiusMeters { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 /// <summary>Employee portal hostname slug — one row per org; globally unique subdomain.</summary>
 public class ZhrEmployeePortalSubdomain
 {
