@@ -84,32 +84,32 @@ BEGIN
 END $$;
 
 
--- Backfill what CAN be inferred, and only that.
+-- Nothing is backfilled, on purpose
+-- -------------------------------
+-- An earlier version of this file rewrote every PAID row to fill
+-- paid_source and paid_amount_ghs. It ran in a quarter of a second against
+-- dev's seventy-three bills, which told me nothing useful: the runner sends
+-- each file as ONE implicit transaction under a 600-second statement
+-- timeout, so on a database with real volume that UPDATE holds a row lock on
+-- every paid bill — against the very statements that settle payments — and
+-- if it overruns the timeout the whole file rolls back and the columns never
+-- arrive at all.
 --
--- paid_source from the shape of paid_by, which is the only evidence there is:
--- the sentinels the two machine paths write, and the uid_ prefix every real
--- user id carries. Anything else is left NULL rather than guessed at — an
--- unknown provenance should read as unknown.
-UPDATE core_platform.cp_billings_logs
-   SET paid_source = CASE
-        WHEN paid_by = 'PAYSTACK' THEN 'GATEWAY'
-        WHEN paid_by = 'SYSTEM'   THEN 'SYSTEM'
-        WHEN paid_by LIKE 'uid\_%' THEN 'USER'
-   END
- WHERE paid_source IS NULL
-   AND paid_status = 'PAID'
-   AND paid_by IS NOT NULL
-   AND (paid_by IN ('PAYSTACK', 'SYSTEM') OR paid_by LIKE 'uid\_%');
-
--- paid_amount_ghs from price * rate, which is what the bill has always said
--- the customer owes and what every charge path actually collects. COALESCE on
--- the rate mirrors the generator's own default; without it a null rate makes
--- the product null and the payment reads as free.
-UPDATE core_platform.cp_billings_logs
-   SET paid_amount_ghs = ROUND((price * COALESCE(rate, 12.0))::numeric, 2)
- WHERE paid_amount_ghs IS NULL
-   AND paid_status = 'PAID'
-   AND price IS NOT NULL;
+-- It was also unnecessary, which is the part that settles it. Neither value
+-- has to be stored to be shown:
+--
+--   paid_amount_ghs  the reader already falls back to price * rate, which is
+--                    the same arithmetic this backfill would have frozen in.
+--   paid_source      inferred at read time from the shape of paid_by — the
+--                    two machine sentinels and the uid_ prefix — which is
+--                    exactly what the backfill was going to infer anyway.
+--
+-- So this migration is now three instant metadata changes and an index. It
+-- costs O(1) instead of O(rows), and there is no version of a busy
+-- production table where it is the slow part of a deploy.
+--
+-- New payments fill all three columns as they settle. Historical rows keep
+-- their NULLs and read correctly regardless.
 
 
 -- The payments screen reads the paid rows for one tenant, newest first.
