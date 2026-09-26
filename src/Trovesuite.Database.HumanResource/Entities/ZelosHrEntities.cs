@@ -161,6 +161,20 @@ public class ZhrOfficeLocation
     public string? UpdatedBy { get; set; }
 }
 
+/// <summary>One JSON document per time-settings screen (rules, capture, schedules, approval).</summary>
+public class ZhrTimeSetting
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Key { get; set; } = default!;
+    public string Payload { get; set; } = default!;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
 /// <summary>Employee portal hostname slug — one row per org; globally unique subdomain.</summary>
 public class ZhrEmployeePortalSubdomain
 {
