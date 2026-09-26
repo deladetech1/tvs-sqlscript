@@ -19,6 +19,8 @@ public class CorePlatformDbContext : DbContext
     public DbSet<Otp> Otps => Set<Otp>();
     public DbSet<PasswordPolicy> PasswordPolicies => Set<PasswordPolicy>();
     public DbSet<MultiFactorSetting> MultiFactorSettings => Set<MultiFactorSetting>();
+    public DbSet<SessionSetting> SessionSettings => Set<SessionSetting>();
+    public DbSet<AccountLockoutSetting> AccountLockoutSettings => Set<AccountLockoutSetting>();
     public DbSet<ChangePasswordPolicy> ChangePasswordPolicies => Set<ChangePasswordPolicy>();
     public DbSet<TimezoneSetting> TimezoneSettings => Set<TimezoneSetting>();
     public DbSet<UserLoginTracking> UserLoginTracking => Set<UserLoginTracking>();

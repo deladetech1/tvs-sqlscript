@@ -34,7 +34,8 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-theme', 'Theme', 'THEME management', null),
 ('rt-expenses', 'Expense', 'Expense management', null),
 ('rt-file', 'File', 'File management', null),
-('rt-billing', 'Billing', 'Billing and billing logs management', null)
+('rt-billing', 'Billing', 'Billing and billing logs management', null),
+('rt-security', 'Security', 'Security dashboard, events and posture', null)
 ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
     description        = EXCLUDED.description,
