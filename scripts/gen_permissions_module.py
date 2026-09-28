@@ -32,7 +32,15 @@ def const(value: str) -> str:
     return re.sub(r"[^A-Z0-9]+", "_", value.upper()).strip("_")
 
 
-def fetch(dsn: str, prefixes: list[str]):
+def fetch(dsn: str, prefixes: list[str], also: list[str] | None = None):
+    """Every permission for these app prefixes, plus any named outright.
+
+    `also` exists for the handful of permissions an app ENFORCES but does not own. Currency is
+    the real one: MyStoreGuard and LoanDrift both check permission-currency-get when listing
+    currencies, and the currencies belong to Core Platform, so its app_prefix is ''. Without
+    this the id had to be written as a string in four controllers -- the one kind of call site
+    the generated module exists to abolish, and the kind that fails silently when the id moves.
+    """
     import psycopg2, psycopg2.extras
     with psycopg2.connect(dsn) as conn, conn.cursor(
         cursor_factory=psycopg2.extras.RealDictCursor
@@ -41,11 +49,19 @@ def fetch(dsn: str, prefixes: list[str]):
             """SELECT id, app_prefix, resource_key, action, target, scope
                FROM core_platform.cp_permissions
                WHERE delete_status = 'NOT_DELETED' AND is_active = true
-                 AND app_prefix = ANY(%s)
+                 AND (app_prefix = ANY(%s) OR id = ANY(%s))
                ORDER BY resource_key, action, target, scope""",
-            (prefixes,),
+            (prefixes, list(also or [])),
         )
-        return [dict(r) for r in cur.fetchall()]
+        rows = [dict(r) for r in cur.fetchall()]
+
+    # A name that matches nothing is a typo in the deploy command, and silently generating a
+    # module without it would put the silent-refusal bug straight back.
+    found = {r["id"] for r in rows}
+    missing = [i for i in (also or []) if i not in found]
+    if missing:
+        sys.exit(f"--also-include names permissions that do not exist: {', '.join(missing)}")
+    return rows
 
 
 def render(rows, prefixes) -> str:
@@ -144,6 +160,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--app", action="append", required=True,
                     help="app_prefix to include; repeat for more than one ('' for Core Platform)")
+    ap.add_argument("--also-include", action="append", default=[], metavar="PERMISSION_ID",
+                    help="a permission this app enforces but does not own, e.g. "
+                         "permission-currency-get; repeatable")
     ap.add_argument("--out", required=True, help="path of the module to write")
     ap.add_argument("--dsn", default=os.environ.get("DATABASE_URL"),
                     help="Postgres DSN (defaults to $DATABASE_URL)")
@@ -151,7 +170,7 @@ def main() -> None:
     if not args.dsn:
         sys.exit("no DSN: pass --dsn or set DATABASE_URL")
 
-    rows = fetch(args.dsn, args.app)
+    rows = fetch(args.dsn, args.app, args.also_include)
     with open(args.out, "w") as fh:
         fh.write(render(rows, args.app))
     print(f"{args.out}: {len(rows)} permissions for app_prefix {args.app!r}")
