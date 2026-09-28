@@ -169,6 +169,10 @@ def main():
     ap.add_argument("--roles", required=True, help="LIKE pattern, e.g. 'role-msg-%%'")
     ap.add_argument("--exclude", action="append", default=[],
                     help="substring; roles containing it are skipped")
+    ap.add_argument("--utility", action="append", default=["file"],
+                    help="a resource that confers no ownership; repeatable")
+    ap.add_argument("--reads-only", action="store_true",
+                    help="list only the missing reads, which are the ones worth granting")
     args = ap.parse_args()
 
     dsn = os.environ.get("DATABASE_URL")
@@ -227,15 +231,25 @@ def main():
     for rid, mine in sorted(held.items()):
         if any(x in rid for x in args.exclude):
             continue
-        can_act = {id2tup[p][1] for p in mine if id2tup[p][2] not in reads}
+        # A utility resource confers no ownership. `file` is the one that matters: there is
+        # no separate "product images" right, so a role that manages anything with an image
+        # holds file writes -- and counting those as ownership made every such role look as
+        # though it owned every screen in the app that uploads anything. ecommerce-admin
+        # was reported as needing the whole product module on that basis.
+        can_act = {id2tup[p][1] for p in mine
+                   if id2tup[p][2] not in reads and id2tup[p][1] not in args.utility}
         if not can_act:
             continue                     # a reader has no screen of its own
         miss = {}
         for route, need in need_by_route.items():
-            if not ({id2tup[p][1] for p in need if id2tup[p][2] not in reads} & can_act):
+            writes_here = {id2tup[p][1] for p in need
+                           if id2tup[p][2] not in reads and id2tup[p][1] not in args.utility}
+            if not (writes_here & can_act):
                 continue
             for pid in need - mine:
                 miss.setdefault(pid, set()).add(route)
+        if args.reads_only:
+            miss = {p: r for p, r in miss.items() if id2tup[p][2] in reads}
         if miss:
             gaps[rid] = miss
             total += len(miss)
