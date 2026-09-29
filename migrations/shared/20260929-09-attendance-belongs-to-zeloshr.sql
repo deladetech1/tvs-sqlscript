@@ -26,6 +26,30 @@
 --
 -- Safe for the two people who hold an attendance role: their grant rows are untouched except
 -- for the same app_prefix column, so they keep precisely what they had.
+--
+-- The earlier migrations that seed these seven resources -- 20260928-05, -09 and -11 -- are
+-- deliberately left saying ''. Correcting them there looks tidier and breaks the deploy: -09
+-- derives each permission id from the app prefix, so a resource filed under 'zeloshr' gets the
+-- id `permission-zeloshr-attendance-records-get`, which does not collide on the id it conflicts
+-- on and does collide on ux_cp_permissions_resource_action. Seventeen duplicate keys, and the
+-- whole database deploy stops.
+--
+-- Every migration re-runs on every deploy, in filename order, and 20260929 sorts after
+-- 20260928. So the seeds put attendance under Core Platform with its original ids and this
+-- migration moves it, on a fresh database and an existing one alike, every time. One statement
+-- owns the answer instead of four having to agree.
+--
+-- That ordering has to stay this way round for a second reason. 20260929-05 empties Core
+-- Platform Admin, whose grants a role rule replaced, and it selects them by the PERMISSION's
+-- app_prefix being '' or 'cp'. Run after this migration it would no longer recognise the
+-- seventeen attendance grants that 20260928-05 hands that role, and Core Platform Admin would
+-- keep seventeen ZelosHR permissions for good -- a cross-app grant of exactly the kind
+-- 20260929-04 was written to remove. Sorting -09 after -05 means the strip still sees them as
+-- Core Platform's, which they are until this runs.
+--
+-- Checked by replaying all twenty-four 20260928 and 20260929 migrations in order against dev
+-- in a transaction that rolls back: the end state is 34 grants across the eight attendance
+-- roles, every one of them 'zeloshr', and role-cp-admin holding none.
 
 BEGIN;
 
