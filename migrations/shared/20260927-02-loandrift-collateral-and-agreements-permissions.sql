@@ -42,6 +42,10 @@ ON CONFLICT (id) DO UPDATE SET role_name=EXCLUDED.role_name, description=EXCLUDE
     resource_type_id=EXCLUDED.resource_type_id;
 
 -- Roles with app-wide access get everything, as for collections.
+-- role-owner and role-subscribed-app-loandrift-admin are deliberately absent from the
+-- grant below. Both are allowed by being the role (tvs-package 1.0.42 / 1.0.43), and
+-- listing them meant every deploy quietly re-granted rows that 20260929-03 removes --
+-- which is how Owner drifted back from 0 to 29 rows overnight.
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
 SELECT r.tenant_id, r.id, p.id, r.role_name || ' can ' || lower(p.permission_name),
        CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
@@ -53,7 +57,7 @@ JOIN core_platform.cp_permissions p ON p.id IN (
   'permission-loandrift-agreements-sign', 'permission-loandrift-agreements-void',
   'permission-loandrift-agreements-share')
 WHERE r.is_system = true
-  AND r.id IN ('role-owner', 'role-admin', 'role-subscribed-app-loandrift-admin')
+  AND r.id IN ('role-admin')
 ON CONFLICT DO NOTHING;
 
 -- Each module's own admin role gets its own permissions.

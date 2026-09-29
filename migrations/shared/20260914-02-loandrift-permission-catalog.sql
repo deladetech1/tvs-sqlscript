@@ -20,6 +20,10 @@ ON CONFLICT (id) DO UPDATE SET role_name=EXCLUDED.role_name, description=EXCLUDE
 
 -- Existing system roles may predate these permissions. Repair only the new
 -- catalogue entries; preserve custom roles, explicit denials and viewer access.
+-- role-owner and role-subscribed-app-loandrift-admin are deliberately absent from the
+-- grant below. Both are allowed by being the role (tvs-package 1.0.42 / 1.0.43), and
+-- listing them meant every deploy quietly re-granted rows that 20260929-03 removes --
+-- which is how Owner drifted back from 0 to 29 rows overnight.
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
 SELECT r.tenant_id, r.id, p.id, r.role_name || ' can ' || lower(p.permission_name), CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
 FROM core_platform.cp_roles r
@@ -30,7 +34,7 @@ JOIN core_platform.cp_permissions p ON p.id IN (
 JOIN core_platform.cp_resource_types rt ON rt.id=p.resource_type_id
 WHERE r.is_system AND r.is_active AND r.delete_status='NOT_DELETED'
   AND (r.resource_type_id IN (p.resource_type_id, rt.parent_resource_id)
-       OR r.id IN ('role-owner','role-admin'))
+       OR r.id IN ('role-admin'))
   AND (r.role_name NOT LIKE '%Viewer Admin%' OR p.id LIKE '%-get')
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 

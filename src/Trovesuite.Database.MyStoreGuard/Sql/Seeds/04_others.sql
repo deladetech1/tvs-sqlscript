@@ -343,8 +343,11 @@ ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
 SELECT r.tenant_id, r.id, 'permission-msg-store-sales-backdate'
 FROM core_platform.cp_roles r
-WHERE r.id IN ('role-owner', 'role-admin', 'role-msg-admin', 'role-subscribed-app-msg-admin')
-   OR r.role_name IN ('Owner', 'Admin')
+-- Owner and Mystoreguard Admin are absent on purpose: both are allowed by being the role
+-- (tvs-package 1.0.42 / 1.0.43), so granting them here would re-create rows that
+-- 20260929-03 removes, on every deploy.
+WHERE r.id IN ('role-admin', 'role-msg-admin')
+   OR r.role_name = 'Admin'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Purchase Backdate role to its single capability permission, and grant it to the
@@ -358,8 +361,11 @@ ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id)
 SELECT r.tenant_id, r.id, 'permission-msg-purchase-orders-backdate'
 FROM core_platform.cp_roles r
-WHERE r.id IN ('role-owner', 'role-admin', 'role-msg-admin', 'role-subscribed-app-msg-admin')
-   OR r.role_name IN ('Owner', 'Admin')
+-- Owner and Mystoreguard Admin are absent on purpose: both are allowed by being the role
+-- (tvs-package 1.0.42 / 1.0.43), so granting them here would re-create rows that
+-- 20260929-03 removes, on every deploy.
+WHERE r.id IN ('role-admin', 'role-msg-admin')
+   OR r.role_name = 'Admin'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Store Admin role (rt-shop) to all store-domain permissions.

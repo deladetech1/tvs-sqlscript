@@ -177,12 +177,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger that fires after inserting the owner role
+-- The trigger that used to fire on creating the Owner role is GONE, and the function above
+-- is left only so an older database can still drop it cleanly.
+--
+-- A new tenant's Owner was given all 513 permissions the moment the role was created. It
+-- now needs none: the check answers true for the Owner role before it looks at any
+-- permission set (tvs-package 1.0.42). Recreating this trigger would hand every new tenant
+-- the rows 20260929-03 exists to remove.
 DROP TRIGGER IF EXISTS trigger_auto_assign_all_permissions_to_owner_role ON core_platform.cp_roles;
-CREATE TRIGGER trigger_auto_assign_all_permissions_to_owner_role
-    AFTER INSERT ON core_platform.cp_roles
-    FOR EACH ROW
-    EXECUTE FUNCTION core_platform.auto_assign_all_permissions_to_owner_role();
 
 -- ====================================================================================================================
 -- ====================================================================================================================
@@ -307,15 +309,16 @@ BEGIN
     END IF;
 
     -- ---------------------------------------------------------------------------------
-    -- 3. Owner: everything, without exception.
+    -- 3. Owner: nothing to do.
+    --
+    -- Owner used to be granted every permission as it was created, which is why this rule
+    -- existed and why it had to be right forever -- one missed backfill and the owner
+    -- quietly could not do something. It is now allowed by BEING the role: the check
+    -- answers true before it looks at any permission set (tvs-package 1.0.42).
+    --
+    -- Granting here would undo that on the next deploy. 20260929-03 removes the rows and
+    -- this is one of the places that kept putting them back.
     -- ---------------------------------------------------------------------------------
-    INSERT INTO core_platform.cp_role_permissions
-        (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
-    SELECT r.tenant_id, r.id, NEW.id, 'Owner has all permissions',
-           CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
-    FROM core_platform.cp_roles r
-    WHERE r.role_name = 'Owner'
-    ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
     -- ---------------------------------------------------------------------------------
     -- 4. Admin: everything except MODIFYING logs. `resource_key = 'logs'` is the whole log
