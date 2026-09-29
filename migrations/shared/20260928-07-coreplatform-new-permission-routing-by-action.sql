@@ -78,15 +78,12 @@ BEGIN
     END IF;
 
     -- ---------------------------------------------------------------------------------
-    -- 3. Owner: everything, without exception.
+    -- 3. Owner: nothing to do. Allowed by BEING the role (tvs-package 1.0.42), so granting
+    --    here would re-create on the next permission insert exactly what 20260929-03
+    --    removed. This function is redefined here AFTER the trigger file runs, so removing
+    --    the rule there alone left it live in the database -- which is where it was found.
     -- ---------------------------------------------------------------------------------
-    INSERT INTO core_platform.cp_role_permissions
-        (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
-    SELECT r.tenant_id, r.id, NEW.id, 'Owner has all permissions',
-           CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
-    FROM core_platform.cp_roles r
-    WHERE r.role_name = 'Owner'
-    ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
 
     -- ---------------------------------------------------------------------------------
     -- 4. Admin: everything except MODIFYING logs. `resource_key = 'logs'` is the whole log
@@ -94,20 +91,10 @@ BEGIN
     --    particular verb changes them -- which is what the name matching was trying and
     --    failing to express.
     -- ---------------------------------------------------------------------------------
-    IF NOT (NEW.resource_key = 'logs' AND NOT is_read_only_var) THEN
-        INSERT INTO core_platform.cp_role_permissions
-            (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
-        SELECT r.tenant_id, r.id, NEW.id,
-               CASE WHEN NEW.resource_key = 'logs'
-                    THEN 'Admin can view logs but not modify them'
-                    ELSE 'Admin has all permissions except log modification' END,
-               CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
-        FROM core_platform.cp_roles r
-        WHERE r.role_name = 'Admin'
-        ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-    ELSE
-        RAISE NOTICE 'Withheld % from Admin: it modifies logs', NEW.id;
-    END IF;
+    -- 4. Admin: nothing to do either. Any app, any resource, never a write to logs -- by
+    --    being the role (tvs-package 1.0.46), not by holding 510 rows.
+    -- ---------------------------------------------------------------------------------
+
 
     RETURN NEW;
 END;

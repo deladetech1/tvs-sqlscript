@@ -326,20 +326,15 @@ BEGIN
     --    particular verb changes them -- which is what the name matching was trying and
     --    failing to express.
     -- ---------------------------------------------------------------------------------
-    IF NOT (NEW.resource_key = 'logs' AND NOT is_read_only_var) THEN
-        INSERT INTO core_platform.cp_role_permissions
-            (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
-        SELECT r.tenant_id, r.id, NEW.id,
-               CASE WHEN NEW.resource_key = 'logs'
-                    THEN 'Admin can view logs but not modify them'
-                    ELSE 'Admin has all permissions except log modification' END,
-               CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
-        FROM core_platform.cp_roles r
-        WHERE r.role_name = 'Admin'
-        ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-    ELSE
-        RAISE NOTICE 'Withheld % from Admin: it modifies logs', NEW.id;
-    END IF;
+    -- ---------------------------------------------------------------------------------
+    -- 4. Admin: nothing to do.
+    --
+    -- Admin was granted every permission except those modifying logs, which is why this
+    -- rule existed. It is now allowed by BEING the role -- any app, any resource, never a
+    -- write to logs (tvs-package 1.0.46). Granting here would re-create on the next
+    -- permission insert exactly what 20260929-07 removed, the way Owner drifted from 0 back
+    -- to 29 rows overnight.
+    -- ---------------------------------------------------------------------------------
 
     RETURN NEW;
 END;

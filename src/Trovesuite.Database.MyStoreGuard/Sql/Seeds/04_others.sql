@@ -346,8 +346,7 @@ FROM core_platform.cp_roles r
 -- Owner and Mystoreguard Admin are absent on purpose: both are allowed by being the role
 -- (tvs-package 1.0.42 / 1.0.43), so granting them here would re-create rows that
 -- 20260929-03 removes, on every deploy.
-WHERE r.id IN ('role-admin', 'role-msg-admin')
-   OR r.role_name = 'Admin'
+WHERE r.id = 'role-msg-admin'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Purchase Backdate role to its single capability permission, and grant it to the
@@ -364,8 +363,7 @@ FROM core_platform.cp_roles r
 -- Owner and Mystoreguard Admin are absent on purpose: both are allowed by being the role
 -- (tvs-package 1.0.42 / 1.0.43), so granting them here would re-create rows that
 -- 20260929-03 removes, on every deploy.
-WHERE r.id IN ('role-admin', 'role-msg-admin')
-   OR r.role_name = 'Admin'
+WHERE r.id = 'role-msg-admin'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 -- Link Store Admin role (rt-shop) to all store-domain permissions.
