@@ -75,8 +75,20 @@ def render(rows, prefixes) -> str:
         width = max(len(const(n)) for n in names)
         return "\n".join(f'    {const(n):<{width}} = "{n}"' for n in names)
 
+    def pair_key(r):
+        # Must match AuthService.pair_key in tvs-package exactly; the two meet on this
+        # string and nowhere else.
+        return "|".join([r["app_prefix"] or "", r["resource_key"], r["action"],
+                         r["target"] or "", r["scope"] or "any"])
+
     entries = "\n".join(
-        f'    ("{r["resource_key"]}", "{r["action"]}", "{r["target"]}", "{r["scope"]}"): "{r["id"]}",'
+        f'    ("{r["resource_key"]}", "{r["action"]}", "{r["target"]}", "{r["scope"]}"): '
+        f'"{pair_key(r)}",'
+        for r in rows
+    )
+    id_entries = "\n".join(
+        f'    ("{r["resource_key"]}", "{r["action"]}", "{r["target"]}", "{r["scope"]}"): '
+        f'"{r["id"]}",'
         for r in rows
     )
     app = LABEL.get(prefixes[0], prefixes[0] or "Core Platform")
@@ -124,13 +136,28 @@ class T:
 {block(targets) if targets else "    pass"}
 
 
+#: What a permission is CALLED when it is named by what it grants:
+#: "msg|store-sales|create||any" -- app, resource, verb, target, scope. This is what the
+#: check compares, and what tvs-package puts in a user's permission set alongside the id.
 _PERMISSIONS: Dict[Tuple[str, str, str, str], str] = {{
 {entries}
 }}
 
+#: The same permissions by their database id. Nothing in an endpoint should need these --
+#: they are here for the boot-time audit, which compares this module against
+#: core_platform.cp_permissions and can only do that by id.
+_PERMISSION_IDS: Dict[Tuple[str, str, str, str], str] = {{
+{id_entries}
+}}
+
 
 def perm(resource: str, action: str, target: str = "", scope: str = "any") -> str:
-    """The permission id for a (resource, action[, target][, scope])."""
+    """What a (resource, action[, target][, scope]) is called in a permission check.
+
+    Returns the pair -- "msg|store-sales|create||any" -- not the database id. The id still
+    exists and still keys the row; it simply stopped being the thing a check compares, so a
+    permission is now addressed by what it allows.
+    """
     try:
         return _PERMISSIONS[(resource, action, target, scope)]
     except KeyError:
@@ -152,7 +179,13 @@ def perm(resource: str, action: str, target: str = "", scope: str = "any") -> st
         ) from None
 
 
-ALL_PERMISSION_IDS = frozenset(_PERMISSIONS.values())
+def perm_id(resource: str, action: str, target: str = "", scope: str = "any") -> str:
+    """The database id, for the audit and for nothing else."""
+    return _PERMISSION_IDS[(resource, action, target, scope)]
+
+
+ALL_PERMISSION_IDS = frozenset(_PERMISSION_IDS.values())
+ALL_PERMISSION_KEYS = frozenset(_PERMISSIONS.values())
 '''
 
 
