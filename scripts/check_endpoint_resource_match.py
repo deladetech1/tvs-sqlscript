@@ -24,7 +24,17 @@ from collections import defaultdict
 
 HTTP = {"get", "post", "put", "patch", "delete"}
 # Reaching these is not a permission decision: they are owner-gated, or deliberately open.
-OWNER_GUARDS = {"_is_owner", "is_owner", "_require_owner"}
+# A permission is not the only way to decide who may call something, and treating it as
+# the only way produced a page of false alarms: close-account compares role ids inline,
+# billing and card routes call _require_owner_or_admin, and extend-subscription is held
+# behind a service secret because it is us calling it, not a customer.
+OWNER_GUARDS = {
+    "_is_owner", "is_owner", "_require_owner", "_require_owner_or_admin",
+    "_require_admin", "_require_privileged", "_platform_operator",
+    "_trusted_service",
+}
+# Comparing the caller's roles against a named set is a guard too.
+ROLE_SET_NAMES = {"ADMIN_ROLES", "PRIVILEGED_ROLES", "_OWNER_ROLE_ID", "OWNER_ROLE_ID"}
 
 
 def router_prefix(tree, src):
@@ -56,12 +66,20 @@ def module_constants(tree):
     """
     out = {}
     for node in tree.body:
-        if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call) \
-                and getattr(node.value.func, "id", "") in ("perm", "perm_id"):
-            pair = _pair_of(node.value)
-            for t in node.targets:
-                if isinstance(t, ast.Name) and pair:
-                    out[t.id] = pair
+        if not isinstance(node, ast.Assign):
+            continue
+        # `_GET = perm(...)` and `GROUP_PICK_PERMISSIONS = [perm(...), perm(...)]`.
+        values = ([node.value] if isinstance(node.value, ast.Call)
+                  else list(node.value.elts) if isinstance(node.value, (ast.List, ast.Tuple, ast.Set))
+                  else [])
+        pairs = [_pair_of(v) for v in values
+                 if isinstance(v, ast.Call) and getattr(v.func, "id", "") in ("perm", "perm_id")]
+        pairs = [x for x in pairs if x]
+        if not pairs:
+            continue
+        for t in node.targets:
+            if isinstance(t, ast.Name):
+                out[t.id] = pairs[0] if len(pairs) == 1 else pairs
     return out
 
 
@@ -73,11 +91,13 @@ def _direct_perms(fn, consts):
             if pair:
                 out.append(pair)
         elif isinstance(n, ast.Name) and n.id in consts:
-            out.append(consts[n.id])
+            v = consts[n.id]
+            out.extend(v if isinstance(v, list) else [v])
     # A helper's own default: `def _authorize(user, perm_id=VIEW_PERMISSION)`.
     for d in list(fn.args.defaults) + [d for d in fn.args.kw_defaults if d]:
         if isinstance(d, ast.Name) and d.id in consts:
-            out.append(consts[d.id])
+            v = consts[d.id]
+            out.extend(v if isinstance(v, list) else [v])
         elif isinstance(d, ast.Call) and getattr(d.func, "id", "") in ("perm", "perm_id"):
             pair = _pair_of(d)
             if pair:
@@ -118,6 +138,31 @@ def helper_perms(tree, consts):
     return perms
 
 
+def owner_guard_map(tree):
+    """Which functions end up behind an owner guard, following delegation.
+
+    MyStoreGuard's 36 audit-log deletes call _loyalty_delete, which calls _delete_logs,
+    which is where _is_owner is. Checking only the route body called every one of them
+    ungated -- thirty-six false alarms about deleting audit trails, which is exactly the
+    sort of thing that makes somebody stop reading the report.
+    """
+    fns = {n.name: n for n in tree.body
+           if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    guarded = {name: owner_guarded(fn) for name, fn in fns.items()}
+    calls = {name: {getattr(c.func, "id", "") for c in ast.walk(fn)
+                    if isinstance(c, ast.Call)} & set(fns)
+             for name, fn in fns.items()}
+    for _ in range(len(fns) + 1):
+        changed = False
+        for name in fns:
+            if not guarded[name] and any(guarded[c] for c in calls[name] if c != name):
+                guarded[name] = True
+                changed = True
+        if not changed:
+            break
+    return guarded
+
+
 def perms_in(fn, consts, helpers=None):
     """Every (resource, action) this route checks, directly or through a helper."""
     out = _direct_perms(fn, consts)
@@ -146,11 +191,23 @@ def always_refuses(fn):
 
 
 def owner_guarded(fn):
+    # A guard can hang off the ROUTE DECORATOR -- dependencies=[Depends(_trusted_service)]
+    # -- where nothing in the body mentions it.
+    for d in fn.decorator_list:
+        if isinstance(d, ast.Call):
+            for kw in d.keywords:
+                if kw.arg == "dependencies":
+                    for x in ast.walk(kw.value):
+                        if isinstance(x, ast.Name) and x.id in OWNER_GUARDS:
+                            return True
     for n in ast.walk(fn):
         if isinstance(n, ast.Call):
             name = getattr(n.func, "id", "") or getattr(n.func, "attr", "")
             if name in OWNER_GUARDS:
                 return True
+        # `Depends(_platform_operator)` names the guard, it does not call it.
+        if isinstance(n, ast.Name) and (n.id in ROLE_SET_NAMES or n.id in OWNER_GUARDS):
+            return True
     return False
 
 
@@ -209,6 +266,7 @@ def main() -> int:
         prefix = router_prefix(tree, src)
         consts = module_constants(tree)
         helpers = helper_perms(tree, consts)
+        guards = owner_guard_map(tree)
         served = norm(prefix)
         for node in ast.walk(tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -224,7 +282,7 @@ def main() -> int:
             rel = str(f).split("/app/src/")[-1]
             for method, route in routes:
                 if not got:
-                    if owner_guarded(node) or always_refuses(node):
+                    if guards.get(node.name) or always_refuses(node):
                         continue
                     ungated.append((rel, method.upper(), (prefix or "") + route, node.name))
                     continue
