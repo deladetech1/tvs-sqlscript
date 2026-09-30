@@ -171,7 +171,9 @@ INSERT INTO core_platform.cp_platform_feature_catalog
 ('security.step-up',         'Step-up Authentication',    3, 'Re-authenticate before privileged actions'),
 ('security.reports',         'Security Reports',          3, 'Sign-in, access review, password hygiene and threat reports'),
 ('security.webhooks',        'Security Webhooks',         3, 'Stream security events to a SIEM or endpoint'),
-('security.tamper-evident',  'Tamper-evident Audit Trail',3, 'Hash-chained security events with verification'),
+-- security.tamper-evident was here. The feature was retired in 20260930-05, which
+-- deletes the row; this seed is re-applied on every deploy and would otherwise put it
+-- back, and set is_active = true again, on each one.
 ('security.api-keys',        'API Keys',                  3, 'Scoped service-account keys'),
 ('security.compliance-pack', 'Compliance Evidence Pack',  3, 'Dated bundle of security reports and posture history')
 
