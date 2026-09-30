@@ -140,6 +140,10 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ON CONFLICT (id) DO UPDATE SET permission_name=EXCLUDED.permission_name, description=EXCLUDED.description,
     resource_type_id=EXCLUDED.resource_type_id;
 
+-- role-owner, role-admin and role-subscribed-app-loandrift-admin are deliberately absent from the
+-- grant below. Both are allowed by being the role (tvs-package 1.0.42 / 1.0.43), and
+-- listing them meant every deploy quietly re-granted rows that 20260929-03 removes --
+-- which is how Owner drifted back from 0 to 29 rows overnight.
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
 SELECT r.tenant_id, r.id, p.id, r.role_name || ' can ' || lower(p.permission_name),
        CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
@@ -147,7 +151,7 @@ FROM core_platform.cp_roles r
 JOIN core_platform.cp_permissions p ON p.id IN (
   'permission-loandrift-repayment-reverse', 'permission-loandrift-repayment-refund', 'permission-loandrift-repayment-auto')
 WHERE r.is_system = true
-  AND r.id IN ('role-owner', 'role-admin', 'role-subscribed-app-loandrift-admin', 'role-loandrift-repayment-admin')
+  AND r.id IN ('role-loandrift-repayment-admin')
 ON CONFLICT DO NOTHING;
 
 -- Automatic repayment draws on savings, so it sits on the same plan (Advance).

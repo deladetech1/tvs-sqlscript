@@ -10,6 +10,55 @@
 -- Set the search path to core_platform schema for this session
 SET search_path TO core_platform;
 
+CREATE OR REPLACE FUNCTION core_platform.reconcile_viewer_admin_permissions(p_role_id TEXT DEFAULT NULL)
+RETURNS INTEGER AS $$
+DECLARE
+    granted INTEGER := 0;
+BEGIN
+    -- Seeds install Triggers BEFORE Seeds, and migrations/shared runs after both -- so on a
+    -- fresh database this can be reached while cp_actions does not yet exist. No-op rather than
+    -- abort: seeding must not fail, and the backfill at the end of this file reconciles every
+    -- viewer role once the table is there.
+    IF to_regclass('core_platform.cp_actions') IS NULL THEN
+        RAISE NOTICE 'cp_actions not present yet - viewer reconciliation skipped';
+        RETURN 0;
+    END IF;
+
+    INSERT INTO core_platform.cp_role_permissions
+        (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
+    SELECT r.tenant_id, r.id, p.id,
+           r.role_name || ' can ' || LOWER(p.permission_name),
+           CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
+    FROM core_platform.cp_roles r
+    JOIN core_platform.cp_permissions p      ON p.delete_status = 'NOT_DELETED'
+    JOIN core_platform.cp_actions a          ON a.action = p.action AND a.viewer_default
+    JOIN core_platform.cp_resource_types rt  ON rt.id = p.resource_type_id
+    WHERE r.role_name LIKE '%Viewer Admin%'
+      AND r.is_active
+      AND r.delete_status = 'NOT_DELETED'
+      AND (p_role_id IS NULL OR r.id = p_role_id)
+      AND (
+            CASE WHEN r.role_name = 'Core Platform Viewer Admin'
+                 -- The platform's own viewer: everything that is not a subscribed app, and not
+                 -- the system-role bucket.
+                 THEN rt.id NOT LIKE 'rt-subscribed-app-%'
+                      AND (rt.parent_resource_id IS NULL
+                           OR rt.parent_resource_id NOT LIKE 'rt-subscribed-app-%')
+                      AND rt.id <> 'rt-system-role'
+                 -- An app's viewer: its own resource type, or any child of it. This is what puts
+                 -- rt-msg-statistics in reach of Mystoreguard Viewer Admin.
+                 ELSE p.resource_type_id = r.resource_type_id
+                      OR rt.parent_resource_id = r.resource_type_id
+            END
+          )
+    ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+    GET DIAGNOSTICS granted = ROW_COUNT;
+    RETURN granted;
+END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION core_platform.auto_assign_resource_permissions_to_admin_role()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -128,12 +177,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create trigger that fires after inserting the owner role
+-- The trigger that used to fire on creating the Owner role is GONE, and the function above
+-- is left only so an older database can still drop it cleanly.
+--
+-- A new tenant's Owner was given all 513 permissions the moment the role was created. It
+-- now needs none: the check answers true for the Owner role before it looks at any
+-- permission set (tvs-package 1.0.42). Recreating this trigger would hand every new tenant
+-- the rows 20260929-03 exists to remove.
 DROP TRIGGER IF EXISTS trigger_auto_assign_all_permissions_to_owner_role ON core_platform.cp_roles;
-CREATE TRIGGER trigger_auto_assign_all_permissions_to_owner_role
-    AFTER INSERT ON core_platform.cp_roles
-    FOR EACH ROW
-    EXECUTE FUNCTION core_platform.auto_assign_all_permissions_to_owner_role();
 
 -- ====================================================================================================================
 -- ====================================================================================================================
@@ -150,54 +201,38 @@ CREATE TRIGGER trigger_auto_assign_all_permissions_to_owner_role
 CREATE OR REPLACE FUNCTION core_platform.auto_assign_all_permissions_except_logs_to_admin_role()
 RETURNS TRIGGER AS $$
 DECLARE
-    permission_record RECORD;
+    granted INTEGER := 0;
 BEGIN
-    -- Only process admin role
-    -- Use the role's tenant_id (system roles use 'system-tenant-id')
-    IF NEW.role_name = 'Admin' THEN
-        -- Get all permissions except log modification permissions
-        -- Log permissions are identified by having '-log-' in the permission name
-        -- Admin gets read-only log permissions but ALL non-log permissions
-        FOR permission_record IN
-            SELECT p.id, p.permission_name, rt.resource_type_name
-            FROM core_platform.cp_permissions p
-            JOIN core_platform.cp_resource_types rt ON p.resource_type_id = rt.id
-            WHERE NOT (LOWER(p.permission_name) LIKE '%-log-%' OR LOWER(p.permission_name) LIKE '% log %')  -- Non-log permissions: assign all
-               OR ((LOWER(p.permission_name) LIKE '%-log-%' OR LOWER(p.permission_name) LIKE '% log %') AND (  -- Log permissions: only read-only
-                   (LOWER(p.permission_name) LIKE '%-log-read%' OR LOWER(p.permission_name) LIKE '%log read%') OR
-                   (LOWER(p.permission_name) LIKE '%-log-list%' OR LOWER(p.permission_name) LIKE '%log list%') OR
-                   (LOWER(p.permission_name) LIKE '%-log-get%' OR LOWER(p.permission_name) LIKE '%log get%') OR
-                   (LOWER(p.permission_name) LIKE '%-log-view%' OR LOWER(p.permission_name) LIKE '%log view%') OR
-                   (LOWER(p.permission_name) LIKE '%-log-export%' OR LOWER(p.permission_name) LIKE '%log export%')
-               ))
-        LOOP
-            -- Insert role permission mapping using role's tenant_id (ignore duplicates)
-            INSERT INTO core_platform.cp_role_permissions (
-                tenant_id,
-                role_id,
-                permission_id,
-                description,
-                cdate,
-                ctime,
-                cdatetime
-            ) VALUES (
-                NEW.tenant_id,
-                NEW.id,
-                permission_record.id,
-                CASE
-                    WHEN LOWER(permission_record.permission_name) LIKE '%-log-%' THEN 'Admin can view logs but not modify them'
-                    ELSE 'Admin has all permissions except log modification'
-                END,
-                CURRENT_DATE::TEXT,
-                CURRENT_TIME::TEXT,
-                CURRENT_TIMESTAMP
-            ) ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-        END LOOP;
-
-        -- Log successful assignment
-        RAISE NOTICE 'Successfully assigned all non-log-modification permissions to Admin role';
+    IF NEW.role_name <> 'Admin' THEN
+        RETURN NEW;
     END IF;
 
+    -- On a fresh database the seed installs triggers before cp_actions exists, and this fires
+    -- while roles are being seeded. Fall back to granting nothing rather than erroring: the
+    -- shared migrations replace this function and reconcile afterwards.
+    IF to_regclass('core_platform.cp_actions') IS NULL THEN
+        RAISE NOTICE 'cp_actions not present yet - Admin permission assignment deferred to migrations';
+        RETURN NEW;
+    END IF;
+
+    INSERT INTO core_platform.cp_role_permissions
+        (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
+    SELECT NEW.tenant_id, NEW.id, p.id,
+           CASE WHEN p.resource_key = 'logs'
+                THEN 'Admin can view logs but not modify them'
+                ELSE 'Admin has all permissions except log modification' END,
+           CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
+    FROM core_platform.cp_permissions p
+    JOIN core_platform.cp_resource_types rt ON rt.id = p.resource_type_id
+    LEFT JOIN core_platform.cp_actions a    ON a.action = p.action
+    WHERE p.delete_status = 'NOT_DELETED'
+      -- everything except a verb that CHANGES logs. An unknown action counts as not-a-read,
+      -- so a log permission with no action yet is withheld rather than handed over.
+      AND NOT (p.resource_key = 'logs' AND NOT COALESCE(a.is_read_only, false))
+    ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+    GET DIAGNOSTICS granted = ROW_COUNT;
+    RAISE NOTICE 'Admin role %: granted % permission(s), log modification withheld', NEW.id, granted;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -224,246 +259,82 @@ CREATE TRIGGER trigger_auto_assign_all_permissions_except_logs_to_admin_role
 CREATE OR REPLACE FUNCTION core_platform.auto_assign_new_permission_to_existing_admin_roles()
 RETURNS TRIGGER AS $$
 DECLARE
-    admin_role_record RECORD;
-    resource_type_name_var TEXT;
     parent_resource_id_var TEXT;
+    is_read_only_var       BOOLEAN;
+    granted                INTEGER;
 BEGIN
-    -- Get the resource type name and parent for this permission
-    SELECT resource_type_name, parent_resource_id
-    INTO resource_type_name_var, parent_resource_id_var
+    SELECT parent_resource_id INTO parent_resource_id_var
     FROM core_platform.cp_resource_types
     WHERE id = NEW.resource_type_id;
 
-    -- If no resource type found, skip
-    IF resource_type_name_var IS NULL THEN
+    IF NOT FOUND THEN
         RAISE NOTICE 'No resource type found for permission: %', NEW.id;
         RETURN NEW;
     END IF;
 
-    -- Find all roles that should get this permission:
-    -- 1. Roles with exact resource_type_id match
-    -- 2. Roles whose resource_type_id is the parent of this permission's resource_type
-    --    (e.g., permission for 'rt-msg-warehouse' assigned to role with 'rt-subscribed-app-msg')
-    -- Note: Owner and Admin (rt-system-role) are handled separately below (by role_name)
-    -- Note: User Profile role (rt-system-role) is excluded - permissions assigned manually
-    -- Note: Viewer Admin roles are handled separately below - only GET permissions
-    -- Note: Now cp_roles has tenant_id, so we use each role's own tenant_id
-    FOR admin_role_record IN
-        SELECT id, role_name, tenant_id
-        FROM core_platform.cp_roles
-        WHERE resource_type_id != 'rt-system-role'  -- Exclude rt-system-role roles (Owner, Admin, User Profile)
-          AND role_name NOT LIKE '%Viewer Admin%'  -- Exclude Viewer Admin roles (handled separately)
-          AND role_name NOT LIKE '%Store Sales Personnel%'  -- Exclude Store Sales Personnel (permissions assigned manually)
-          AND (resource_type_id = NEW.resource_type_id  -- Direct match
-           OR (parent_resource_id_var IS NOT NULL AND resource_type_id = parent_resource_id_var))  -- Parent match
-    LOOP
-        -- Insert role permission mapping using the role's own tenant_id (ignore duplicates)
-        INSERT INTO core_platform.cp_role_permissions (
-            tenant_id,
-            role_id,
-            permission_id,
-            description,
-            cdate,
-            ctime,
-            cdatetime
-        ) VALUES (
-            admin_role_record.tenant_id,
-            admin_role_record.id,
-            NEW.id,
-            admin_role_record.role_name || ' can ' || LOWER(NEW.permission_name),
-            CURRENT_DATE::TEXT,
-            CURRENT_TIME::TEXT,
-            CURRENT_TIMESTAMP
-        ) ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+    -- A permission may arrive with no action yet (the column is nullable on purpose until the
+    -- seeds supply it). Treat unknown as "not a read", which is the cautious direction: it can
+    -- only withhold a log permission from Admin, never hand one over.
+    SELECT a.is_read_only INTO is_read_only_var
+    FROM core_platform.cp_actions a WHERE a.action = NEW.action;
+    is_read_only_var := COALESCE(is_read_only_var, false);
 
-        -- Log successful assignment
-        RAISE NOTICE 'Successfully assigned permission % to role %', NEW.id, admin_role_record.role_name;
-    END LOOP;
-
-    -- Handle Viewer Admin roles - only assign GET permissions
-    -- For Core Platform Viewer Admin: assign GET permissions that don't belong to subscribed apps
-    IF NEW.permission_name LIKE '%Get%' OR NEW.permission_name LIKE '% get%' OR 
-       NEW.permission_name LIKE '%-get%' OR NEW.permission_name LIKE '% get %' OR
-       NEW.permission_name LIKE '%-get-%' OR NEW.permission_name LIKE '% get-%' OR
-       NEW.permission_name LIKE '%-get-list%' OR NEW.permission_name LIKE '% get list%' OR
-       NEW.permission_name LIKE '%-get-statistics%' OR NEW.permission_name LIKE '% get statistics%' OR
-       NEW.permission_name LIKE '%-get-activity-logs%' OR NEW.permission_name LIKE '% get activity logs%' OR
-       NEW.permission_name LIKE '%-get-own%' OR NEW.permission_name LIKE '% get own%' OR
-       NEW.permission_name LIKE '%-get-locations%' OR NEW.permission_name LIKE '% get locations%' OR
-       NEW.permission_name LIKE '%-get-chart-data%' OR NEW.permission_name LIKE '% get chart data%' OR
-       NEW.permission_name LIKE '%-get-total-captured%' OR NEW.permission_name LIKE '% get total captured%' OR
-       NEW.permission_name LIKE '%-get-payment-dates%' OR NEW.permission_name LIKE '% get payment dates%' OR
-       NEW.permission_name LIKE '%-get-loan-messages%' OR NEW.permission_name LIKE '% get loan messages%' OR
-       NEW.permission_name LIKE '%-get-deletion-chat-history%' OR NEW.permission_name LIKE '% get deletion chat history%' OR
-       NEW.permission_name LIKE '%reports-get%' OR NEW.permission_name LIKE '% reports get%' OR
-       NEW.permission_name LIKE '%-reports-get%' OR NEW.permission_name LIKE '% reports-get%' THEN
-        
-        -- Check if this is a Core Platform permission (not from subscribed apps)
-        -- Core Platform permissions don't have parent_resource_id pointing to subscribed apps
-        -- and don't have resource_type_id starting with 'rt-subscribed-app-'
-        IF (parent_resource_id_var IS NULL OR parent_resource_id_var NOT LIKE 'rt-subscribed-app-%') 
-           AND NEW.resource_type_id NOT LIKE 'rt-subscribed-app-%'
-           AND NEW.resource_type_id != 'rt-system-role' THEN
-            -- Assign to Core Platform Viewer Admin
-            INSERT INTO core_platform.cp_role_permissions (
-                tenant_id,
-                role_id,
-                permission_id,
-                description,
-                cdate,
-                ctime,
-                cdatetime
-            )
-            SELECT
-                r.tenant_id,
-                r.id,
-                NEW.id,
-                r.role_name || ' can ' || LOWER(NEW.permission_name),
-                CURRENT_DATE::TEXT,
-                CURRENT_TIME::TEXT,
-                CURRENT_TIMESTAMP
-            FROM core_platform.cp_roles r
-            WHERE r.role_name = 'Core Platform Viewer Admin'
-            ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-
-            IF EXISTS (SELECT 1 FROM core_platform.cp_roles WHERE role_name = 'Core Platform Viewer Admin') THEN
-                RAISE NOTICE 'Successfully assigned GET permission % to Core Platform Viewer Admin role', NEW.id;
-            END IF;
-        END IF;
-
-        -- For application-specific Viewer Admin roles
-        -- Assign GET permissions to Viewer Admin roles for the same resource type or parent
-        FOR admin_role_record IN
-            SELECT id, role_name, tenant_id, resource_type_id
-            FROM core_platform.cp_roles
-            WHERE role_name LIKE '%Viewer Admin%'
-              AND role_name != 'Core Platform Viewer Admin'
-              AND (resource_type_id = NEW.resource_type_id  -- Direct match
-               OR (parent_resource_id_var IS NOT NULL AND resource_type_id = parent_resource_id_var))  -- Parent match
-        LOOP
-            INSERT INTO core_platform.cp_role_permissions (
-                tenant_id,
-                role_id,
-                permission_id,
-                description,
-                cdate,
-                ctime,
-                cdatetime
-            ) VALUES (
-                admin_role_record.tenant_id,
-                admin_role_record.id,
-                NEW.id,
-                admin_role_record.role_name || ' can ' || LOWER(NEW.permission_name),
-                CURRENT_DATE::TEXT,
-                CURRENT_TIME::TEXT,
-                CURRENT_TIMESTAMP
-            ) ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-
-            RAISE NOTICE 'Successfully assigned GET permission % to Viewer Admin role %', NEW.id, admin_role_record.role_name;
-        END LOOP;
-    END IF;
-
-    -- ALWAYS assign to Owner role (if it exists)
-    -- Owner should have ALL permissions without exception
-    -- Use the role's own tenant_id (system Owner uses 'system-tenant-id')
-    INSERT INTO core_platform.cp_role_permissions (
-        tenant_id,
-        role_id,
-        permission_id,
-        description,
-        cdate,
-        ctime,
-        cdatetime
-    )
-    SELECT
-        r.tenant_id,
-        r.id,
-        NEW.id,
-        'Owner has all permissions',
-        CURRENT_DATE::TEXT,
-        CURRENT_TIME::TEXT,
-        CURRENT_TIMESTAMP
+    -- ---------------------------------------------------------------------------------
+    -- 1. Resource-scoped admin roles: the permission's own resource type, or its parent.
+    --    Unchanged. Owner and Admin are handled below by name; Viewer Admin and Store Sales
+    --    Personnel are excluded here because their grants are decided differently.
+    -- ---------------------------------------------------------------------------------
+    INSERT INTO core_platform.cp_role_permissions
+        (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
+    SELECT r.tenant_id, r.id, NEW.id, r.role_name || ' can ' || LOWER(NEW.permission_name),
+           CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP
     FROM core_platform.cp_roles r
-    WHERE r.role_name = 'Owner'
+    WHERE r.resource_type_id <> 'rt-system-role'
+      AND r.role_name NOT LIKE '%Viewer Admin%'
+      AND r.role_name NOT LIKE '%Store Sales Personnel%'
+      AND (r.resource_type_id = NEW.resource_type_id
+        OR (parent_resource_id_var IS NOT NULL AND r.resource_type_id = parent_resource_id_var))
     ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
-    -- Log assignment attempt (even if role doesn't exist, the INSERT will just do nothing)
-    IF EXISTS (SELECT 1 FROM core_platform.cp_roles WHERE role_name = 'Owner') THEN
-        RAISE NOTICE 'Successfully assigned permission % to Owner role', NEW.id;
-    END IF;
-
-    -- ALWAYS assign to Admin role with special handling for log permissions
-    -- Admin should have ALL non-log permissions
-    -- Admin should have ONLY read-only log permissions (identified by 'log' in permission name)
-    -- Admin CAN read/view logs but CANNOT modify them (no delete, create, update, import)
-    -- Handle both formats: "log" with dash (log-read) and with space (log read)
-    IF NOT (LOWER(NEW.permission_name) LIKE '%-log-%' OR LOWER(NEW.permission_name) LIKE '% log %') THEN
-        -- Non-log permission: assign to Admin
-        -- Use the role's own tenant_id (system Admin uses 'system-tenant-id')
-        INSERT INTO core_platform.cp_role_permissions (
-            tenant_id,
-            role_id,
-            permission_id,
-            description,
-            cdate,
-            ctime,
-            cdatetime
-        )
-        SELECT
-            r.tenant_id,
-            r.id,
-            NEW.id,
-            'Admin has all permissions except log modification',
-            CURRENT_DATE::TEXT,
-            CURRENT_TIME::TEXT,
-            CURRENT_TIMESTAMP
-        FROM core_platform.cp_roles r
-        WHERE r.role_name = 'Admin'
-        ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-
-        -- Log assignment attempt
-        IF EXISTS (SELECT 1 FROM core_platform.cp_roles WHERE role_name = 'Admin') THEN
-            RAISE NOTICE 'Successfully assigned permission % to Admin role', NEW.id;
-        END IF;
-    ELSE
-        -- Log permission: only assign read-only permissions to Admin
-        -- Read-only log permissions: -log-read, -log-list, -log-get, -log-view, -log-export
-        -- Handle both formats: "log-read" (with dash) and "log read" (with space)
-        IF (LOWER(NEW.permission_name) LIKE '%-log-read%' OR LOWER(NEW.permission_name) LIKE '%log read%') OR
-           (LOWER(NEW.permission_name) LIKE '%-log-list%' OR LOWER(NEW.permission_name) LIKE '%log list%') OR
-           (LOWER(NEW.permission_name) LIKE '%-log-get%' OR LOWER(NEW.permission_name) LIKE '%log get%') OR
-           (LOWER(NEW.permission_name) LIKE '%-log-view%' OR LOWER(NEW.permission_name) LIKE '%log view%') OR
-           (LOWER(NEW.permission_name) LIKE '%-log-export%' OR LOWER(NEW.permission_name) LIKE '%log export%') THEN
-
-            -- Use the role's own tenant_id (system Admin uses 'system-tenant-id')
-            INSERT INTO core_platform.cp_role_permissions (
-                tenant_id,
-                role_id,
-                permission_id,
-                description,
-                cdate,
-                ctime,
-                cdatetime
-            )
-            SELECT
-                r.tenant_id,
-                r.id,
-                NEW.id,
-                'Admin can view logs but not modify them',
-                CURRENT_DATE::TEXT,
-                CURRENT_TIME::TEXT,
-                CURRENT_TIMESTAMP
-            FROM core_platform.cp_roles r
-            WHERE r.role_name = 'Admin'
-            ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-
-            IF EXISTS (SELECT 1 FROM core_platform.cp_roles WHERE role_name = 'Admin') THEN
-                RAISE NOTICE 'Successfully assigned read-only log permission % to Admin role', NEW.id;
-            END IF;
-        ELSE
-            RAISE NOTICE 'Skipping Admin role assignment for log modification permission % (excluded)', NEW.id;
+    -- ---------------------------------------------------------------------------------
+    -- 2. Viewer Admin roles: one shared rule, the same one the backfill and the role trigger
+    --    use. Guarded because on a fresh database the seed fires this before
+    --    migrations/shared has created either cp_actions or the function itself.
+    -- ---------------------------------------------------------------------------------
+    IF to_regproc('core_platform.reconcile_viewer_admin_permissions') IS NOT NULL THEN
+        granted := core_platform.reconcile_viewer_admin_permissions();
+        IF granted > 0 THEN
+            RAISE NOTICE 'Viewer Admin roles picked up % permission(s) after inserting %', granted, NEW.id;
         END IF;
     END IF;
+
+    -- ---------------------------------------------------------------------------------
+    -- 3. Owner: nothing to do.
+    --
+    -- Owner used to be granted every permission as it was created, which is why this rule
+    -- existed and why it had to be right forever -- one missed backfill and the owner
+    -- quietly could not do something. It is now allowed by BEING the role: the check
+    -- answers true before it looks at any permission set (tvs-package 1.0.42).
+    --
+    -- Granting here would undo that on the next deploy. 20260929-03 removes the rows and
+    -- this is one of the places that kept putting them back.
+    -- ---------------------------------------------------------------------------------
+
+    -- ---------------------------------------------------------------------------------
+    -- 4. Admin: everything except MODIFYING logs. `resource_key = 'logs'` is the whole log
+    --    family across every app (cp, msg, loandrift), and is_read_only says whether this
+    --    particular verb changes them -- which is what the name matching was trying and
+    --    failing to express.
+    -- ---------------------------------------------------------------------------------
+    -- ---------------------------------------------------------------------------------
+    -- 4. Admin: nothing to do.
+    --
+    -- Admin was granted every permission except those modifying logs, which is why this
+    -- rule existed. It is now allowed by BEING the role -- any app, any resource, never a
+    -- write to logs (tvs-package 1.0.46). Granting here would re-create on the next
+    -- permission insert exactly what 20260929-07 removed, the way Owner drifted from 0 back
+    -- to 29 rows overnight.
+    -- ---------------------------------------------------------------------------------
 
     RETURN NEW;
 END;
@@ -491,148 +362,12 @@ CREATE TRIGGER trigger_auto_assign_new_permission_to_existing_admin_roles
 CREATE OR REPLACE FUNCTION core_platform.auto_assign_get_permissions_to_viewer_admin_role()
 RETURNS TRIGGER AS $$
 DECLARE
-    permission_record RECORD;
-    total_permissions_assigned INTEGER := 0;
-    resource_type_parent_var TEXT;
+    granted INTEGER;
 BEGIN
-    -- Only process roles with "Viewer Admin" in the name
     IF NEW.role_name LIKE '%Viewer Admin%' THEN
-        -- Get the resource type parent for this role
-        SELECT parent_resource_id INTO resource_type_parent_var
-        FROM core_platform.cp_resource_types
-        WHERE id = NEW.resource_type_id;
-
-        -- For Core Platform Viewer Admin, assign all GET permissions that don't belong to subscribed apps
-        IF NEW.role_name = 'Core Platform Viewer Admin' THEN
-            -- Get all GET permissions for Core Platform (not from subscribed apps)
-            -- Core Platform permissions don't have parent_resource_id pointing to subscribed apps
-            -- and don't have resource_type_id starting with 'rt-subscribed-app-'
-            FOR permission_record IN
-                SELECT p.id, p.permission_name, p.description, rt.resource_type_name, rt.parent_resource_id
-                FROM core_platform.cp_permissions p
-                JOIN core_platform.cp_resource_types rt ON p.resource_type_id = rt.id
-                WHERE (LOWER(p.permission_name) LIKE '%-get%' OR 
-                       LOWER(p.permission_name) LIKE '% get%' OR
-                       LOWER(p.permission_name) LIKE '%-get-%' OR
-                       LOWER(p.permission_name) LIKE '% get %' OR
-                       LOWER(p.permission_name) LIKE '%-get-list%' OR
-                       LOWER(p.permission_name) LIKE '% get list%' OR
-                       LOWER(p.permission_name) LIKE '%-get-statistics%' OR
-                       LOWER(p.permission_name) LIKE '% get statistics%' OR
-                       LOWER(p.permission_name) LIKE '%-get-activity-logs%' OR
-                       LOWER(p.permission_name) LIKE '% get activity logs%' OR
-                       LOWER(p.permission_name) LIKE '%-get-own%' OR
-                       LOWER(p.permission_name) LIKE '% get own%' OR
-                       LOWER(p.permission_name) LIKE '%-get-locations%' OR
-                       LOWER(p.permission_name) LIKE '% get locations%' OR
-                       LOWER(p.permission_name) LIKE '%-get-chart-data%' OR
-                       LOWER(p.permission_name) LIKE '% get chart data%' OR
-                       LOWER(p.permission_name) LIKE '%-get-total-captured%' OR
-                       LOWER(p.permission_name) LIKE '% get total captured%' OR
-                       LOWER(p.permission_name) LIKE '%-get-payment-dates%' OR
-                       LOWER(p.permission_name) LIKE '% get payment dates%' OR
-                       LOWER(p.permission_name) LIKE '%-get-loan-messages%' OR
-                       LOWER(p.permission_name) LIKE '% get loan messages%' OR
-                       LOWER(p.permission_name) LIKE '%-get-deletion-chat-history%' OR
-                       LOWER(p.permission_name) LIKE '% get deletion chat history%' OR
-                       LOWER(p.permission_name) LIKE '%reports-get%' OR
-                       LOWER(p.permission_name) LIKE '% reports get%' OR
-                       LOWER(p.permission_name) LIKE '%-reports-get%' OR
-                       LOWER(p.permission_name) LIKE '% reports-get%')
-                  AND (rt.parent_resource_id IS NULL OR 
-                       rt.parent_resource_id NOT LIKE 'rt-subscribed-app-%')
-                  AND rt.id NOT LIKE 'rt-subscribed-app-%'
-                  AND rt.id != 'rt-system-role'  -- Exclude system role permissions
-            LOOP
-                -- Insert role permission mapping (ignore duplicates)
-                INSERT INTO core_platform.cp_role_permissions (
-                    tenant_id,
-                    role_id,
-                    permission_id,
-                    description,
-                    cdate,
-                    ctime,
-                    cdatetime
-                ) VALUES (
-                    NEW.tenant_id,
-                    NEW.id,
-                    permission_record.id,
-                    NEW.role_name || ' can ' || LOWER(permission_record.permission_name),
-                    CURRENT_DATE::TEXT,
-                    CURRENT_TIME::TEXT,
-                    CURRENT_TIMESTAMP
-                ) ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-
-                total_permissions_assigned := total_permissions_assigned + 1;
-            END LOOP;
-        ELSE
-            -- For application-specific Viewer Admin roles (Loandrift, Mystoreguard, etc.)
-            -- Get all GET permissions for this resource type and its children
-            FOR permission_record IN
-                SELECT p.id, p.permission_name, p.description, rt.resource_type_name, rt.parent_resource_id
-                FROM core_platform.cp_permissions p
-                JOIN core_platform.cp_resource_types rt ON p.resource_type_id = rt.id
-                WHERE (p.resource_type_id = NEW.resource_type_id  -- Direct match
-                   OR rt.parent_resource_id = NEW.resource_type_id)  -- Child match
-                  AND (LOWER(p.permission_name) LIKE '%-get%' OR 
-                       LOWER(p.permission_name) LIKE '% get%' OR
-                       LOWER(p.permission_name) LIKE '%-get-%' OR
-                       LOWER(p.permission_name) LIKE '% get %' OR
-                       LOWER(p.permission_name) LIKE '%-get-list%' OR
-                       LOWER(p.permission_name) LIKE '% get list%' OR
-                       LOWER(p.permission_name) LIKE '%-get-statistics%' OR
-                       LOWER(p.permission_name) LIKE '% get statistics%' OR
-                       LOWER(p.permission_name) LIKE '%-get-activity-logs%' OR
-                       LOWER(p.permission_name) LIKE '% get activity logs%' OR
-                       LOWER(p.permission_name) LIKE '%-get-own%' OR
-                       LOWER(p.permission_name) LIKE '% get own%' OR
-                       LOWER(p.permission_name) LIKE '%-get-locations%' OR
-                       LOWER(p.permission_name) LIKE '% get locations%' OR
-                       LOWER(p.permission_name) LIKE '%-get-chart-data%' OR
-                       LOWER(p.permission_name) LIKE '% get chart data%' OR
-                       LOWER(p.permission_name) LIKE '%-get-total-captured%' OR
-                       LOWER(p.permission_name) LIKE '% get total captured%' OR
-                       LOWER(p.permission_name) LIKE '%-get-payment-dates%' OR
-                       LOWER(p.permission_name) LIKE '% get payment dates%' OR
-                       LOWER(p.permission_name) LIKE '%-get-loan-messages%' OR
-                       LOWER(p.permission_name) LIKE '% get loan messages%' OR
-                       LOWER(p.permission_name) LIKE '%-get-deletion-chat-history%' OR
-                       LOWER(p.permission_name) LIKE '% get deletion chat history%' OR
-                       LOWER(p.permission_name) LIKE '%reports-get%' OR
-                       LOWER(p.permission_name) LIKE '% reports get%' OR
-                       LOWER(p.permission_name) LIKE '%-reports-get%' OR
-                       LOWER(p.permission_name) LIKE '% reports-get%')
-            LOOP
-                -- Insert role permission mapping (ignore duplicates)
-                INSERT INTO core_platform.cp_role_permissions (
-                    tenant_id,
-                    role_id,
-                    permission_id,
-                    description,
-                    cdate,
-                    ctime,
-                    cdatetime
-                ) VALUES (
-                    NEW.tenant_id,
-                    NEW.id,
-                    permission_record.id,
-                    NEW.role_name || ' can ' || LOWER(permission_record.permission_name),
-                    CURRENT_DATE::TEXT,
-                    CURRENT_TIME::TEXT,
-                    CURRENT_TIMESTAMP
-                ) ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
-
-                total_permissions_assigned := total_permissions_assigned + 1;
-            END LOOP;
-        END IF;
-
-        -- Log successful assignment
-        RAISE NOTICE 'Successfully assigned % GET permissions for Viewer Admin role: % (resource type: %)',
-            total_permissions_assigned,
-            NEW.role_name,
-            NEW.resource_type_id;
+        granted := core_platform.reconcile_viewer_admin_permissions(NEW.id);
+        RAISE NOTICE 'Viewer Admin role %: granted % read-only permission(s)', NEW.role_name, granted;
     END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
