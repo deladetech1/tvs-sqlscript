@@ -9,14 +9,19 @@ CREATE SCHEMA IF NOT EXISTS core_platform;
 SET search_path TO core_platform;
 
 -- Insert system tenant (required before roles)
-INSERT INTO cp_tenants (id, delete_status, is_active, cdate, ctime, cdatetime, description, is_verified, is_system) VALUES
-('system-tenant-id', 'NOT_DELETED', true, null, null, CURRENT_TIMESTAMP, 'Default System Tenant', true, true)
+-- tenant_name is NOT NULL as of AddTenantName, so this seed has to supply it or
+-- a fresh database cannot be built at all. It is set on conflict too: an
+-- existing system tenant was named by the migration, and leaving it out here
+-- would mean the seed and the migration disagree about the same row.
+INSERT INTO cp_tenants (id, delete_status, is_active, cdate, ctime, cdatetime, description, is_verified, is_system, tenant_name) VALUES
+('system-tenant-id', 'NOT_DELETED', true, null, null, CURRENT_TIMESTAMP, 'Default System Tenant', true, true, 'Trovesuite System')
 ON CONFLICT (id) DO UPDATE SET
     delete_status = EXCLUDED.delete_status,
     is_active     = EXCLUDED.is_active,
     description   = EXCLUDED.description,
     is_verified   = EXCLUDED.is_verified,
-    is_system     = EXCLUDED.is_system;
+    is_system     = EXCLUDED.is_system,
+    tenant_name   = EXCLUDED.tenant_name;
 
 -- Insert default roles
 -- Note: cp_roles now has tenant_id - system roles use 'system-tenant-id'

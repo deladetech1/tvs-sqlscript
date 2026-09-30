@@ -5,6 +5,22 @@ namespace Trovesuite.Database.CorePlatform.Entities;
 public class Tenant
 {
     public string Id { get; set; } = default!;
+
+    // What this tenant is called, in the words of the person who signed up.
+    //
+    // A tenant had no name at all until now, only an id and a Description that
+    // nothing set. That was survivable while one person belonged to exactly one
+    // tenant, because nothing ever had to name one: you were simply in it. Once
+    // the same email can be in two, sign-in has to ask which — and a question
+    // offering two rows of uuids is not a question anybody can answer.
+    //
+    // Deliberately NOT unique. Two unrelated customers can both be "Acme Ltd",
+    // and refusing the second one means telling a paying customer their own
+    // company name is taken, which also tells them somebody else has it.
+    // Uniqueness belongs on the subdomain slug, when that arrives: the
+    // machine-readable handle is the thing that must not collide, not the label.
+    public string TenantName { get; set; } = default!;
+
     public string DeleteStatus { get; set; } = DeleteStatuses.NotDeleted;
     public bool IsActive { get; set; } = true;
 
