@@ -63,8 +63,19 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 -- role's OWN resource type, and this role spans twenty of them. Its grants are made
 -- explicitly in Seeds/04_others.sql instead.
 ('role-cp-admin', 'system-tenant-id', 'Core Platform Admin', 'Administrator for Core Platform - full access to every Core Platform resource (organizations, businesses, locations, users, groups, roles, permissions, settings, billing), excluding deletion of activity logs. Carries no access to any subscribed app.', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- role_name is deliberately NOT re-asserted below.
+--
+-- 20260929-11-roles-named-after-jobs owns these names now, and this seed runs
+-- at step 1 of a deploy while that migration runs at step 5. Handing the old
+-- name back here means every deploy reverts it and then renames it again --
+-- harmless when a deploy finishes, and wrong the moment one does not. On
+-- 2026-09-30 a module seed started failing at step 3, step 5 stopped being
+-- reached, and 49 role names sat reverted for a day while anything matching on
+-- the new names quietly did nothing.
+--
+-- The INSERT above still supplies a name, because a brand new database has to
+-- get one from somewhere; the migration renames it there, once.
 ON CONFLICT (id) DO UPDATE SET
-    role_name        = EXCLUDED.role_name,
     description      = EXCLUDED.description,
     resource_type_id = EXCLUDED.resource_type_id,
     is_system        = EXCLUDED.is_system,
