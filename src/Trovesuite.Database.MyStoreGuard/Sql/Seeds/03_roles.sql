@@ -11,8 +11,27 @@ SET search_path TO mystoreguard;
 -- Insert default role into core_platform schema (shared across all modules)
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
 
--- General Admin Role (gets all permissions via trigger)
-('role-msg-admin', 'system-tenant-id', 'Admin', 'The administrator of the Sales and Inventory system, can manage all operations including log management', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- role-msg-admin used to be declared here, named 'Admin', and is deliberately gone.
+--
+-- Two problems in one row. core_platform.cp_roles has a unique index on
+-- (tenant_id, role_name) and CorePlatform's own seed already claims the name
+-- 'Admin' for role-admin, so this row could never be inserted -- the old
+-- ON CONFLICT (tenant_id, role_name) clause diverted it into an UPDATE of
+-- role-admin instead, overwriting the platform administrator's description and
+-- resource type with MyStoreGuard's on every single deploy. 20260929-06 exists
+-- to repair exactly that damage, which is how long this went unnoticed.
+--
+-- And the role was already obsolete: "gets all permissions via trigger" refers
+-- to the auto-assign triggers that have since been dropped. The app
+-- administrator MyStoreGuard actually uses is role-subscribed-app-msg-admin
+-- below, which tvs-package and Trovesuite.Package recognise BY ID (auth_service
+-- maps it to the 'msg' prefix), so it is authorised by being the role rather
+-- than by holding grant rows. role-msg-admin is in neither map, exists in no
+-- database, and holds no permissions or assignments anywhere.
+--
+-- The guarded blocks in 04_others.sql that grant it permissions are all
+-- WHERE EXISTS (... id = 'role-msg-admin'), so they simply never fire. They are
+-- harmless and left alone rather than swept up in a fix for a broken deploy.
 
 ('role-subscribed-app-msg-admin', 'system-tenant-id', 'Mystoreguard Admin', 'The administrator of the Sales and Inventory system, can manage all operations including log management', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-msg-warehouse-admin', 'system-tenant-id', 'Mystoreguard Warehouse Admin', 'Administrator for warehouse management', 'rt-warehouse', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
