@@ -9,14 +9,15 @@
 --   * the trigger that stamps each event, and the function behind it
 --   * the verifier the retired screen called
 --   * chain_seq, prev_hash, row_hash
---   * the feature itself: its catalogue entry, and the entitlement of every tenant holding it
+--   * the feature itself: its catalogue entry, which is the only place it is recorded
 --
 -- What stays: every security event, and `seq` from 20260930-04, which carries the ordering
 -- the feed needs. Retiring the evidence does not retire the record.
 --
--- The tenant rows are deleted rather than disabled. A feature nobody can be granted has no
--- use for a row saying a tenant is not granted it, and leaving them means the next person to
--- read that table finds three tenants entitled to something that does not exist.
+-- There are no tenant rows to delete or disable. Platform entitlement is derived, not
+-- stored -- cp_tenant_platform_features is a view over the catalogue and each tenant's
+-- tier_rank -- so removing the catalogue entry is what makes the feature cease to exist
+-- for everybody at once. Nobody is left entitled to something that does not exist.
 -- =====================================================================================
 
 DROP TRIGGER IF EXISTS trg_cp_security_events_chain ON core_platform.cp_security_events;
@@ -45,9 +46,15 @@ ALTER TABLE core_platform.cp_security_events
     DROP COLUMN IF EXISTS prev_hash,
     DROP COLUMN IF EXISTS row_hash;
 
-DELETE FROM core_platform.cp_tenant_platform_features
- WHERE feature_key = 'security.tamper-evident';
-
+-- Deleting the catalogue row is the whole job. There is no per-tenant entitlement to
+-- clear: cp_tenant_platform_features is a VIEW joining cp_tenant_platform_limits to
+-- cp_platform_feature_catalog on tier_rank >= min_tier_rank, so a tenant "holds" a
+-- feature by being on a high enough tier, not by owning a row. The two tenants that
+-- can see this feature today see it for that reason alone, and stop seeing it the
+-- moment the catalogue row below is gone.
+--
+-- This previously tried to DELETE from that view, which a join view cannot accept --
+-- 55000: cannot delete from view -- and it failed every deploy of the shared SQL.
 DELETE FROM core_platform.cp_platform_feature_catalog
  WHERE feature_key = 'security.tamper-evident';
 
