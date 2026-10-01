@@ -104,7 +104,7 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 -- the pre-rename names in place if any later module fails, which is precisely
 -- the state anything matching on the new names cannot survive. The INSERT
 -- above still supplies a name, because a brand new database has to get one
--- from somewhere; the migration then renames it, exactly as for every other
+-- from somewhere, and the migration then renames it, exactly as for every other
 -- module.
 ON CONFLICT (id) DO UPDATE SET
     description      = EXCLUDED.description,
