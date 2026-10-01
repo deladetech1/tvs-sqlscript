@@ -67,7 +67,27 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 
 -- Viewer Admin Role (read-only access to all Mystoreguard resources)
 ('role-msg-viewer-admin', 'system-tenant-id', 'Mystoreguard Viewer Admin', 'Viewer Admin for Mystoreguard - can view all Mystoreguard resources with GET permissions only', 'rt-subscribed-app-msg', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (tenant_id, role_name) DO UPDATE SET
+-- Conflict on the PRIMARY KEY, because the id is what identifies a role and
+-- the name is no longer ours to assert.
+--
+-- This said ON CONFLICT (tenant_id, role_name), which only resolves a clash on
+-- the name. After 20260929-11-roles-named-after-jobs renamed these 34 roles --
+-- 'Mystoreguard Store Admin' became 'Store Manager' -- the names in this file
+-- no longer matched any row, so there was nothing for that clause to catch:
+-- Postgres attempted a plain INSERT and broke pk_cp_roles on an id that was
+-- already there. Every saas-dev schema deploy failed from 2026-09-30 onward,
+-- and because migrations/shared/*.sql runs only after every module seed
+-- completes, nothing downstream of this file was applied either.
+--
+-- role_name is deliberately absent below. 20260929-11 owns it now, and a seed
+-- that re-asserted the old name would hand it back on every deploy for the
+-- migration to rename again -- harmless when a deploy finishes, but it leaves
+-- the pre-rename names in place if any later module fails, which is precisely
+-- the state anything matching on the new names cannot survive. The INSERT
+-- above still supplies a name, because a brand new database has to get one
+-- from somewhere; the migration then renames it, exactly as for every other
+-- module.
+ON CONFLICT (id) DO UPDATE SET
     description      = EXCLUDED.description,
     resource_type_id = EXCLUDED.resource_type_id,
     is_system        = EXCLUDED.is_system,
