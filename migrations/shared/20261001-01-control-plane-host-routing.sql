@@ -207,3 +207,51 @@ VALUES
     -- bgclt: its own cell, and its own database is that cell's pooled one
     ('bgclt.trovesuite.com',                 NULL, 'POOLED', 'bgclt-prod',  'ACTIVE', CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, 'migration')
 ON CONFLICT (host) DO NOTHING;
+
+-- ---------------------------------------------------------------------
+-- Let the applications READ this, and only read it.
+--
+-- The schema is created by the migrator and so owned by it, which leaves every
+-- app role unable to see it at all. A resolver running as mystoreguard_dev gets
+-- "permission denied for schema control_plane" and -- because it treats any
+-- failure as "no route rather than a wrong one" -- quietly decides every host is
+-- unknown. That is exactly the silent nothing this table exists to prevent, and
+-- it is the failure this block was added in response to: the first deploy
+-- created the tables and no application could see them.
+--
+-- Granted to the tvs_app_<env> group rather than to each login role, which is
+-- how core_platform is already shared. Discovered by pattern rather than named,
+-- because the group's name carries the environment (tvs_app_dev,
+-- tvs_app_bgclt_prod) while this file is identical in all of them.
+--
+-- SELECT only, deliberately. An application resolves a route. It must never
+-- write one. If an app role could UPDATE ctl_tenant_routes it could point a
+-- host at another tenant's database, which is the worst thing anything in this
+-- design can do -- so the privilege that would allow it is withheld rather than
+-- merely left unused. Provisioning writes these rows as the migrator.
+--
+-- That is also why this is here rather than in the db-app-group terraform unit:
+-- that module grants its group full CRUD on the schemas it manages, which is
+-- right for application data and wrong for the table that decides which
+-- database application data lives in.
+--
+-- Idempotent: re-granting an existing privilege is a no-op.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+    grp text;
+BEGIN
+    FOR grp IN
+        SELECT rolname
+          FROM pg_roles
+         WHERE rolname LIKE 'tvs\_app\_%'
+           AND NOT rolcanlogin
+    LOOP
+        EXECUTE format('GRANT USAGE ON SCHEMA control_plane TO %I', grp);
+        EXECUTE format('GRANT SELECT ON ALL TABLES IN SCHEMA control_plane TO %I', grp);
+        EXECUTE format(
+            'ALTER DEFAULT PRIVILEGES IN SCHEMA control_plane GRANT SELECT ON TABLES TO %I',
+            grp);
+        RAISE NOTICE 'control_plane: granted read-only access to %', grp;
+    END LOOP;
+END $$;
