@@ -29,6 +29,7 @@
 --   tvs-dev-silotest-sql    -> tvs-dev-silo-dedicated-sql   (the old server is deleted)
 --   tvsdevsilotestsa        -> tvsdevsilodedicatedsa        (deleted with its RG)
 --   silosharedtest          -> shared                       (container prefix)
+--   tvsdevmsgsa             -> NULL                         (storage is per app)
 --   silo-*-test-db-url      -> NULL                         (both secrets deleted)
 --
 -- Leaving them would have pointed two tiers at a server that no longer resolves.
@@ -58,8 +59,12 @@ UPDATE control_plane.ctl_tenant_routes
    SET silo_key         = 'shared',
        db_name          = 'silo-shared-dev',
        db_server_fqdn   = 'tvs-shared-sql.postgres.database.azure.com',
-       -- own containers inside the shared account, prefixed with the silo key
-       storage_account  = 'tvsdevmsgsa',
+       -- Own containers inside each APP's own account, prefixed with the silo
+       -- key. storage_account stays NULL on purpose: storage is per app, so
+       -- naming one would send every app to that app's account. 20261002-07
+       -- adds the constraint that enforces it, and this statement has to agree
+       -- with that constraint because every migration re-runs on each deploy.
+       storage_account  = NULL,
        container_prefix = 'shared',
        db_secret_uri    = NULL,
        udatetime        = now(),
@@ -126,8 +131,8 @@ BEGIN
             RAISE EXCEPTION 'the shared silo row was not repointed: silo_key=% db=%',
                 v_silo_key, v_db_name;
         END IF;
-        IF v_storage IS DISTINCT FROM 'tvsdevmsgsa' OR v_prefix IS NULL THEN
-            RAISE EXCEPTION 'SILO_SHARED keeps the shared storage account and prefixes its containers';
+        IF v_storage IS NOT NULL OR v_prefix IS NULL THEN
+            RAISE EXCEPTION 'SILO_SHARED names no storage account and prefixes its containers';
         END IF;
     END IF;
 
