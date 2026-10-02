@@ -122,7 +122,24 @@ jobs:
       TVS_ENTERPRISE: ${{ inputs.enterprise_slug }}
 
     steps:
+      # The SQL and the runner live in THIS repository, and a bare checkout in a
+      # reusable workflow takes the CALLER's repository -- which for a cross-repo
+      # caller is an app repo with no Trovesuite.Database.sln in it. That is
+      # exactly how the zeloshr migrate job failed with
+      # "MSBUILD : error MSB1009: Project file does not exist".
+      #
+      # The same trap as the `uses:` line in migrate.yml, which is pinned to a
+      # full path for the same reason. Two steps rather than always naming the
+      # repository, so a push to saas/silo/enterprise still builds and applies
+      # the SQL from THAT branch instead of silently from dev.
       - uses: actions/checkout@v4
+        if: github.repository == 'deladetech1/tvs-sqlscript'
+
+      - uses: actions/checkout@v4
+        if: github.repository != 'deladetech1/tvs-sqlscript'
+        with:
+          repository: deladetech1/tvs-sqlscript
+          ref: dev
 
       - uses: actions/setup-dotnet@v4
         with:
