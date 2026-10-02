@@ -26,7 +26,7 @@
 #   * Key Vault "Secrets User" (RBAC) or get on migrator-db-url for that SP.
 # Callers pass scope/environment/module and gate their deploy on this job.
 
-name: Schema · apply (reusable)
+name: apply (reusable)
 
 on:
   workflow_call:

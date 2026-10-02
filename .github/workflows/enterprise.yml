@@ -17,16 +17,19 @@
 #   migrations/enterprise/          every enterprise, none of the pool or silos
 #   migrations/enterprise/<slug>/   one customer
 
-name: Schema · enterprise (self-hosted)
+name: enterprise
 
 on:
   workflow_dispatch:
     inputs:
-      targets:
-        description: "'all', or a comma-separated list of slugs (e.g. bgclt)"
-        type: string
+      target:
+        description: "Which enterprise (add new ones to this list as they are onboarded)"
+        type: choice
         required: true
         default: all
+        options:
+          - all
+          - bgclt
       environment:
         description: "Which of their environments (tenants are prod-only today)"
         type: choice
@@ -47,7 +50,7 @@ on:
         options: [validate, verify, deploy]
 
 concurrency:
-  group: tvs-sqlscript-enterprise-${{ inputs.environment }}
+  group: enterprise-${{ inputs.environment }}
   cancel-in-progress: false
 
 permissions:
@@ -72,7 +75,7 @@ jobs:
       - name: Select from the roster
         id: pick
         env:
-          WANTED: ${{ inputs.targets }}
+          WANTED: ${{ inputs.target }}
         run: |
           set -euo pipefail
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
