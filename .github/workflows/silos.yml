@@ -133,10 +133,17 @@ jobs:
           CP_URL="$(az keyvault secret show --vault-name "$KV" --name migrator-db-url --query value -o tsv)"
           echo "::add-mask::$CP_URL"
 
-          # Host, tier and secret URI only -- never a credential. apply.yml reads
+          # Host, tier and silo key only -- never a credential. apply.yml reads
           # each silo's own secret itself, so nothing sensitive crosses a job.
+          #
+          # silo_key, not db_secret_uri. The route row's secret column was the
+          # right source while a silo had ONE credential; it now has a login per
+          # APP, so the column is NULL and five db-url-<app>-<silo> secrets stand
+          # in its place -- none of which this workflow should use. Migrations run
+          # as the MIGRATOR, which Terraform writes to migrator-db-url-<silo>, so
+          # the key is what this needs and the name is derived from it below.
           export ROWS="$(psql "$CP_URL" -At -F'|' -c "
-            SELECT host, tier, db_name, db_secret_uri
+            SELECT host, tier, db_name, silo_key
               FROM control_plane.ctl_tenant_routes
              WHERE status = 'ACTIVE' AND tier IN ('SILO_SHARED','SILO_DEDICATED')
              ORDER BY tier, host")"
@@ -145,14 +152,26 @@ jobs:
           import json, os, sys
           TIER = {"shared": "SILO_SHARED", "dedicated": "SILO_DEDICATED"}
           kind, target = os.environ["KIND"], os.environ["TARGET"]
+          VAULT = f"https://{os.environ['KV']}.vault.azure.net"
 
           live = {}
           for line in os.environ["ROWS"].strip().splitlines():
               if not line.strip():
                   continue
-              host, tier, db, uri = line.split("|")
-              live[host] = {"host": host, "tier": tier, "db": db, "secret_uri": uri,
-                            "kind": "shared" if tier == "SILO_SHARED" else "dedicated"}
+              host, tier, db, silo_key = line.split("|")
+              if not silo_key:
+                  print(f"::error::{host} is {tier} but names no silo_key, so its "
+                        f"migrator credential cannot be found. Refusing.", file=sys.stderr)
+                  sys.exit(1)
+              live[host] = {
+                  "host": host, "tier": tier, "db": db, "silo_key": silo_key,
+                  # The migrator for THIS silo, which Terraform's migrator-secret
+                  # unit writes. The pooled migrator-db-url names dev-db, so using
+                  # it would run a silo's migration against the shared database and
+                  # report success.
+                  "secret_uri": f"{VAULT}/secrets/migrator-db-url-{silo_key}",
+                  "kind": "shared" if tier == "SILO_SHARED" else "dedicated",
+              }
 
           picked = list(live.values())
           if kind != "all":
