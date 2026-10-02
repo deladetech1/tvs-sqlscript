@@ -54,106 +54,13 @@ ALTER TABLE control_plane.ctl_tenant_routes
             AND (db_secret_uri IS NOT NULL OR silo_key IS NOT NULL))
     );
 
--- ------------------------------------------------------------------ the two dev rows
-UPDATE control_plane.ctl_tenant_routes
-   SET silo_key         = 'shared',
-       db_name          = 'silo-shared-dev',
-       db_server_fqdn   = 'tvs-shared-sql.postgres.database.azure.com',
-       -- Own containers inside each APP's own account, prefixed with the silo
-       -- key. storage_account stays NULL on purpose: storage is per app, so
-       -- naming one would send every app to that app's account. 20261002-07
-       -- adds the constraint that enforces it, and this statement has to agree
-       -- with that constraint because every migration re-runs on each deploy.
-       storage_account  = NULL,
-       container_prefix = 'shared',
-       db_secret_uri    = NULL,
-       udatetime        = now(),
-       updated_by       = 'migration 20261002-06'
- WHERE host = 'siloshared.dev.trovesuite.com';
-
-UPDATE control_plane.ctl_tenant_routes
-   SET silo_key         = 'dedicated',
-       db_name          = 'silo-dedicated-dev',
-       db_server_fqdn   = 'tvs-dev-silo-dedicated-sql.postgres.database.azure.com',
-       -- its own storage ACCOUNT, so the containers need no prefix to stay apart
-       storage_account  = 'tvsdevsilodedicatedsa',
-       container_prefix = NULL,
-       db_secret_uri    = NULL,
-       udatetime        = now(),
-       updated_by       = 'migration 20261002-06'
- WHERE host = 'silodedicated.dev.trovesuite.com';
-
--- ----------------------------------------------------------------------------- checks
 --
--- Everything here must hold in a database that has NO route rows as well as in the
--- one that has them all. migrations/shared/ runs against every class, so this same
--- file is applied to each silo's own database, where control_plane exists and is
--- empty. A `SELECT * INTO rec` that matches nothing leaves the record with no field
--- structure at all, so `rec.silo_key` there does not read as NULL -- it raises
--- `record "r" has no field "silo_key"` and fails the deploy. Hence EXISTS guards
--- and per-column scalar selects rather than SELECT INTO on a record.
-DO $$
-DECLARE
-    n integer;
-    v_silo_key         text;
-    v_db_name          text;
-    v_server           text;
-    v_storage          text;
-    v_prefix           text;
-BEGIN
-    -- Every silo row present can be acted on: it names a database and a way to
-    -- resolve a credential. Vacuously true where there are none.
-    SELECT count(*) INTO n FROM control_plane.ctl_tenant_routes
-     WHERE tier IN ('SILO_SHARED','SILO_DEDICATED')
-       AND (db_name IS NULL OR (silo_key IS NULL AND db_secret_uri IS NULL));
-    IF n > 0 THEN
-        RAISE EXCEPTION '% silo route(s) name no database or no way to resolve a credential', n;
-    END IF;
+-- SUPERSEDED, 2026-10-02: the row updates this file made belonged to the kind-named test
+-- tenants (`shared`, `dedicated`), which are retired. 20261002-09 registers the real
+-- ones, itech and accesspoint, and deletes these hosts. Every migration re-runs on each
+-- deploy, so leaving the INSERT here meant each deploy re-created rows pointing at a
+-- database and a server that have been deleted, for 09 to remove again moments later.
+-- The seeding is gone; the header stays as the record of why the columns exist.
 
-    -- A POOLED row must not claim a silo: it would make an app compose a secret
-    -- name for a database it has no business reaching.
-    SELECT count(*) INTO n FROM control_plane.ctl_tenant_routes
-     WHERE tier = 'POOLED' AND silo_key IS NOT NULL;
-    IF n > 0 THEN
-        RAISE EXCEPTION '% pooled route(s) carry a silo_key', n;
-    END IF;
-
-    -- The dev rows, only where they live. The two tiers must still differ in the
-    -- way the tier model says they do, now against resources Terraform created.
-    IF EXISTS (SELECT 1 FROM control_plane.ctl_tenant_routes
-                WHERE host = 'siloshared.dev.trovesuite.com') THEN
-        SELECT silo_key, db_name, storage_account, container_prefix
-          INTO v_silo_key, v_db_name, v_storage, v_prefix
-          FROM control_plane.ctl_tenant_routes
-         WHERE host = 'siloshared.dev.trovesuite.com';
-
-        IF v_silo_key IS DISTINCT FROM 'shared' OR v_db_name IS DISTINCT FROM 'silo-shared-dev' THEN
-            RAISE EXCEPTION 'the shared silo row was not repointed: silo_key=% db=%',
-                v_silo_key, v_db_name;
-        END IF;
-        IF v_storage IS NOT NULL OR v_prefix IS NULL THEN
-            RAISE EXCEPTION 'SILO_SHARED names no storage account and prefixes its containers';
-        END IF;
-    END IF;
-
-    IF EXISTS (SELECT 1 FROM control_plane.ctl_tenant_routes
-                WHERE host = 'silodedicated.dev.trovesuite.com') THEN
-        SELECT silo_key, db_name, db_server_fqdn, storage_account, container_prefix
-          INTO v_silo_key, v_db_name, v_server, v_storage, v_prefix
-          FROM control_plane.ctl_tenant_routes
-         WHERE host = 'silodedicated.dev.trovesuite.com';
-
-        IF v_silo_key IS DISTINCT FROM 'dedicated' OR v_db_name IS DISTINCT FROM 'silo-dedicated-dev' THEN
-            RAISE EXCEPTION 'the dedicated silo row was not repointed: silo_key=% db=%',
-                v_silo_key, v_db_name;
-        END IF;
-        IF v_storage = 'tvsdevmsgsa' OR v_prefix IS NOT NULL THEN
-            RAISE EXCEPTION 'SILO_DEDICATED owns its storage account, so it needs no prefix';
-        END IF;
-        IF v_server LIKE 'tvs-dev-silotest%' OR v_server LIKE 'tvs-shared-sql%' THEN
-            RAISE EXCEPTION 'SILO_DEDICATED must be on its own server, not %', v_server;
-        END IF;
-    END IF;
-
-    RAISE NOTICE 'silo routes name their silo; credentials are resolved per app';
-END $$;
+-- The silo_key column and the constraint above are still the schema.
+SELECT 1;

@@ -27,73 +27,13 @@
 -- what may read it -- which is why this table can be readable to every app without being
 -- worth stealing. A leaked row says where a secret lives, not what it is.
 -- =====================================================================================
+--
+-- SUPERSEDED, 2026-10-02: the rows this file seeded belonged to the kind-named test
+-- tenants (`shared`, `dedicated`), which are retired. 20261002-09 registers the real
+-- ones, itech and accesspoint, and deletes these hosts. Every migration re-runs on each
+-- deploy, so leaving the INSERT here meant each deploy re-created rows pointing at a
+-- database and a server that have been deleted, for 09 to remove again moments later.
+-- The seeding is gone; the header stays as the record of why the columns exist.
 
-INSERT INTO control_plane.ctl_tenant_routes
-    (host, tenant_id, tier, cell_key,
-     db_server_fqdn, db_name, db_secret_uri,
-     storage_account, container_prefix, storage_secret_uri,
-     status, is_wildcard, cdate, ctime, cdatetime, created_by)
-VALUES
-    ('siloshared.dev.trovesuite.com',
-     'tnt_siloshared_test', 'SILO_SHARED', 'uksouth-dev',
-     'tvs-shared-sql.postgres.database.azure.com', 'silo-shared-test',
-     'https://tvs-dev-kv.vault.azure.net/secrets/silo-shared-test-db-url',
-     -- NO storage account, and the prefix is the silo key.
-     --
-     -- This said 'tvsdevmsgsa' originally, on the assumption of one shared
-     -- account split by container name. Storage is PER APP, so a shared silo
-     -- keeps each app's own account and takes its own <silo>-<container> inside
-     -- each. 20261002-07 made that a constraint, and because every migration
-     -- re-runs on each deploy this INSERT has to satisfy it -- a CHECK is
-     -- evaluated before ON CONFLICT arbitration, so it failed the deploy even
-     -- though the row already existed.
-     NULL, 'shared', NULL,
-     'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261002-04'),
-
-    ('silodedicated.dev.trovesuite.com',
-     'tnt_silodedicated_test', 'SILO_DEDICATED', 'uksouth-dev',
-     'tvs-dev-silotest-sql.postgres.database.azure.com', 'silo-dedicated-test',
-     'https://tvs-dev-kv.vault.azure.net/secrets/silo-dedicated-test-db-url',
-     -- its own storage ACCOUNT, so no prefix is needed to keep it apart
-     'tvsdevsilotestsa', NULL, NULL,
-     'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261002-04')
-ON CONFLICT (host) DO NOTHING;
-
--- ----------------------------------------------------------------------------- checks
-DO $$
-DECLARE
-    r record;
-    n_silo integer;
-BEGIN
-    -- The TWO THIS FILE CREATES, not a count of every silo route.
-    --
-    -- This asserted exactly 2 and broke the moment a third tenant was onboarded
-    -- (tenantb, 20261002-08): every migration re-runs on each deploy, so a
-    -- global count here is an assertion that the platform will never gain a
-    -- customer. A migration should only assert what it is responsible for.
-    SELECT count(*) INTO n_silo FROM control_plane.ctl_tenant_routes
-     WHERE host IN ('siloshared.dev.trovesuite.com', 'silodedicated.dev.trovesuite.com');
-    IF n_silo <> 2 THEN
-        RAISE EXCEPTION 'expected this file''s 2 silo routes, found %', n_silo;
-    END IF;
-
-    -- The constraints already refuse a silo without a database or a non-pooled row
-    -- without a tenant, so this asserts what they cannot: that the two tiers differ in
-    -- the way the tier model says they do.
-    SELECT * INTO r FROM control_plane.ctl_tenant_routes
-     WHERE host = 'siloshared.dev.trovesuite.com';
-    IF r.storage_account IS NOT NULL OR r.container_prefix IS NULL THEN
-        RAISE EXCEPTION 'SILO_SHARED names no storage account and prefixes its containers';
-    END IF;
-
-    SELECT * INTO r FROM control_plane.ctl_tenant_routes
-     WHERE host = 'silodedicated.dev.trovesuite.com';
-    IF r.storage_account IS NULL THEN
-        RAISE EXCEPTION 'SILO_DEDICATED must have its own storage account';
-    END IF;
-    IF r.db_server_fqdn = 'tvs-shared-sql.postgres.database.azure.com' THEN
-        RAISE EXCEPTION 'SILO_DEDICATED must be on its own server';
-    END IF;
-
-    RAISE NOTICE 'two silo routes registered: own-database and own-server';
-END $$;
+-- Nothing to do.
+SELECT 1;

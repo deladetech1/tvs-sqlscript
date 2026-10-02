@@ -24,12 +24,10 @@
 -- discovered by a tenant's files appearing in another tenant's account.
 -- =====================================================================================
 
-UPDATE control_plane.ctl_tenant_routes
-   SET storage_account = NULL,
-       udatetime       = now(),
-       updated_by      = 'migration 20261002-07'
- WHERE tier = 'SILO_SHARED'
-   AND storage_account IS NOT NULL;
+-- The UPDATE that was here fixed the retired `shared` test row; 20261002-09
+-- registers the real tenants with the right columns from the start. The two
+-- constraints below are the lasting part, and they are what refuse a silo row
+-- that sets both storage columns or neither.
 
 -- Exactly one of the two, for a silo. Not a NOT NULL on either column, because
 -- which one is set is what distinguishes the tiers.

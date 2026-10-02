@@ -17,29 +17,11 @@
 -- overlap anywhere.
 -- =====================================================================================
 
-INSERT INTO control_plane.ctl_tenant_routes
-    (host, tenant_id, tier, cell_key,
-     db_server_fqdn, db_name, silo_key, db_secret_uri,
-     storage_account, container_prefix, storage_secret_uri,
-     status, is_wildcard, cdate, ctime, cdatetime, created_by)
-VALUES
-    ('tenantb.dev.trovesuite.com',
-     'tnt_tenantb_test', 'SILO_SHARED', 'uksouth-dev',
-     'tvs-shared-sql.postgres.database.azure.com', 'silo-tenantb-dev', 'tenantb', NULL,
-     -- No storage account: a shared silo keeps each app's own, and prefixes its
-     -- containers inside them. The prefix is the silo key, so it is this tenant's.
-     NULL, 'tenantb', NULL,
-     'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261002-08')
-ON CONFLICT (host) DO UPDATE
-   SET tenant_id        = EXCLUDED.tenant_id,
-       tier             = EXCLUDED.tier,
-       db_server_fqdn   = EXCLUDED.db_server_fqdn,
-       db_name          = EXCLUDED.db_name,
-       silo_key         = EXCLUDED.silo_key,
-       storage_account  = EXCLUDED.storage_account,
-       container_prefix = EXCLUDED.container_prefix,
-       udatetime        = now(),
-       updated_by       = 'migration 20261002-08';
+-- SUPERSEDED, 2026-10-02: tenantb existed only to prove that two shared-silo
+-- tenants do not share containers. itech and accesspoint (20261002-09) are named
+-- tenants, so the demonstration tenant is retired and its row deleted there.
+-- The checks below outlive it: they assert the PROPERTY, not the row, and hold for
+-- however many tenants exist.
 
 -- ----------------------------------------------------------------------------- checks
 -- Safe where there are no route rows: migrations/shared reaches every silo's own
@@ -73,8 +55,5 @@ BEGIN
         RAISE EXCEPTION '% shared silo(s) have a container_prefix that is not their silo_key', n;
     END IF;
 
-    IF EXISTS (SELECT 1 FROM control_plane.ctl_tenant_routes
-                WHERE host = 'tenantb.dev.trovesuite.com') THEN
-        RAISE NOTICE 'tenantb registered: its own database and its own tenantb-* containers';
-    END IF;
+    RAISE NOTICE 'no silo database or container prefix is shared between tenants';
 END $$;
