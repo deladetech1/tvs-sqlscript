@@ -1,36 +1,33 @@
 # Schema for the SaaS pooled database -- the one every shared-infrastructure
 # tenant lives in.
 #
-# Merging to `dev` or `saas` auto-deploys to the dev pool. Production is only ever
-# a dispatch: the same files, but the prod pool is every paying customer at once,
-# so somebody chooses to do it.
+# Merging to `dev` or `saas` auto-deploys to the dev pool. Production is only a
+# dispatch: same files, but the prod pool is every paying customer at once.
 #
 # Three workflows, one per class of target, because they roll out at different
 # speeds and to different people's databases:
 #
-#   saas        this one -- the pooled database       (auto on dev)
-#   silos       a tenant with its own database        (auto on dev, prod by hand)
-#   enterprise  a customer hosting it themselves      (always by hand)
+#   saas        this one -- the pooled database     auto on dev, prod by hand
+#   silos       a tenant with its own database      auto on dev, prod by hand
+#   enterprise  a customer hosting it themselves    always by hand
 #
-# The branch says which CLASS a change is for, not which tenant: `saas`, `silo`,
-# `enterprise`. There is deliberately no branch per customer -- that would be a
-# dozen branches to keep level with the schema, and the one nobody rebased is the
-# one that breaks. All three share migrations/shared/, so a table change is
-# written once and reaches every database.
-#
-# DATABASE_URL comes from the GitHub Environment (saas-dev / saas-prod), unlike
-# the silo workflow which reads each tenant's own secret from Key Vault.
-# Application deploys never migrate a database.
+# The branch says which CLASS a change is for, not which tenant. All three share
+# migrations/shared/, so a table change is written once and reaches every
+# database. Everything below only decides WHICH database; apply.yml does the work.
 
 name: saas
 
 on:
   push:
-    branches:
-      - dev
-      - saas
-  # Production is never a push. Same schema, same files -- but the pool in prod is
-  # every paying customer at once, so it is always somebody choosing to do it.
+    branches: [dev, saas]
+    paths:
+      - "src/**"
+      - "migrations/shared/**"
+      - "migrations/saas/**"
+      - "Directory.Build.props"
+      - "Trovesuite.Database.sln"
+      - ".github/workflows/saas.yml"
+      - ".github/workflows/apply.yml"
   workflow_dispatch:
     inputs:
       environment:
@@ -40,23 +37,15 @@ on:
         default: dev
         options: [dev, prod]
       module:
-        description: "Module to target"
         type: choice
         required: true
         default: all
         options: [all, core_platform, loandrift, mystoreguard, zeloshr, attendance]
       command:
-        description: What to do
         type: choice
         required: true
         default: validate
         options: [validate, verify, deploy]
-    paths:
-      - "src/**"
-      - "migrations/**"
-      - "Directory.Build.props"
-      - "Trovesuite.Database.sln"
-      - ".github/workflows/schema-saas-pool.yml"
 
 concurrency:
   group: saas-${{ inputs.environment || 'dev' }}
@@ -64,129 +53,19 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-  deploy:
-    name: ${{ inputs.command || 'deploy' }} → saas ${{ inputs.environment || 'dev' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    environment: saas-${{ inputs.environment || 'dev' }}
-
-    defaults:
-      run:
-        shell: bash
-
-    env:
-      DOTNET_NOLOGO: "1"
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-      TVS_SSL: Require
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      # So the Runner applies migrations/shared/ then migrations/saas/ — and not
-      # the silo or enterprise trees, which this database is neither of.
-      TVS_TARGET_CLASS: saas
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Build solution
-        run: dotnet build Trovesuite.Database.sln -c Release --nologo
-
-      - name: Parse DATABASE_URL into env vars
-        id: db
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          set -euo pipefail
-          if [[ -z "${DATABASE_URL:-}" ]]; then
-            echo "::error::DATABASE_URL is not set on environment 'saas-dev'."
-            exit 1
-          fi
-          echo "::add-mask::${DATABASE_URL}"
-
-          proto_stripped="${DATABASE_URL#postgresql://}"
-          proto_stripped="${proto_stripped#postgres://}"
-          creds="${proto_stripped%%@*}"
-          rest="${proto_stripped#*@}"
-          DB_USER="${creds%%:*}"
-          PGPASSWORD="${creds#*:}"
-          hostport="${rest%%/*}"
-          DB_HOST="${hostport%%:*}"
-          DB_PORT="${hostport#*:}"
-          [[ "$DB_PORT" == "$hostport" ]] && DB_PORT=5432
-          dbpart="${rest#*/}"
-          DB_NAME="${dbpart%%\?*}"
-
-          echo "::add-mask::$PGPASSWORD"
-          echo "::add-mask::$DB_USER"
-          echo "::add-mask::$DB_HOST"
-
-          {
-            echo "DB_HOST=$DB_HOST"
-            echo "DB_PORT=$DB_PORT"
-            echo "DB_USER=$DB_USER"
-            echo "PGPASSWORD=$PGPASSWORD"
-            echo "DB_NAME=$DB_NAME"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: What this run is doing
-        id: what
-        run: |
-          set -euo pipefail
-          # A push to dev or saas deploys every module to the dev pool. A dispatch
-          # says what it wants, including against prod -- which is why prod is only
-          # ever a dispatch.
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "environment=dev" >> "$GITHUB_OUTPUT"
-            echo "command=deploy"  >> "$GITHUB_OUTPUT"
-            echo "module=all"      >> "$GITHUB_OUTPUT"
-            echo "pick=0"          >> "$GITHUB_OUTPUT"
-          else
-            echo "environment=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
-            echo "command=${{ inputs.command }}"         >> "$GITHUB_OUTPUT"
-            echo "module=${{ inputs.module }}"           >> "$GITHUB_OUTPUT"
-            case "${{ inputs.module }}" in
-              core_platform) echo "pick=1" >> "$GITHUB_OUTPUT" ;;
-              loandrift)     echo "pick=2" >> "$GITHUB_OUTPUT" ;;
-              mystoreguard)  echo "pick=3" >> "$GITHUB_OUTPUT" ;;
-              zeloshr)       echo "pick=4" >> "$GITHUB_OUTPUT" ;;
-              attendance)    echo "pick=5" >> "$GITHUB_OUTPUT" ;;
-              all)           echo "pick=0" >> "$GITHUB_OUTPUT" ;;
-            esac
-          fi
-
-      - name: Summary
-        run: |
-          {
-            echo "## saas · ${{ steps.what.outputs.command }} · ${{ steps.what.outputs.environment }}"
-            echo ""
-            echo "| | |"
-            echo "| --- | --- |"
-            echo "| **Trigger** | \`${{ github.event_name }}\` on \`${{ github.ref_name }}\` |"
-            echo "| **Commit** | \`${{ github.sha }}\` |"
-            echo "| **Module** | \`${{ steps.what.outputs.module }}\` |"
-            echo "| **DB name** | \`${{ steps.db.outputs.DB_NAME }}\` |"
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: ${{ steps.what.outputs.command }} → saas ${{ steps.what.outputs.environment }}
-        env:
-          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
-          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
-          DB_USER: ${{ steps.db.outputs.DB_USER }}
-          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
-          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
-        run: |
-          set -euo pipefail
-          echo "::group::Runner output (module pick ${{ steps.what.outputs.pick }}; 0=ALL)"
-          printf '%s\n' "${{ steps.what.outputs.pick }}" \
-            | dotnet run --no-build -c Release \
-                --project src/Trovesuite.Database.Runner -- \
-                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" \
-                "${{ steps.what.outputs.command }}"
-          echo "::endgroup::"
-          echo "::notice title=${{ steps.what.outputs.command }} succeeded::saas ${{ steps.what.outputs.environment }} — module=${{ steps.what.outputs.module }}"
+  apply:
+    # A push deploys everything to dev. A dispatch says what it wants, which is
+    # the only way to reach prod.
+    uses: ./.github/workflows/apply.yml
+    with:
+      label: saas ${{ inputs.environment || 'dev' }}
+      environment: saas-${{ inputs.environment || 'dev' }}
+      module: ${{ inputs.module || 'all' }}
+      command: ${{ inputs.command || 'deploy' }}
+      target_class: saas
+      source: secret
+    secrets:
+      database_url: ${{ secrets.DATABASE_URL }}

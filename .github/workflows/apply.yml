@@ -1,0 +1,230 @@
+# Apply the schema to ONE database. Every other workflow here calls this.
+#
+# It exists because saas, silos, enterprise and the app pipelines were each
+# carrying their own copy of the same five things -- checkout, setup-dotnet,
+# dotnet build, the DATABASE_URL parser, and the module-name-to-number mapping --
+# about nine hundred lines between them. The parser in particular is fiddly
+# string surgery on a libpq URL, and four copies of fiddly string surgery is four
+# places for a leading-zero port or a password containing '@' to behave
+# differently.
+#
+# The caller's whole job is now to decide WHICH database. This decides nothing
+# and knows nothing about tiers.
+#
+# Where the connection string comes from, because the two differ for a reason:
+#
+#   source: secret     the caller passes database_url, out of a GitHub
+#                      Environment. That is how the SaaS pool and the app
+#                      pipelines work, and it needs no Azure login.
+#
+#   source: keyvault   the caller passes secret_uri and this logs in with OIDC
+#                      and reads it. That is how silos and enterprises work,
+#                      because each tenant's credential lives in its own Key
+#                      Vault secret and there are as many as there are tenants.
+#
+# The credential is read INSIDE this workflow either way. It is never a job
+# output or a matrix value, because those are visible to anything that can read
+# the run.
+
+name: apply (one database)
+
+on:
+  workflow_call:
+    inputs:
+      label:
+        description: "What to call this target in logs and the summary"
+        type: string
+        required: true
+      module:
+        description: "all | core_platform | loandrift | mystoreguard | zeloshr | attendance"
+        type: string
+        required: false
+        default: all
+      command:
+        description: "deploy | validate | verify"
+        type: string
+        required: false
+        default: validate
+      target_class:
+        description: "saas | silo | enterprise — selects migrations/<class>/"
+        type: string
+        required: false
+        default: ""
+      silo_host:
+        description: "Applies migrations/silo/<host>/ as well"
+        type: string
+        required: false
+        default: ""
+      enterprise_slug:
+        description: "Applies migrations/enterprise/<slug>/ as well"
+        type: string
+        required: false
+        default: ""
+      source:
+        description: "secret | keyvault"
+        type: string
+        required: false
+        default: secret
+      secret_uri:
+        description: "Key Vault secret URI, when source=keyvault"
+        type: string
+        required: false
+        default: ""
+      subscription_id:
+        description: "Azure subscription to log in to, when source=keyvault"
+        type: string
+        required: false
+        default: ""
+      azure_client_id:
+        description: "OIDC client id, when source=keyvault"
+        type: string
+        required: false
+        default: ""
+      azure_tenant_id:
+        description: "Azure AD tenant, when source=keyvault"
+        type: string
+        required: false
+        default: ""
+      environment:
+        description: "GitHub Environment to bind to, when source=secret"
+        type: string
+        required: false
+        default: ""
+      refuse_pooled_database:
+        description: "Fail if the resolved database is the pool. Set for silos."
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      database_url:
+        description: "The connection string, when source=secret"
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply:
+    name: ${{ inputs.command }} → ${{ inputs.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: ${{ inputs.environment }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      TVS_SSL: Require
+      TVS_TARGET_CLASS: ${{ inputs.target_class }}
+      TVS_SILO: ${{ inputs.silo_host }}
+      TVS_ENTERPRISE: ${{ inputs.enterprise_slug }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - run: dotnet build Trovesuite.Database.sln -c Release --nologo
+
+      - name: Azure login
+        if: inputs.source == 'keyvault'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ inputs.azure_client_id }}
+          tenant-id: ${{ inputs.azure_tenant_id }}
+          subscription-id: ${{ inputs.subscription_id }}
+
+      - name: Resolve the connection string
+        id: db
+        env:
+          FROM_SECRET: ${{ secrets.database_url }}
+          SECRET_URI: ${{ inputs.secret_uri }}
+        run: |
+          set -euo pipefail
+
+          if [ "${{ inputs.source }}" = "keyvault" ]; then
+            [ -n "$SECRET_URI" ] || { echo "::error::source=keyvault but no secret_uri"; exit 1; }
+            # https://<vault>.vault.azure.net/secrets/<name>[/<version>]
+            vault="$(printf '%s' "$SECRET_URI" | sed -E 's#^https://([^.]+)\..*#\1#')"
+            name="$(printf '%s' "$SECRET_URI" | sed -E 's#^https://[^/]+/secrets/([^/]+).*#\1#')"
+            [ -n "$vault" ] && [ -n "$name" ] || { echo "::error::cannot parse '$SECRET_URI'"; exit 1; }
+            DATABASE_URL="$(az keyvault secret show --vault-name "$vault" --name "$name" --query value -o tsv)"
+            [ -n "$DATABASE_URL" ] || { echo "::error::$name is empty in $vault"; exit 1; }
+          else
+            DATABASE_URL="$FROM_SECRET"
+            [ -n "$DATABASE_URL" ] || { echo "::error::source=secret but database_url was not passed"; exit 1; }
+          fi
+          echo "::add-mask::$DATABASE_URL"
+
+          # libpq URL -> fields. postgresql://user:password@host:port/dbname?sslmode=…
+          proto="${DATABASE_URL#postgresql://}"; proto="${proto#postgres://}"
+          creds="${proto%%@*}"; rest="${proto#*@}"
+          DB_USER="${creds%%:*}"; PGPASSWORD="${creds#*:}"
+          hostport="${rest%%/*}"; DB_HOST="${hostport%%:*}"; DB_PORT="${hostport#*:}"
+          # No ':' in the host part means no port was given.
+          [[ "$DB_PORT" == "$hostport" ]] && DB_PORT=5432
+          dbpart="${rest#*/}"; DB_NAME="${dbpart%%\?*}"
+
+          echo "::add-mask::$PGPASSWORD"
+          echo "::add-mask::$DB_USER"
+
+          # A silo whose secret resolves to the pool would apply silo-only SQL to
+          # every tenant's data. Checked here, where the name is already parsed,
+          # rather than trusted in each caller.
+          if [ "${{ inputs.refuse_pooled_database }}" = "true" ]; then
+            case "$DB_NAME" in
+              dev-db|prod-db|staging-db)
+                echo "::error::${{ inputs.label }} should have its own database but its secret points at the POOLED '$DB_NAME'. Refusing."
+                exit 1 ;;
+            esac
+          fi
+
+          {
+            echo "DB_HOST=$DB_HOST"; echo "DB_PORT=$DB_PORT"; echo "DB_USER=$DB_USER"
+            echo "PGPASSWORD=$PGPASSWORD"; echo "DB_NAME=$DB_NAME"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: ${{ inputs.command }}
+        env:
+          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
+          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
+          DB_USER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
+        run: |
+          set -euo pipefail
+          case "${{ inputs.command }}" in
+            deploy|validate|verify) ;;
+            *) echo "::error::command '${{ inputs.command }}' not allowed (deploy|validate|verify)"; exit 1 ;;
+          esac
+          case "${{ inputs.module }}" in
+            core_platform)          PICK=1 ;;
+            loandrift)              PICK=2 ;;
+            mystoreguard)           PICK=3 ;;
+            zeloshr|human_resource) PICK=4 ;;   # human_resource kept as an alias
+            attendance)             PICK=5 ;;
+            all)                    PICK=0 ;;
+            *) echo "::error::unknown module '${{ inputs.module }}'"; exit 1 ;;
+          esac
+
+          {
+            echo "### ${{ inputs.command }} · ${{ inputs.label }}"
+            echo ""
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| database | \`$DB_NAME\` |"
+            echo "| module | \`${{ inputs.module }}\` |"
+            echo "| class | \`${{ inputs.target_class || 'shared only' }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "::group::Runner output (module pick $PICK; 0=ALL)"
+          printf '%s\n' "$PICK" \
+            | dotnet run --no-build -c Release \
+                --project src/Trovesuite.Database.Runner -- \
+                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "${{ inputs.command }}"
+          echo "::endgroup::"
+          echo "::notice title=${{ inputs.command }} succeeded::${{ inputs.label }} — module=${{ inputs.module }}"
