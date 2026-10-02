@@ -55,6 +55,11 @@ on:
         type: string
         required: false
         default: ""
+      destructive_ack:
+        description: "For rollback only: must be exactly YESDestructive"
+        type: string
+        required: false
+        default: ""
       enterprise_slug:
         description: "Applies migrations/enterprise/<slug>/ as well"
         type: string
