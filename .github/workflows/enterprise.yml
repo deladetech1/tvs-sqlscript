@@ -35,7 +35,11 @@ on:
         type: choice
         required: true
         default: validate
-        options: [validate, verify, deploy]
+        options: [validate, verify, status, deploy, migrations-list, rollback]
+      destructive_ack:
+        description: 'For rollback only: type exactly YESDestructive'
+        type: string
+        default: ""
 
 concurrency:
   group: enterprise-${{ inputs.target }}-${{ inputs.environment }}
@@ -82,6 +86,7 @@ jobs:
       label: ${{ inputs.target }} (${{ inputs.environment }})
       module: ${{ inputs.module }}
       command: ${{ inputs.command }}
+      destructive_ack: ${{ inputs.destructive_ack }}
       target_class: enterprise
       enterprise_slug: ${{ inputs.target }}
       source: keyvault

@@ -65,7 +65,11 @@ on:
         type: choice
         required: true
         default: validate
-        options: [validate, verify, deploy]
+        options: [validate, verify, status, deploy, migrations-list, rollback]
+      destructive_ack:
+        description: 'For rollback only: type exactly YESDestructive'
+        type: string
+        default: ""
 
 concurrency:
   group: silos-${{ inputs.environment || 'dev' }}
@@ -84,6 +88,7 @@ jobs:
       count: ${{ steps.pick.outputs.count }}
       environment: ${{ steps.run.outputs.environment }}
       command: ${{ steps.run.outputs.command }}
+      destructive_ack: ${{ inputs.destructive_ack }}
       module: ${{ steps.run.outputs.module }}
       subscription: ${{ steps.az.outputs.sub }}
     steps:

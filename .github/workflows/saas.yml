@@ -45,7 +45,11 @@ on:
         type: choice
         required: true
         default: validate
-        options: [validate, verify, deploy]
+        options: [validate, verify, status, deploy, migrations-list, rollback]
+      destructive_ack:
+        description: 'For rollback only: type exactly YESDestructive'
+        type: string
+        default: ""
 
 concurrency:
   group: saas-${{ inputs.environment || 'dev' }}
@@ -65,6 +69,7 @@ jobs:
       environment: saas-${{ inputs.environment || 'dev' }}
       module: ${{ inputs.module || 'all' }}
       command: ${{ inputs.command || 'deploy' }}
+      destructive_ack: ${{ inputs.destructive_ack }}
       target_class: saas
       source: secret
     secrets:
