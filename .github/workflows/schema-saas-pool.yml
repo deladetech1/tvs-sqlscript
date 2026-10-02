@@ -1,24 +1,39 @@
-# Auto-deploy EF Core migrations to saas-dev when changes merge to the `dev`
-# branch. Deploys ALL modules (core_platform → loandrift → mystoreguard → zeloshr).
+# Auto-deploy EF Core migrations to saas-dev when changes merge to `dev` or to
+# the `saas` branch. Deploys ALL modules (core_platform → loandrift →
+# mystoreguard → zeloshr).
 #
-#   dev push → GitHub Environment saas-dev (DATABASE_URL)
+#   dev | saas push → GitHub Environment saas-dev (DATABASE_URL)
 #
-# This is the ONLY automatic database deploy. Prod and tenants are deliberate:
-# run the manual "Database (EF Core dispatch)" workflow (database-dispatch.yml)
-# and pick scope + environment. Application deploys never migrate a DB.
+# THE BRANCH SAYS WHICH CLASS OF DATABASE A CHANGE IS FOR, not which tenant.
+# Three branches, because there are three kinds of target and they roll out at
+# different speeds:
+#
+#   saas        the pooled database — this workflow, automatic on dev and saas
+#   silo        every tenant with its own database — schema-silos.yml
+#   enterprise  every self-hosted customer — schema-enterprise.yml
+#
+# There is deliberately no branch per tenant. A branch per customer would be a
+# dozen branches that each have to be kept level with the schema, and the one
+# nobody rebased is the one that breaks. The class branches share
+# migrations/shared/, so a table change is written once and reaches all three.
+#
+# Only the SaaS pool deploys automatically. Silos and enterprises are dispatched
+# by hand: they are other people's databases, and a push is not consent to touch
+# them. Application deploys never migrate a DB.
 
-name: Database deploy (saas-dev auto)
+name: Schema · SaaS pool (auto on dev)
 
 on:
   push:
     branches:
       - dev
+      - saas
     paths:
       - "src/**"
       - "migrations/**"
       - "Directory.Build.props"
       - "Trovesuite.Database.sln"
-      - ".github/workflows/database-deploy-branches.yml"
+      - ".github/workflows/schema-saas-pool.yml"
 
 concurrency:
   group: tvs-sqlscript-deploy-saas-dev
@@ -43,6 +58,9 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       TVS_SSL: Require
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      # So the Runner applies migrations/shared/ then migrations/saas/ — and not
+      # the silo or enterprise trees, which this database is neither of.
+      TVS_TARGET_CLASS: saas
 
     steps:
       - uses: actions/checkout@v4

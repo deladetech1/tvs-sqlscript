@@ -1,0 +1,246 @@
+# Schema for the silo databases: one, several, or all of them.
+#
+# A silo is a tenant with its own database -- SILO_SHARED (own database on the
+# shared server) or SILO_DEDICATED (own server). Both hold the SAME schema as the
+# pool, so this applies migrations/shared/ exactly as the SaaS deploy does, then
+# migrations/silo/ for anything true of silos only, then
+# migrations/silo/<host>/ for one tenant.
+#
+# The targets are DISCOVERED, not listed here. control_plane.ctl_tenant_routes
+# already knows every silo and where its credential lives, so onboarding a silo
+# is an INSERT and this workflow picks it up with no edit. A hand-maintained list
+# would be a second inventory of the same thing, and the one that drifts is
+# always the one nobody deploys from.
+#
+# Each silo is its own matrix job, so one unreachable database fails its own job
+# and the rest still get the schema. fail-fast is off for the same reason: a
+# tenant mid-migration must not stop the other eleven.
+#
+# A silo's connection string is read from the db_secret_uri on its own route row.
+# The row never holds a credential, only the Key Vault URI where one lives.
+
+name: Schema · silos (own database)
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment's silos"
+        type: choice
+        required: true
+        default: dev
+        options: [dev, staging, prod]
+      targets:
+        description: "'all', or a comma-separated list of silo hosts (e.g. siloshared.dev.trovesuite.com,acme.dev.zeloshr.com)"
+        type: string
+        required: true
+        default: all
+      module:
+        description: "Module to target"
+        type: choice
+        required: true
+        default: all
+        options: [all, core_platform, loandrift, mystoreguard, zeloshr, attendance]
+      command:
+        description: What to do
+        type: choice
+        required: true
+        default: validate
+        options: [validate, verify, deploy]
+
+concurrency:
+  # One silo rollout per environment. Two at once would have two runners applying
+  # the same files to the same databases in an unknown order.
+  group: tvs-sqlscript-silos-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  discover:
+    name: 🔎 which silos
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.find.outputs.matrix }}
+      count: ${{ steps.find.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve the Azure target
+        id: az
+        run: |
+          set -euo pipefail
+          case "${{ inputs.environment }}" in
+            dev|staging) SUB="${{ vars.TVS_DEV_SUBSCRIPTION_ID }}"; KV="tvs-dev-kv" ;;
+            prod)        SUB="${{ vars.TVS_PROD_SUBSCRIPTION_ID }}"; KV="tvs-prod-kv" ;;
+          esac
+          echo "sub=$SUB" >> "$GITHUB_OUTPUT"
+          echo "kv=$KV"   >> "$GITHUB_OUTPUT"
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.TVS_AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.TVS_TENANT_ID }}
+          subscription-id: ${{ steps.az.outputs.sub }}
+
+      - name: Ask the control plane which silos exist
+        id: find
+        env:
+          KV: ${{ steps.az.outputs.kv }}
+          WANTED: ${{ inputs.targets }}
+        run: |
+          set -euo pipefail
+          CP_URL="$(az keyvault secret show --vault-name "$KV" --name migrator-db-url --query value -o tsv)"
+          echo "::add-mask::$CP_URL"
+
+          # host and secret URI only. Never the credential -- that is read inside
+          # the per-silo job, from the URI, so it is never a workflow output.
+          rows="$(psql "$CP_URL" -At -F'|' -c "
+            SELECT host, tier, db_name, db_secret_uri
+              FROM control_plane.ctl_tenant_routes
+             WHERE status = 'ACTIVE'
+               AND tier IN ('SILO_SHARED','SILO_DEDICATED')
+             ORDER BY host")"
+
+          if [ -z "$rows" ]; then
+            echo "::warning::No ACTIVE silo routes in this environment — nothing to deploy."
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          export ROWS="$rows"
+          python3 - "$WANTED" <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, sys
+          wanted = sys.argv[1].strip()
+          rows = [l.split('|') for l in os.environ['ROWS'].strip().splitlines() if l.strip()]
+          found = {r[0]: {"host": r[0], "tier": r[1], "db": r[2], "secret_uri": r[3]} for r in rows}
+
+          if wanted.lower() == 'all':
+              picked = list(found.values())
+          else:
+              asked = [h.strip() for h in wanted.split(',') if h.strip()]
+              missing = [h for h in asked if h not in found]
+              if missing:
+                  # Naming a silo that is not routed is a typo, and silently
+                  # deploying to the others would hide it.
+                  print(f"::error::not ACTIVE silo routes: {', '.join(missing)}. "
+                        f"Known: {', '.join(sorted(found))}", file=sys.stderr)
+                  raise SystemExit(1)
+              picked = [found[h] for h in asked]
+
+          print("matrix=" + json.dumps({"include": picked}))
+          print(f"count={len(picked)}")
+          PY
+
+      - name: 📍 Summary
+        run: |
+          {
+            echo "## Silos selected: ${{ steps.find.outputs.count }}"
+            echo ""
+            echo "| host | tier | database |"
+            echo "| --- | --- | --- |"
+            echo '${{ steps.find.outputs.matrix }}' | python3 -c "
+          import json,sys
+          for s in json.load(sys.stdin)['include']:
+              print(f\"| \`{s['host']}\` | {s['tier']} | \`{s['db']}\` |\")"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: ${{ inputs.command }} → ${{ matrix.host }}
+    needs: discover
+    if: needs.discover.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # One silo's failure must not cancel the others.
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      TVS_SSL: Require
+      TVS_TARGET_CLASS: silo
+      TVS_SILO: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - run: dotnet build Trovesuite.Database.sln -c Release --nologo
+
+      - name: Resolve the Azure target
+        id: az
+        run: |
+          set -euo pipefail
+          case "${{ inputs.environment }}" in
+            dev|staging) echo "sub=${{ vars.TVS_DEV_SUBSCRIPTION_ID }}" >> "$GITHUB_OUTPUT" ;;
+            prod)        echo "sub=${{ vars.TVS_PROD_SUBSCRIPTION_ID }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.TVS_AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.TVS_TENANT_ID }}
+          subscription-id: ${{ steps.az.outputs.sub }}
+
+      - name: Read this silo's connection string from its own secret URI
+        id: db
+        env:
+          SECRET_URI: ${{ matrix.secret_uri }}
+        run: |
+          set -euo pipefail
+          # https://<vault>.vault.azure.net/secrets/<name>[/<version>]
+          vault="$(printf '%s' "$SECRET_URI" | sed -E 's#^https://([^/]+)/.*#\1#')"
+          name="$(printf '%s' "$SECRET_URI" | sed -E 's#^https://[^/]+/secrets/([^/]+).*#\1#')"
+          [ -n "$vault" ] && [ -n "$name" ] || { echo "::error::cannot parse db_secret_uri '$SECRET_URI'"; exit 1; }
+
+          DATABASE_URL="$(az keyvault secret show --vault-name "${vault%%.*}" --name "$name" --query value -o tsv)"
+          [ -n "$DATABASE_URL" ] || { echo "::error::$name is empty in $vault"; exit 1; }
+          echo "::add-mask::$DATABASE_URL"
+
+          proto="${DATABASE_URL#postgresql://}"; proto="${proto#postgres://}"
+          creds="${proto%%@*}"; rest="${proto#*@}"
+          DB_USER="${creds%%:*}"; PGPASSWORD="${creds#*:}"
+          hostport="${rest%%/*}"; DB_HOST="${hostport%%:*}"; DB_PORT="${hostport#*:}"
+          [[ "$DB_PORT" == "$hostport" ]] && DB_PORT=5432
+          dbpart="${rest#*/}"; DB_NAME="${dbpart%%\?*}"
+
+          echo "::add-mask::$PGPASSWORD"
+          echo "::add-mask::$DB_USER"
+          {
+            echo "DB_HOST=$DB_HOST"; echo "DB_PORT=$DB_PORT"; echo "DB_USER=$DB_USER"
+            echo "PGPASSWORD=$PGPASSWORD"; echo "DB_NAME=$DB_NAME"
+          } >> "$GITHUB_OUTPUT"
+
+          # The one assertion worth making before writing anything: this had
+          # better not be the pooled database. A silo row whose secret points at
+          # the pool would apply silo SQL to everybody's data.
+          if [ "$DB_NAME" = "dev-db" ] || [ "$DB_NAME" = "prod-db" ]; then
+            echo "::error::${{ matrix.host }} is a silo but its secret points at the POOLED database '$DB_NAME'. Refusing."
+            exit 1
+          fi
+
+      - name: 🚀 ${{ inputs.command }} → ${{ matrix.host }}
+        env:
+          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
+          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
+          DB_USER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
+        run: |
+          set -euo pipefail
+          case "${{ inputs.module }}" in
+            core_platform) PICK=1 ;; loandrift) PICK=2 ;; mystoreguard) PICK=3 ;;
+            zeloshr) PICK=4 ;; attendance) PICK=5 ;; all) PICK=0 ;;
+          esac
+          echo "::notice title=Target::${{ matrix.host }} → $DB_NAME (${{ matrix.tier }})"
+          printf '%s\n' "$PICK" \
+            | dotnet run --no-build -c Release \
+                --project src/Trovesuite.Database.Runner -- \
+                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "${{ inputs.command }}"
