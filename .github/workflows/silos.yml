@@ -1,0 +1,293 @@
+# Schema for the silo databases — a tenant with its own database.
+#
+# Two kinds, and this workflow treats them as one thing with a switch rather than
+# two workflows, because the only difference is where the database lives:
+#
+#   shared      SILO_SHARED     own database on the shared server
+#   dedicated   SILO_DEDICATED  own PostgreSQL server
+#
+# They hold the SAME schema as the SaaS pool, so migrations/shared/ applies here
+# exactly as it does there, then migrations/silo/ for anything true of silos only,
+# then migrations/silo/<host>/ for one tenant.
+#
+# Merging to the `silo` branch auto-deploys to the DEV silos — our own dev silo
+# databases, which exist so this path is exercised before it reaches a customer.
+# Production is always a deliberate dispatch: those are customers' databases and
+# a merge is not consent to touch them.
+#
+# Targets are a dropdown, not free text. A typed hostname is a typo waiting to
+# happen and the mistake is silent — you deploy to nothing, or to the wrong
+# database, and the run goes green. Adding a silo means adding a line to the
+# options below, which is a reviewable change. The run still checks the chosen
+# host against control_plane.ctl_tenant_routes, so a stale option fails loudly
+# rather than deploying nowhere.
+
+name: silos
+
+on:
+  push:
+    branches: [silo]
+    paths:
+      - "src/**"
+      - "migrations/shared/**"
+      - "migrations/silo/**"
+      - "Directory.Build.props"
+      - "Trovesuite.Database.sln"
+      - ".github/workflows/silos.yml"
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "Which kind of silo"
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - shared        # own database, shared server
+          - dedicated     # own server
+      environment:
+        description: "Which environment's silos"
+        type: choice
+        required: true
+        default: dev
+        options: [dev, prod]
+      target:
+        description: "Which silo (add new ones to this list as they are onboarded)"
+        type: choice
+        required: true
+        default: all
+        options:
+          - all
+          - siloshared.dev.trovesuite.com
+          - silodedicated.dev.trovesuite.com
+      module:
+        description: "Module to target"
+        type: choice
+        required: true
+        default: all
+        options: [all, core_platform, loandrift, mystoreguard, zeloshr, attendance]
+      command:
+        description: What to do
+        type: choice
+        required: true
+        default: validate
+        options: [validate, verify, deploy]
+
+concurrency:
+  group: silos-${{ inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  select:
+    name: which silos
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pick.outputs.matrix }}
+      count: ${{ steps.pick.outputs.count }}
+      environment: ${{ steps.defaults.outputs.environment }}
+      command: ${{ steps.defaults.outputs.command }}
+      module: ${{ steps.defaults.outputs.module }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: What a push means
+        id: defaults
+        run: |
+          set -euo pipefail
+          # A merge to `silo` deploys every dev silo. A dispatch says what it wants.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "environment=dev"  >> "$GITHUB_OUTPUT"
+            echo "command=deploy"   >> "$GITHUB_OUTPUT"
+            echo "module=all"       >> "$GITHUB_OUTPUT"
+            echo "kind=all"         >> "$GITHUB_OUTPUT"
+            echo "target=all"       >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
+            echo "command=${{ inputs.command }}"         >> "$GITHUB_OUTPUT"
+            echo "module=${{ inputs.module }}"           >> "$GITHUB_OUTPUT"
+            echo "kind=${{ inputs.kind }}"               >> "$GITHUB_OUTPUT"
+            echo "target=${{ inputs.target }}"           >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve the Azure target
+        id: az
+        run: |
+          set -euo pipefail
+          case "${{ steps.defaults.outputs.environment }}" in
+            dev)  echo "sub=${{ vars.TVS_DEV_SUBSCRIPTION_ID }}"  >> "$GITHUB_OUTPUT"
+                  echo "kv=tvs-dev-kv"  >> "$GITHUB_OUTPUT" ;;
+            prod) echo "sub=${{ vars.TVS_PROD_SUBSCRIPTION_ID }}" >> "$GITHUB_OUTPUT"
+                  echo "kv=tvs-prod-kv" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.TVS_AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.TVS_TENANT_ID }}
+          subscription-id: ${{ steps.az.outputs.sub }}
+
+      - name: Check the chosen silos against the control plane
+        id: pick
+        env:
+          KV: ${{ steps.az.outputs.kv }}
+          KIND: ${{ steps.defaults.outputs.kind }}
+          TARGET: ${{ steps.defaults.outputs.target }}
+        run: |
+          set -euo pipefail
+          CP_URL="$(az keyvault secret show --vault-name "$KV" --name migrator-db-url --query value -o tsv)"
+          echo "::add-mask::$CP_URL"
+
+          # Host, tier and secret URI only — never the credential. That is read in
+          # the per-silo job, from the URI, so it is never a workflow output.
+          export ROWS="$(psql "$CP_URL" -At -F'|' -c "
+            SELECT host, tier, db_name, db_secret_uri
+              FROM control_plane.ctl_tenant_routes
+             WHERE status = 'ACTIVE' AND tier IN ('SILO_SHARED','SILO_DEDICATED')
+             ORDER BY tier, host")"
+
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, sys
+          TIER = {"shared": "SILO_SHARED", "dedicated": "SILO_DEDICATED"}
+          kind, target = os.environ["KIND"], os.environ["TARGET"]
+
+          live = {}
+          for line in os.environ["ROWS"].strip().splitlines():
+              if not line.strip():
+                  continue
+              host, tier, db, uri = line.split("|")
+              live[host] = {"host": host, "tier": tier, "db": db, "secret_uri": uri,
+                            "kind": "shared" if tier == "SILO_SHARED" else "dedicated"}
+
+          picked = list(live.values())
+          if kind != "all":
+              picked = [s for s in picked if s["tier"] == TIER[kind]]
+          if target != "all":
+              # A dropdown option that no longer matches a route is a stale list,
+              # and deploying nothing while reporting success is the failure to avoid.
+              if target not in live:
+                  print(f"::error::'{target}' is in this workflow's options but is not an "
+                        f"ACTIVE silo route. Live silos: {', '.join(sorted(live)) or '(none)'}",
+                        file=sys.stderr)
+                  raise SystemExit(1)
+              picked = [s for s in picked if s["host"] == target]
+              if not picked:
+                  print(f"::error::'{target}' exists but is not kind='{kind}' "
+                        f"(it is {live[target]['kind']}).", file=sys.stderr)
+                  raise SystemExit(1)
+
+          print("matrix=" + json.dumps({"include": picked}))
+          print(f"count={len(picked)}")
+          PY
+
+      - name: Summary
+        run: |
+          {
+            echo "## silos · ${{ steps.defaults.outputs.command }} · ${{ steps.defaults.outputs.environment }}"
+            echo ""
+            echo "kind \`${{ steps.defaults.outputs.kind }}\` · target \`${{ steps.defaults.outputs.target }}\` · module \`${{ steps.defaults.outputs.module }}\` · **${{ steps.pick.outputs.count }} selected**"
+            echo ""
+            echo "| host | kind | database |"
+            echo "| --- | --- | --- |"
+            echo '${{ steps.pick.outputs.matrix }}' | python3 -c "
+          import json,sys
+          for s in json.load(sys.stdin)['include']:
+              print(f\"| \`{s['host']}\` | {s['kind']} | \`{s['db']}\` |\")"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: ${{ matrix.kind }} · ${{ matrix.host }}
+    needs: select
+    if: needs.select.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # One silo's failure must not cancel the others: a tenant mid-migration
+      # cannot be allowed to stop the rest getting the schema.
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJson(needs.select.outputs.matrix) }}
+    env:
+      DOTNET_NOLOGO: "1"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      TVS_SSL: Require
+      TVS_TARGET_CLASS: silo
+      TVS_SILO: ${{ matrix.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: dotnet build Trovesuite.Database.sln -c Release --nologo
+
+      - name: Resolve the Azure target
+        id: az
+        run: |
+          set -euo pipefail
+          case "${{ needs.select.outputs.environment }}" in
+            dev)  echo "sub=${{ vars.TVS_DEV_SUBSCRIPTION_ID }}"  >> "$GITHUB_OUTPUT" ;;
+            prod) echo "sub=${{ vars.TVS_PROD_SUBSCRIPTION_ID }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.TVS_AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.TVS_TENANT_ID }}
+          subscription-id: ${{ steps.az.outputs.sub }}
+
+      - name: Read this silo's own connection string
+        id: db
+        env:
+          SECRET_URI: ${{ matrix.secret_uri }}
+        run: |
+          set -euo pipefail
+          vault="$(printf '%s' "$SECRET_URI" | sed -E 's#^https://([^.]+)\..*#\1#')"
+          name="$(printf '%s' "$SECRET_URI" | sed -E 's#^https://[^/]+/secrets/([^/]+).*#\1#')"
+          [ -n "$vault" ] && [ -n "$name" ] || { echo "::error::cannot parse '$SECRET_URI'"; exit 1; }
+
+          DATABASE_URL="$(az keyvault secret show --vault-name "$vault" --name "$name" --query value -o tsv)"
+          [ -n "$DATABASE_URL" ] || { echo "::error::$name is empty in $vault"; exit 1; }
+          echo "::add-mask::$DATABASE_URL"
+
+          proto="${DATABASE_URL#postgresql://}"; proto="${proto#postgres://}"
+          creds="${proto%%@*}"; rest="${proto#*@}"
+          DB_USER="${creds%%:*}"; PGPASSWORD="${creds#*:}"
+          hostport="${rest%%/*}"; DB_HOST="${hostport%%:*}"; DB_PORT="${hostport#*:}"
+          [[ "$DB_PORT" == "$hostport" ]] && DB_PORT=5432
+          dbpart="${rest#*/}"; DB_NAME="${dbpart%%\?*}"
+          echo "::add-mask::$PGPASSWORD"; echo "::add-mask::$DB_USER"
+          {
+            echo "DB_HOST=$DB_HOST"; echo "DB_PORT=$DB_PORT"; echo "DB_USER=$DB_USER"
+            echo "PGPASSWORD=$PGPASSWORD"; echo "DB_NAME=$DB_NAME"
+          } >> "$GITHUB_OUTPUT"
+
+          # The one check worth making before writing: a silo secret that resolves
+          # to the pool would apply silo-only SQL to every tenant's data.
+          case "$DB_NAME" in
+            dev-db|prod-db|staging-db)
+              echo "::error::${{ matrix.host }} is a silo but its secret points at the POOLED database '$DB_NAME'. Refusing."
+              exit 1 ;;
+          esac
+
+      - name: ${{ needs.select.outputs.command }} → ${{ matrix.host }}
+        env:
+          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
+          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
+          DB_USER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
+        run: |
+          set -euo pipefail
+          case "${{ needs.select.outputs.module }}" in
+            core_platform) PICK=1 ;; loandrift) PICK=2 ;; mystoreguard) PICK=3 ;;
+            zeloshr) PICK=4 ;; attendance) PICK=5 ;; all) PICK=0 ;;
+          esac
+          echo "::notice title=${{ matrix.kind }} silo::${{ matrix.host }} → $DB_NAME"
+          printf '%s\n' "$PICK" \
+            | dotnet run --no-build -c Release \
+                --project src/Trovesuite.Database.Runner -- \
+                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" \
+                "${{ needs.select.outputs.command }}"
