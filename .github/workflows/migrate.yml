@@ -26,7 +26,7 @@
 #   * Key Vault "Secrets User" (RBAC) or get on migrator-db-url for that SP.
 # Callers pass scope/environment/module and gate their deploy on this job.
 
-name: Database migrate (reusable)
+name: Schema · apply (reusable)
 
 on:
   workflow_call:
@@ -217,7 +217,7 @@ jobs:
           set -euo pipefail
           case "${{ inputs.command }}" in
             deploy|validate|verify) ;;
-            *) echo "::error::command '${{ inputs.command }}' not allowed here (deploy|validate|verify). Use database-dispatch.yml for rollback."; exit 1 ;;
+            *) echo "::error::command '${{ inputs.command }}' not allowed here (deploy|validate|verify). Use schema-dispatch.yml for rollback."; exit 1 ;;
           esac
           echo "::group::Runner output (module pick ${{ steps.map.outputs.pick }}; 0=ALL)"
           printf '%s\n' "${{ steps.map.outputs.pick }}" \

@@ -9,14 +9,19 @@ CREATE SCHEMA IF NOT EXISTS core_platform;
 SET search_path TO core_platform;
 
 -- Insert system tenant (required before roles)
-INSERT INTO cp_tenants (id, delete_status, is_active, cdate, ctime, cdatetime, description, is_verified, is_system) VALUES
-('system-tenant-id', 'NOT_DELETED', true, null, null, CURRENT_TIMESTAMP, 'Default System Tenant', true, true)
+-- tenant_name is NOT NULL as of AddTenantName, so this seed has to supply it or
+-- a fresh database cannot be built at all. It is set on conflict too: an
+-- existing system tenant was named by the migration, and leaving it out here
+-- would mean the seed and the migration disagree about the same row.
+INSERT INTO cp_tenants (id, delete_status, is_active, cdate, ctime, cdatetime, description, is_verified, is_system, tenant_name) VALUES
+('system-tenant-id', 'NOT_DELETED', true, null, null, CURRENT_TIMESTAMP, 'Default System Tenant', true, true, 'Trovesuite System')
 ON CONFLICT (id) DO UPDATE SET
     delete_status = EXCLUDED.delete_status,
     is_active     = EXCLUDED.is_active,
     description   = EXCLUDED.description,
     is_verified   = EXCLUDED.is_verified,
-    is_system     = EXCLUDED.is_system;
+    is_system     = EXCLUDED.is_system,
+    tenant_name   = EXCLUDED.tenant_name;
 
 -- Insert default roles
 -- Note: cp_roles now has tenant_id - system roles use 'system-tenant-id'
@@ -58,8 +63,19 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 -- role's OWN resource type, and this role spans twenty of them. Its grants are made
 -- explicitly in Seeds/04_others.sql instead.
 ('role-cp-admin', 'system-tenant-id', 'Core Platform Admin', 'Administrator for Core Platform - full access to every Core Platform resource (organizations, businesses, locations, users, groups, roles, permissions, settings, billing), excluding deletion of activity logs. Carries no access to any subscribed app.', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- role_name is deliberately NOT re-asserted below.
+--
+-- 20260929-11-roles-named-after-jobs owns these names now, and this seed runs
+-- at step 1 of a deploy while that migration runs at step 5. Handing the old
+-- name back here means every deploy reverts it and then renames it again --
+-- harmless when a deploy finishes, and wrong the moment one does not. On
+-- 2026-09-30 a module seed started failing at step 3, step 5 stopped being
+-- reached, and 49 role names sat reverted for a day while anything matching on
+-- the new names quietly did nothing.
+--
+-- The INSERT above still supplies a name, because a brand new database has to
+-- get one from somewhere; the migration renames it there, once.
 ON CONFLICT (id) DO UPDATE SET
-    role_name        = EXCLUDED.role_name,
     description      = EXCLUDED.description,
     resource_type_id = EXCLUDED.resource_type_id,
     is_system        = EXCLUDED.is_system,

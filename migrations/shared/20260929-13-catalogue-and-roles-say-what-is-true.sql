@@ -60,6 +60,26 @@ SELECT replace(p.id, 'calender', 'calendar'), p.app_prefix, 'calendar', p.action
  WHERE p.resource_key = 'calender'
 ON CONFLICT (id) DO NOTHING;
 
+-- Drop the misspelt grant wherever the corrected one is already held, BEFORE
+-- renaming the rest. Otherwise the rename below collides with it: saas-dev has
+-- 15 rows on 'calender' and the same 15 roles already hold 'calendar', so every
+-- single row would violate ix_cp_role_permissions_tenant_id_role_id_permission_id
+-- and an UPDATE cannot carry an ON CONFLICT clause to absorb that.
+--
+-- Both spellings coexist because this migration never completed: the deploys
+-- that would have run it died earlier, in a module seed, while something else
+-- went on granting the correctly-spelled permission. On a database where only
+-- 'calender' exists this DELETE matches nothing and the rename does the whole
+-- job, exactly as before.
+DELETE FROM core_platform.cp_role_permissions rp
+ WHERE rp.resource_key = 'calender'
+   AND EXISTS (
+        SELECT 1 FROM core_platform.cp_role_permissions x
+         WHERE x.tenant_id     = rp.tenant_id
+           AND x.role_id       = rp.role_id
+           AND x.permission_id = replace(rp.permission_id, 'calender', 'calendar')
+   );
+
 UPDATE core_platform.cp_role_permissions rp
    SET permission_id = replace(rp.permission_id, 'calender', 'calendar'),
        resource_key  = 'calendar'

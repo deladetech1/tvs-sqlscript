@@ -210,8 +210,10 @@ internal static class Program
         }
 
         // Custom post-migration SQL on top of EF Core migrations:
-        //   migrations/shared/*.sql           — applied to every target
-        //   migrations/enterprise/<slug>/*.sql — applied when TVS_ENTERPRISE is set
+        //   migrations/shared/*.sql            — every database there is
+        //   migrations/<class>/*.sql           — saas | silo | enterprise, per TVS_TARGET_CLASS
+        //   migrations/silo/<host>/*.sql       — one silo, per TVS_SILO
+        //   migrations/enterprise/<slug>/*.sql — one enterprise, per TVS_ENTERPRISE
         await ApplyCustomMigrationSql(cfg);
 
         Success("All selected modules deployed successfully");
@@ -239,17 +241,40 @@ internal static class Program
     }
 
     /// <summary>
-    /// Applies the on-disk SQL under <c>migrations/shared/</c> and (optionally)
-    /// <c>migrations/enterprise/&lt;slug&gt;/</c>. Order: shared first, then
-    /// enterprise — both in lexicographic filename order. Every file is expected
-    /// to be idempotent (CREATE … IF NOT EXISTS / ON CONFLICT DO NOTHING).
+    /// Applies the on-disk SQL, in three layers: common, then the target CLASS,
+    /// then the individual tenant.
     /// </summary>
+    /// <remarks>
+    /// <code>
+    ///   migrations/shared/              every database there is
+    ///   migrations/saas/                the SaaS pooled database only
+    ///   migrations/silo/                every silo database
+    ///   migrations/enterprise/          every enterprise database
+    ///   migrations/enterprise/&lt;slug&gt;/   one enterprise
+    /// </code>
+    ///
+    /// <c>shared/</c> stays, and that is the important part. A silo and an
+    /// enterprise database hold the SAME schema as the pool — they differ in who
+    /// can reach them, not in what is in them. Splitting the common schema three
+    /// ways would mean writing every table change three times and discovering the
+    /// copies had drifted when one tenant's app started 500ing. The class folders
+    /// are for SQL that is genuinely only true of one class: seeds the pool needs
+    /// and a silo does not, a per-silo role grant, an enterprise's own extension.
+    ///
+    /// Selected by <c>TVS_TARGET_CLASS</c> (saas | silo | enterprise). Unset means
+    /// shared only, which is what every existing caller gets.
+    ///
+    /// Order is shared → class → tenant, narrowing, so a later file can rely on
+    /// what an earlier one created. Every file is expected to be idempotent
+    /// (CREATE … IF NOT EXISTS / ON CONFLICT DO NOTHING) because they all re-run
+    /// on every deploy.
+    /// </remarks>
     private static async Task ApplyCustomMigrationSql(DbConfig cfg)
     {
         var migrationsRoot = ResolveMigrationsRoot();
         if (migrationsRoot is null)
         {
-            Info("  No 'migrations/' folder found — skipping shared/enterprise SQL.");
+            Info("  No 'migrations/' folder found — skipping custom SQL.");
             return;
         }
 
@@ -257,20 +282,55 @@ internal static class Program
         await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync();
 
+        // 1. everything, everywhere
         await RunSqlFolder(conn, Path.Combine(migrationsRoot, "shared"), label: "shared");
+
+        // 2. this class of target
+        var targetClass = (Environment.GetEnvironmentVariable("TVS_TARGET_CLASS") ?? "").Trim().ToLowerInvariant();
+        if (targetClass is "saas" or "silo" or "enterprise")
+        {
+            await RunSqlFolder(conn, Path.Combine(migrationsRoot, targetClass), label: targetClass);
+        }
+        else if (targetClass.Length > 0)
+        {
+            Info($"  TVS_TARGET_CLASS='{targetClass}' is not saas|silo|enterprise — applying shared only.");
+        }
+
+        // 3. this one tenant. TVS_SILO names a silo by its host, TVS_ENTERPRISE an
+        //    enterprise by its slug. Both are optional: a class with no per-tenant
+        //    SQL is the normal case, not an error.
+        var silo = Environment.GetEnvironmentVariable("TVS_SILO");
+        if (!string.IsNullOrWhiteSpace(silo))
+        {
+            await RunTenantFolder(conn, migrationsRoot, "silo", silo.Trim());
+        }
 
         var enterprise = Environment.GetEnvironmentVariable("TVS_ENTERPRISE");
         if (!string.IsNullOrWhiteSpace(enterprise))
         {
-            var enterpriseFolder = Path.Combine(migrationsRoot, "enterprise", enterprise.Trim());
-            if (Directory.Exists(enterpriseFolder))
-            {
-                await RunSqlFolder(conn, enterpriseFolder, label: $"enterprise/{enterprise}");
-            }
-            else
-            {
-                Info($"  TVS_ENTERPRISE='{enterprise}' set but '{enterpriseFolder}' doesn't exist — skipping.");
-            }
+            await RunTenantFolder(conn, migrationsRoot, "enterprise", enterprise.Trim());
+        }
+    }
+
+    /// <summary>
+    /// Applies <c>migrations/&lt;class&gt;/&lt;name&gt;/*.sql</c> if that folder exists.
+    /// </summary>
+    /// <remarks>
+    /// A missing folder is logged, not failed. Most tenants never need SQL of
+    /// their own, and failing the deploy of the twelve that are fine because the
+    /// thirteenth has no folder would be the wrong trade.
+    /// </remarks>
+    private static async Task RunTenantFolder(
+        NpgsqlConnection conn, string migrationsRoot, string klass, string name)
+    {
+        var folder = Path.Combine(migrationsRoot, klass, name);
+        if (Directory.Exists(folder))
+        {
+            await RunSqlFolder(conn, folder, label: $"{klass}/{name}");
+        }
+        else
+        {
+            Info($"  No {klass}-specific SQL for '{name}' ({folder}) — skipping.");
         }
     }
 

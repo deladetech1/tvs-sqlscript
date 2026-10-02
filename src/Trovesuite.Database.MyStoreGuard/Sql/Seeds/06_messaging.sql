@@ -262,7 +262,13 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
 ('role-msg-messaging-admin', 'system-tenant-id', 'Mystoreguard Messaging Admin', 'Administrator for messaging management with full access to compose, send, and manage messages', 'rt-messaging', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 -- role-msg-meetings-admin retired: see the cleanup block at the end of this file.
-ON CONFLICT (tenant_id, role_name) DO UPDATE SET
+-- Conflict on the PRIMARY KEY, and do not re-assert role_name: these roles were
+-- renamed by 20260929-11-roles-named-after-jobs, so the names in this file no
+-- longer match any row. A clause targeting (tenant_id, role_name) therefore had
+-- nothing to catch, became a plain INSERT, and broke pk_cp_roles on an id that
+-- was already there -- failing every saas-dev schema deploy. Same reasoning and
+-- the same fix as 03_roles.sql in this folder, where the full explanation is.
+ON CONFLICT (id) DO UPDATE SET
     description      = EXCLUDED.description,
     resource_type_id = EXCLUDED.resource_type_id,
     is_system        = EXCLUDED.is_system,

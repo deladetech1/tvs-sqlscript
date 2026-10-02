@@ -27,15 +27,38 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 
 -- Viewer Admin Role (read-only access to all Loandrift resources)
 ('role-loandrift-viewer-admin', 'system-tenant-id', 'Loandrift Viewer Admin', 'Viewer Admin for Loandrift - can view all Loandrift resources with GET permissions only', 'rt-subscribed-app-loandrift', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- role_name is deliberately NOT re-asserted below.
+--
+-- 20260929-11-roles-named-after-jobs owns these names now, and this seed runs
+-- at step 1 of a deploy while that migration runs at step 5. Handing the old
+-- name back here means every deploy reverts it and then renames it again --
+-- harmless when a deploy finishes, and wrong the moment one does not. On
+-- 2026-09-30 a module seed started failing at step 3, step 5 stopped being
+-- reached, and 49 role names sat reverted for a day while anything matching on
+-- the new names quietly did nothing.
+--
+-- The INSERT above still supplies a name, because a brand new database has to
+-- get one from somewhere; the migration renames it there, once.
 ON CONFLICT (id) DO UPDATE SET
-    role_name        = EXCLUDED.role_name,
     description      = EXCLUDED.description,
     resource_type_id = EXCLUDED.resource_type_id,
     is_system        = EXCLUDED.is_system,
     is_active        = EXCLUDED.is_active;
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime)
 VALUES ('role-loandrift-accounting-admin', 'system-tenant-id', 'Loandrift Accounting Admin', 'Manage LoanDrift accounting subject to owner-only configuration restrictions', 'rt-loandrift-accounting', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
-ON CONFLICT (id) DO UPDATE SET role_name=EXCLUDED.role_name, description=EXCLUDED.description, resource_type_id=EXCLUDED.resource_type_id;
+-- role_name is deliberately NOT re-asserted below.
+--
+-- 20260929-11-roles-named-after-jobs owns these names now, and this seed runs
+-- at step 1 of a deploy while that migration runs at step 5. Handing the old
+-- name back here means every deploy reverts it and then renames it again --
+-- harmless when a deploy finishes, and wrong the moment one does not. On
+-- 2026-09-30 a module seed started failing at step 3, step 5 stopped being
+-- reached, and 49 role names sat reverted for a day while anything matching on
+-- the new names quietly did nothing.
+--
+-- The INSERT above still supplies a name, because a brand new database has to
+-- get one from somewhere; the migration renames it there, once.
+ON CONFLICT (id) DO UPDATE SET description=EXCLUDED.description, resource_type_id=EXCLUDED.resource_type_id;
 
 -- Core Platform resource types can be shared/reparented. App-wide roles must
 -- also receive this app's explicitly namespaced permissions, including locations.
@@ -80,8 +103,19 @@ INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resou
 ('role-loandrift-collections-manager', 'system-tenant-id', 'Loandrift Collections Manager', 'Owns the arrears book: approves or rejects collection actions, waives penalties where warranted, agrees restructures, and recommends write-offs.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-compliance-officer', 'system-tenant-id', 'Loandrift Compliance Officer', 'Keeps the business inside the rules: runs KYC/AML checks, prepares regulatory returns including the Bank of Ghana credit bureau submission, approves client data-erasure requests, and reviews activity logs for policy breaches.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('role-loandrift-internal-auditor', 'system-tenant-id', 'Loandrift Internal Auditor', 'Independent assurance: reviews every transaction, approval and log to confirm controls held and nothing was circumvented. Sees everything, changes nothing.', 'rt-loandrift-job-roles', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- role_name is deliberately NOT re-asserted below.
+--
+-- 20260929-11-roles-named-after-jobs owns these names now, and this seed runs
+-- at step 1 of a deploy while that migration runs at step 5. Handing the old
+-- name back here means every deploy reverts it and then renames it again --
+-- harmless when a deploy finishes, and wrong the moment one does not. On
+-- 2026-09-30 a module seed started failing at step 3, step 5 stopped being
+-- reached, and 49 role names sat reverted for a day while anything matching on
+-- the new names quietly did nothing.
+--
+-- The INSERT above still supplies a name, because a brand new database has to
+-- get one from somewhere; the migration renames it there, once.
 ON CONFLICT (id) DO UPDATE SET
-    role_name        = EXCLUDED.role_name,
     description      = EXCLUDED.description,
     resource_type_id = EXCLUDED.resource_type_id,
     is_system        = EXCLUDED.is_system,

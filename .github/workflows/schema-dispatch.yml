@@ -46,7 +46,7 @@
 # Concurrency: one in-flight job per repo + (scope-environment) so two dispatch
 # runs never fight the same DB.
 
-name: Database (EF Core dispatch)
+name: Schema · manual dispatch (any target)
 
 on:
   workflow_dispatch:
