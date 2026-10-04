@@ -105,6 +105,23 @@ GRANT USAGE ON SCHEMA control_plane, core_platform TO tvs_app_dev;
 -- Apps resolve routes, so reading this table is part of being an app.
 GRANT SELECT ON control_plane.ctl_tenant_routes TO tvs_app_dev;
 
+-- AND THE SCHEMA DEFAULT, which is the part that matters here.
+--
+-- 20261001-01 ends with this, so every table created in control_plane afterwards
+-- is readable by every application group without anybody deciding so. The ledger
+-- was born that way and the migration has to revoke it. A fixture without this
+-- line cannot see the hole -- which is precisely what happened: the test passed
+-- locally and the migration failed its own assertion on dev.
+-- FOR ROLE migrator, because a default privilege is keyed to the role that
+-- CREATES the object, not to the schema alone. In the pipeline 20261001-01 runs
+-- as the migrator, so its ALTER DEFAULT PRIVILEGES is implicitly for the same
+-- role that later creates the ledger -- and that is what makes the hole real.
+-- Setting it as postgres here would key it to postgres, apply to nothing the
+-- migration creates, and quietly turn this fixture back into one that cannot
+-- see the problem.
+ALTER DEFAULT PRIVILEGES FOR ROLE migrator IN SCHEMA control_plane
+    GRANT SELECT ON TABLES TO tvs_app_dev;
+
 -- The migrator owns what it migrates, which is what lets it grant on its own
 -- tables without being a superuser. It can also create a schema -- the real one
 -- created control_plane and deladetech -- which is why the migration's defensive

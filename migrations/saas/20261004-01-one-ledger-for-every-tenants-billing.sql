@@ -260,6 +260,43 @@ COMMENT ON VIEW control_plane.ctl_billing_coverage IS
     'Every database expected to report, beside what it last reported. never_reported or '
     'current_period_missing is the alert; a revenue total cannot show a silent silo.';
 
+-- ----------------------------------------------------------------- revoke first
+-- THE LEDGER IS BORN READABLE BY EVERY APP, AND MUST NOT STAY THAT WAY.
+--
+-- 20261001-01 ends with
+--
+--     ALTER DEFAULT PRIVILEGES IN SCHEMA control_plane GRANT SELECT ON TABLES TO <app>
+--
+-- for every application group, which is exactly right for what control_plane held until
+-- now: a route table that every app must read to resolve a host. It is exactly wrong
+-- for these two tables. Without this revoke, every application role in the cluster can
+-- read every customer's revenue the moment the tables exist -- not through any decision,
+-- but as the default for the schema they happen to live in.
+--
+-- This is the hole the check at the end of this file exists to catch, and it caught it:
+-- the migration failed its own assertion on dev with "an application group can read the
+-- whole billing ledger". Worth stating plainly, because a default privilege is invisible
+-- at the point where the table is created -- there is nothing to read in the CREATE
+-- TABLE that says who can see it.
+DO $$
+DECLARE grp text;
+BEGIN
+    FOR grp IN
+        SELECT rolname FROM pg_roles
+         WHERE rolname ~ '^tvs_app_[a-z0-9_]+$' AND NOT rolcanlogin
+    LOOP
+        EXECUTE format(
+            'REVOKE ALL ON control_plane.ctl_billing_reports FROM %I', grp);
+        EXECUTE format(
+            'REVOKE ALL ON control_plane.ctl_billing_facts FROM %I', grp);
+        EXECUTE format(
+            'REVOKE ALL ON control_plane.ctl_billing_facts_current FROM %I', grp);
+        EXECUTE format(
+            'REVOKE ALL ON control_plane.ctl_billing_coverage FROM %I', grp);
+        RAISE NOTICE 'billing ledger: revoked the schema default from %', grp;
+    END LOOP;
+END $$;
+
 -- ------------------------------------------------------------------------------ grants
 --
 -- APPEND for the reporters, READ for a named group, and DELETE for nobody.
