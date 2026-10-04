@@ -36,12 +36,11 @@ import tempfile
 import time
 
 HERE = pathlib.Path(__file__).resolve().parent
-MIGRATION = (
-    HERE.parent
-    / "migrations"
-    / "saas"
-    / "20261004-01-one-ledger-for-every-tenants-billing.sql"
-)
+SAAS = HERE.parent / "migrations" / "saas"
+MIGRATION = SAAS / "20261004-01-one-ledger-for-every-tenants-billing.sql"
+# Applied after it, in filename order, exactly as the pipeline does. The customer
+# table carries a foreign key to the reports table, so the two only work together.
+FOLLOW_ONS = [SAAS / "20261004-03-what-each-customer-is-worth.sql"]
 
 # What the pooled database already has, reduced to the columns the ledger reads.
 # The route mix is the real dev one plus the two cases that must be EXCLUDED: a
@@ -236,6 +235,11 @@ def main():
         # As the MIGRATOR, which is not a superuser -- see the fixture.
         r = pg.run("migrator", str(MIGRATION), file=True)
         check("the migration applies as a non-superuser migrator", r.returncode, 0)
+        for extra in FOLLOW_ONS:
+            r2 = pg.run("migrator", str(extra), file=True)
+            check(f"...and {extra.name[:22]} applies too", r2.returncode, 0)
+            if r2.returncode != 0:
+                print(r2.stderr)
         if r.returncode != 0:
             print(r.stderr)
             sys.exit(1)
@@ -243,6 +247,9 @@ def main():
         # It is re-applied on every deploy, so a second run must be a no-op.
         r = pg.run("migrator", str(MIGRATION), file=True)
         check("and applies a second time (re-run on every deploy)", r.returncode, 0)
+        for extra in FOLLOW_ONS:
+            check(f"...{extra.name[:22]} is re-runnable too",
+                  pg.run("migrator", str(extra), file=True).returncode, 0)
         if r.returncode != 0:
             print(r.stderr)
 
