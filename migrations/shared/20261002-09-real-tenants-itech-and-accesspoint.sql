@@ -26,40 +26,72 @@ DELETE FROM control_plane.ctl_tenant_routes
    'tenantb.dev.trovesuite.com'
  );
 
-INSERT INTO control_plane.ctl_tenant_routes
-    (host, tenant_id, tier, cell_key,
-     db_server_fqdn, db_name, silo_key, db_secret_uri,
-     storage_account, container_prefix, storage_secret_uri,
-     status, is_wildcard, cdate, ctime, cdatetime, created_by)
-VALUES
-    ('itech.dev.trovesuite.com',
-     'tnt_itech', 'SILO_SHARED', 'uksouth-dev',
-     'tvs-shared-sql.postgres.database.azure.com', 'silo-itech-dev', 'itech', NULL,
-     -- A shared silo names NO account: storage is per app, so it keeps each
-     -- app's own and prefixes its containers inside them. The prefix is the
-     -- silo key, which is why it is this tenant's and nobody else's.
-     NULL, 'itech', NULL,
-     'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261002-09'),
+-- WHY THIS SEED IS GUARDED
+--
+-- route_kind is added by the LATER 20261003-07, with a default of 'PLATFORM' and a check
+-- that refuses a customer's address resolving to the pooled database. Migrations re-run
+-- on every deploy, which puts this statement in an impossible position:
+--
+--   * naming route_kind breaks the FIRST run, where the column does not exist yet;
+--   * omitting it breaks every LATER run in which these rows are absent, because the
+--     default 'PLATFORM' against a SILO tier is exactly what the check refuses.
+--
+-- The second case is not hypothetical. Both clients were cleared and set up again
+-- through the console, and the next deploy died here -- one release after the constraint
+-- was added, which is the worst possible delay for finding it.
+--
+-- So this file keeps its original form for a fresh database and stands aside once the
+-- column exists; 20261004-02 owns these two rows from then on. That is the repo's own
+-- rule -- a later migration wins -- rather than a second copy of the seed kept in step
+-- by hand.
+DO $seed$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'control_plane'
+           AND table_name   = 'ctl_tenant_routes'
+           AND column_name  = 'route_kind'
+    ) THEN
+        RAISE NOTICE
+            'itech/accesspoint routes: skipped here; 20261004-02 owns them now that '
+            'route_kind exists';
+    ELSE
+    INSERT INTO control_plane.ctl_tenant_routes
+        (host, tenant_id, tier, cell_key,
+         db_server_fqdn, db_name, silo_key, db_secret_uri,
+         storage_account, container_prefix, storage_secret_uri,
+         status, is_wildcard, cdate, ctime, cdatetime, created_by)
+    VALUES
+        ('itech.dev.trovesuite.com',
+         'tnt_itech', 'SILO_SHARED', 'uksouth-dev',
+         'tvs-shared-sql.postgres.database.azure.com', 'silo-itech-dev', 'itech', NULL,
+         -- A shared silo names NO account: storage is per app, so it keeps each
+         -- app's own and prefixes its containers inside them. The prefix is the
+         -- silo key, which is why it is this tenant's and nobody else's.
+         NULL, 'itech', NULL,
+         'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261002-09'),
 
-    ('accesspoint.dev.trovesuite.com',
-     'tnt_accesspoint', 'SILO_DEDICATED', 'uksouth-dev',
-     'tvs-dev-silo-accesspoint-sql.postgres.database.azure.com', 'silo-accesspoint-dev',
-     'accesspoint', NULL,
-     -- Its own account, so its containers need no prefix to stay apart.
-     'tvsdevaccesspointsa', NULL, NULL,
-     'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261002-09')
-ON CONFLICT (host) DO UPDATE
-   SET tenant_id        = EXCLUDED.tenant_id,
-       tier             = EXCLUDED.tier,
-       db_server_fqdn   = EXCLUDED.db_server_fqdn,
-       db_name          = EXCLUDED.db_name,
-       silo_key         = EXCLUDED.silo_key,
-       db_secret_uri    = EXCLUDED.db_secret_uri,
-       storage_account  = EXCLUDED.storage_account,
-       container_prefix = EXCLUDED.container_prefix,
-       status           = EXCLUDED.status,
-       udatetime        = now(),
-       updated_by       = 'migration 20261002-09';
+        ('accesspoint.dev.trovesuite.com',
+         'tnt_accesspoint', 'SILO_DEDICATED', 'uksouth-dev',
+         'tvs-dev-silo-accesspoint-sql.postgres.database.azure.com', 'silo-accesspoint-dev',
+         'accesspoint', NULL,
+         -- Its own account, so its containers need no prefix to stay apart.
+         'tvsdevaccesspointsa', NULL, NULL,
+         'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261002-09')
+    ON CONFLICT (host) DO UPDATE
+       SET tenant_id        = EXCLUDED.tenant_id,
+           tier             = EXCLUDED.tier,
+           db_server_fqdn   = EXCLUDED.db_server_fqdn,
+           db_name          = EXCLUDED.db_name,
+           silo_key         = EXCLUDED.silo_key,
+           db_secret_uri    = EXCLUDED.db_secret_uri,
+           storage_account  = EXCLUDED.storage_account,
+           container_prefix = EXCLUDED.container_prefix,
+           status           = EXCLUDED.status,
+           udatetime        = now(),
+           updated_by       = 'migration 20261002-09';
+    END IF;
+END $seed$;
 
 -- ----------------------------------------------------------------------------- checks
 -- Safe where there are no route rows: migrations/shared reaches every silo's own

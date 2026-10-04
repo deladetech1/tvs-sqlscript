@@ -124,13 +124,37 @@ BEGIN
     -- container_prefix and NO storage account of its own -- because a shared
     -- silo's containers live inside each app's account. The probe rows have to
     -- be real routes or they never reach the function being tested.
-    INSERT INTO control_plane.ctl_tenant_routes
-        (host, tenant_id, tier, cell_key, silo_key, status, is_wildcard,
-         db_server_fqdn, db_name, container_prefix)
-    VALUES (v_host, 'tnt_probe', 'SILO_SHARED', 'uksouth-dev', 'probe', 'ACTIVE', false,
-            'probe.postgres.database.azure.com', 'probe-db', 'probe'),
-           (v_pool, NULL, 'POOLED', 'uksouth-dev', NULL, 'ACTIVE', false,
-            NULL, NULL, NULL);
+    -- WHY THIS IS WRITTEN TWICE
+    --
+    -- route_kind is added by 20261003-07, which is LATER than this file. On a fresh
+    -- database this runs first and the column does not exist, so naming it fails. On
+    -- every later deploy -- migrations re-run -- the column and its check ARE there,
+    -- and a SILO_SHARED probe row taking the default 'PLATFORM' is refused. Either
+    -- single version of this statement breaks one of the two cases, and the one it
+    -- breaks is a migration whose only job is to prove a function works.
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'control_plane'
+           AND table_name   = 'ctl_tenant_routes'
+           AND column_name  = 'route_kind'
+    ) THEN
+        INSERT INTO control_plane.ctl_tenant_routes
+            (host, tenant_id, tier, cell_key, silo_key, status, is_wildcard,
+             db_server_fqdn, db_name, container_prefix, route_kind)
+        VALUES (v_host, 'tnt_probe', 'SILO_SHARED', 'uksouth-dev', 'probe', 'ACTIVE',
+                false, 'probe.postgres.database.azure.com', 'probe-db', 'probe',
+                'TENANT'),
+               (v_pool, NULL, 'POOLED', 'uksouth-dev', NULL, 'ACTIVE', false,
+                NULL, NULL, NULL, 'PLATFORM');
+    ELSE
+        INSERT INTO control_plane.ctl_tenant_routes
+            (host, tenant_id, tier, cell_key, silo_key, status, is_wildcard,
+             db_server_fqdn, db_name, container_prefix)
+        VALUES (v_host, 'tnt_probe', 'SILO_SHARED', 'uksouth-dev', 'probe', 'ACTIVE',
+                false, 'probe.postgres.database.azure.com', 'probe-db', 'probe'),
+               (v_pool, NULL, 'POOLED', 'uksouth-dev', NULL, 'ACTIVE', false,
+                NULL, NULL, NULL);
+    END IF;
 
     -- The reconciliation it exists for.
     r := control_plane.reconcile_route_tenant(v_host, 'tnt_real_one', 'tnt_probe', 'checks');
