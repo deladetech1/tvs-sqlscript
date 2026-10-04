@@ -76,6 +76,20 @@ INSERT INTO control_plane.ctl_tenant_routes
  ('selfhosted.example.com',         'tnt_sh',   'SELF_MANAGED',  'uksouth-dev','ACTIVE', 'sh',         'tvs_sh',         'TENANT'),
  ('retired.dev.trovesuite.com',     'tnt_old',  'SILO_SHARED',   'uksouth-dev','RETIRED','retired',    'tvs_retired',    'TENANT');
 
+-- THE MIGRATOR.
+--
+-- The pipeline applies migrations as a role that owns the schemas and is NOT a
+-- superuser. That distinction is not academic: the first version of this
+-- migration created a group role, which works as postgres and fails on Azure
+-- Flexible Server with "permission denied to create role" -- found on dev,
+-- after review, after a green local run. Applying as this role instead is the
+-- only way the test can see what the pipeline sees.
+DO $r$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='migrator') THEN
+     CREATE ROLE migrator LOGIN NOCREATEROLE NOCREATEDB NOSUPERUSER;
+  END IF;
+END $r$;
+
 -- The grant model: one NOLOGIN group per environment, a login per app inside it.
 DO $r$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='tvs_app_dev')
@@ -91,13 +105,23 @@ GRANT USAGE ON SCHEMA control_plane, core_platform TO tvs_app_dev;
 -- Apps resolve routes, so reading this table is part of being an app.
 GRANT SELECT ON control_plane.ctl_tenant_routes TO tvs_app_dev;
 
--- The console's own future login: the reader group and nothing else. The
--- migration grants the group to names matching coreplatform_*/deladetech_*, so
--- this one is granted here by hand -- which is exactly the one statement that
--- moves the right to read when the console stops borrowing a credential.
+-- The migrator owns what it migrates, which is what lets it grant on its own
+-- tables without being a superuser. It can also create a schema -- the real one
+-- created control_plane and deladetech -- which is why the migration's defensive
+-- CREATE SCHEMA IF NOT EXISTS is not a privilege it lacks.
+GRANT CREATE ON DATABASE ledger TO migrator;
+ALTER SCHEMA control_plane OWNER TO migrator;
+ALTER SCHEMA core_platform OWNER TO migrator;
+ALTER TABLE control_plane.ctl_tenant_routes OWNER TO migrator;
+ALTER TABLE core_platform.cp_app_schemas OWNER TO migrator;
+
+-- The console's own login, which it does not use yet -- today it borrows
+-- core-platform's. It exists here to prove the read grant follows it with no
+-- migration change, and that it needs NOTHING else: not app-group membership,
+-- not the route table.
 DO $r$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='console_only')
-     THEN CREATE ROLE console_only LOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='deladetech_dev')
+     THEN CREATE ROLE deladetech_dev LOGIN; END IF;
 END $r$;
 """
 
@@ -163,7 +187,12 @@ class Postgres:
         return ["psql", "-h", self.tmp, "-p", "5478", "-U", user, "-d", db]
 
     def run(self, user, sql, db="ledger", file=False):
-        args = self._args(user, db) + (["-f", sql] if file else ["-tAc", sql])
+        # ON_ERROR_STOP for a FILE. Without it psql carries on past a failed
+        # statement and exits 0, so a migration that half-applied reported
+        # success here and the real cause surfaced three checks later as
+        # "permission denied" on a grant that never ran.
+        args = self._args(user, db) + (
+            ["-v", "ON_ERROR_STOP=1", "-f", sql] if file else ["-tAc", sql])
         return subprocess.run(args, capture_output=True, text=True)
 
     def value(self, user, sql, db="ledger"):
@@ -187,14 +216,15 @@ def main():
             sys.exit("fixture failed:\n" + r.stderr)
 
         # ---------------------------------------------------- the migration itself
-        r = pg.run("postgres", str(MIGRATION), file=True)
-        check("the migration applies", r.returncode, 0)
+        # As the MIGRATOR, which is not a superuser -- see the fixture.
+        r = pg.run("migrator", str(MIGRATION), file=True)
+        check("the migration applies as a non-superuser migrator", r.returncode, 0)
         if r.returncode != 0:
             print(r.stderr)
             sys.exit(1)
 
         # It is re-applied on every deploy, so a second run must be a no-op.
-        r = pg.run("postgres", str(MIGRATION), file=True)
+        r = pg.run("migrator", str(MIGRATION), file=True)
         check("and applies a second time (re-run on every deploy)", r.returncode, 0)
         if r.returncode != 0:
             print(r.stderr)
@@ -271,30 +301,47 @@ def main():
         check("the console reads the facts",
               pg.value("coreplatform_dev",
                        "SELECT count(*) FROM control_plane.ctl_billing_facts"), "1")
-        # A reader that is NOT an app -- the console's own role, when it has one.
-        # The coverage view reads the route table; the view's owner supplies that,
-        # so the minimal role needs nothing on it. If that were not true, giving
-        # the console its own login would mean also granting it the route table,
-        # and the "least privilege" role would quietly need two grants.
-        pg.run("postgres", "GRANT tvs_billing_reader TO console_only")
+        # The console's OWN login, which nothing granted by hand. The migration
+        # matches coreplatform_*/deladetech_*, so the day the console stops
+        # borrowing a credential the grant follows it on the next deploy.
+        #
+        # A dedicated group role would read better, but the migrator on Azure
+        # Flexible Server cannot CREATE ROLE -- which is how this migration first
+        # failed on dev -- so the grant goes to logins by name instead.
         check(
-            "a reader holding only the group can read coverage",
-            pg.value("console_only",
+            "the console's own login can read the ledger, ungranted by hand",
+            pg.value("deladetech_dev",
+                     "SELECT count(*) FROM control_plane.ctl_billing_facts"),
+            "1",
+        )
+        check(
+            "...and the coverage view, which it is not a member of any app group for",
+            pg.value("deladetech_dev",
                      "SELECT count(*) FROM control_plane.ctl_billing_coverage"),
             "3",
         )
+        # The coverage view reads the route table; the view's owner supplies that
+        # access. If it did not, giving the console its own login would quietly
+        # need a second grant on ctl_tenant_routes.
         check(
-            "...while having no privilege on the route table at all",
+            "...while holding no privilege on the route table at all",
             pg.value("postgres",
-                     "SELECT has_table_privilege('console_only',"
+                     "SELECT has_table_privilege('deladetech_dev',"
                      "'control_plane.ctl_tenant_routes','SELECT')::text"),
             "false",
         )
         check_contains(
             "...and still cannot write",
-            pg.value("console_only",
+            pg.value("deladetech_dev",
                      "DELETE FROM control_plane.ctl_billing_facts"),
             "permission denied",
+        )
+        # Nothing may create a role here, because the migrator cannot.
+        check(
+            "the migration creates no role",
+            "CREATE ROLE" not in MIGRATION.read_text().replace(
+                "CREATE ROLE fails", ""),
+            True,
         )
 
         # ------------------------------------------------- coverage: the whole point

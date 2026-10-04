@@ -271,26 +271,11 @@ COMMENT ON VIEW control_plane.ctl_billing_coverage IS
 --
 -- SELECT does NOT go to the app groups. Reading this table means reading every
 -- customer's revenue across every database, which is a strictly wider thing than any
--- application has ever been able to do. It goes to tvs_billing_reader, which exists so
--- that the right to see all of it is held by name and can be moved in one statement --
--- today to the credential the console borrows, and to the console's own login the moment
--- it has one.
+-- application has ever been able to do -- so it is granted to the console's login by
+-- name, below, and to nothing else.
 DO $$
 DECLARE grp text;
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'tvs_billing_reader') THEN
-        CREATE ROLE tvs_billing_reader NOLOGIN;
-        RAISE NOTICE 'created role tvs_billing_reader';
-    END IF;
-
-    GRANT USAGE ON SCHEMA control_plane TO tvs_billing_reader;
-    GRANT SELECT ON control_plane.ctl_billing_reports        TO tvs_billing_reader;
-    GRANT SELECT ON control_plane.ctl_billing_facts          TO tvs_billing_reader;
-    GRANT SELECT ON control_plane.ctl_billing_facts_current  TO tvs_billing_reader;
-    GRANT SELECT ON control_plane.ctl_billing_coverage       TO tvs_billing_reader;
-    -- The coverage view reads the route table, and the view's owner supplies that
-    -- access, so a reader needs nothing on ctl_tenant_routes itself.
-
     FOR grp IN
         SELECT rolname FROM pg_roles
          WHERE rolname ~ '^tvs_app_[a-z0-9_]+$' AND NOT rolcanlogin
@@ -304,9 +289,20 @@ BEGIN
     END LOOP;
 END $$;
 
--- Who may read it. Discovered rather than hardcoded, because the console borrows
--- core-platform's login today and will have deladetech's tomorrow; both are matched, so
--- the switch needs no migration.
+-- Who may READ it.
+--
+-- Granted to the console's own login by name, NOT to a group of its own.
+--
+-- A dedicated tvs_billing_reader role would say the intent better and would move in
+-- one statement. It cannot be created here: the migrator on Azure Flexible Server is
+-- not a superuser and CREATE ROLE fails with "permission denied to create role", which
+-- is how this migration first reached dev. Creating it belongs to the pipeline that
+-- holds the server's admin password, and making a reporting feature wait on that would
+-- leave the ledger unreadable for longer than it leaves it ungrouped.
+--
+-- The pattern matches the credential the console borrows today (coreplatform_*) and the
+-- one it will own tomorrow (deladetech_*), and migrations re-run on every deploy -- so
+-- the day the console gets its own login, the grant follows it with no migration.
 DO $$
 DECLARE r text; n integer := 0;
 BEGIN
@@ -315,7 +311,14 @@ BEGIN
          WHERE rolcanlogin
            AND rolname ~ '^(coreplatform|deladetech)_[a-z0-9]+$'
     LOOP
-        EXECUTE format('GRANT tvs_billing_reader TO %I', r);
+        EXECUTE format('GRANT USAGE ON SCHEMA control_plane TO %I', r);
+        EXECUTE format('GRANT SELECT ON control_plane.ctl_billing_reports TO %I', r);
+        EXECUTE format('GRANT SELECT ON control_plane.ctl_billing_facts TO %I', r);
+        EXECUTE format(
+            'GRANT SELECT ON control_plane.ctl_billing_facts_current TO %I', r);
+        EXECUTE format('GRANT SELECT ON control_plane.ctl_billing_coverage TO %I', r);
+        -- Nothing on ctl_tenant_routes: the coverage view reads it and the view's
+        -- owner supplies that access, so a reader needs no privilege on the table.
         RAISE NOTICE 'billing ledger: % may now read it', r;
         n := n + 1;
     END LOOP;
@@ -325,7 +328,8 @@ BEGIN
         -- migration that refuses to finish over a missing grant would block a deploy
         -- over a reporting feature. Loud, and actionable.
         RAISE WARNING 'billing ledger: no console login matched, so NOTHING can read '
-                      'it yet. Grant it by name: GRANT tvs_billing_reader TO <login>;';
+                      'it yet. Grant it by name: '
+                      'GRANT SELECT ON control_plane.ctl_billing_facts_current TO <login>;';
     END IF;
 END $$;
 
