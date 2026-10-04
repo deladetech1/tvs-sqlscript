@@ -55,11 +55,17 @@ BEGIN
         RAISE EXCEPTION 'the lock columns were not all created (% of 4)', n;
     END IF;
 
-    -- Nobody is locked by the migration itself. A schema change that suspends a
-    -- customer is the kind of thing that happens once and is never forgotten.
-    SELECT count(*) INTO n FROM core_platform.cp_tenants WHERE is_locked;
+    -- Nobody is locked BY THE MIGRATION. Asserted as "is_locked defaults to false",
+    -- not as "no tenant is locked" -- which is what this check said when it shipped,
+    -- and which would have failed every deploy after the first real suspension, since
+    -- every migration re-runs on every deploy. The count read correctly on a fresh
+    -- database and was a time bomb on a live one.
+    SELECT count(*) INTO n FROM information_schema.columns
+     WHERE table_schema = 'core_platform' AND table_name = 'cp_tenants'
+       AND column_name = 'is_locked' AND column_default NOT LIKE '%false%';
     IF n > 0 THEN
-        RAISE EXCEPTION '% tenant(s) are locked immediately after adding the column', n;
+        RAISE EXCEPTION 'is_locked does not default to false, so adding it suspends '
+                        'existing customers';
     END IF;
 
     -- The default must be false rather than NULL: a NOT NULL boolean read as "is this
