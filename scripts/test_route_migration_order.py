@@ -162,6 +162,22 @@ def main():
               c.value("SELECT count(*) FROM control_plane.ctl_tenant_routes WHERE host "
                       "IN ('ddt.dev.trovesuite.com','bidtl.dev.trovesuite.com')") == "0")
 
+        # The Amplify defaults, same shape. 20261002-02 still INSERTs them on every
+        # deploy and 20261005-04 takes them back out -- later wins -- so this is the
+        # assertion that the two stay in that order. Swap the filenames and it fails.
+        check("the amplify default addresses stay deleted",
+              c.value("SELECT count(*) FROM control_plane.ctl_tenant_routes "
+                      "WHERE host LIKE '%.amplifyapp.com'") == "0",
+              c.value("SELECT string_agg(host, ', ') FROM "
+                      "control_plane.ctl_tenant_routes WHERE host LIKE '%.amplifyapp.com'"))
+        # ...and the container-app rows do NOT, because the console reaches
+        # core-platform at its FQDN and tenant creation 404s without them.
+        check("the container-app routes are kept",
+              c.value("SELECT count(*) FROM control_plane.ctl_tenant_routes "
+                      "WHERE host LIKE '%.azurecontainerapps.io'") == "5",
+              c.value("SELECT count(*) FROM control_plane.ctl_tenant_routes "
+                      "WHERE host LIKE '%.azurecontainerapps.io'"))
+
         # The ledger's coverage view reads the route table, so a route column
         # moving breaks the billing screens and nothing else.
         check("the billing coverage view still resolves",
