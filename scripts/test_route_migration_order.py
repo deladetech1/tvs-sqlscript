@@ -94,6 +94,12 @@ class Cluster:
         self.sql("CREATE SCHEMA IF NOT EXISTS core_platform")
         self.sql("CREATE TABLE IF NOT EXISTS core_platform.cp_app_schemas "
                  "(schema_name text PRIMARY KEY)")
+        # cp_tenants: 20261005-07 looks a pooled client up by NAME to give it its own
+        # address, rather than writing an id that differs per environment. Every real
+        # database has this table; only the fixture did not.
+        self.sql("CREATE TABLE IF NOT EXISTS core_platform.cp_tenants ("
+                 "id text PRIMARY KEY, tenant_name text, "
+                 "delete_status text NOT NULL DEFAULT 'NOT_DELETED')")
 
     def stop(self):
         if self.dir:
