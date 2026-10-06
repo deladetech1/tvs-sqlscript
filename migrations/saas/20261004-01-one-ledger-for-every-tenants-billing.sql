@@ -192,6 +192,41 @@ COMMENT ON TABLE control_plane.ctl_billing_facts IS
 -- -------------------------------------------------------------------------------------
 -- The latest snapshot per key, so no reader has to know how revisions work.
 -- -------------------------------------------------------------------------------------
+-- STANDS ASIDE ONCE 20261004-07 HAS EXTENDED THIS VIEW.
+--
+-- Every migration re-runs on every deploy, so re-asserting this column list
+-- after a later file appended to it gives
+--
+--     42P16: cannot drop columns from view
+--
+-- and the deploy stops before the file that owns the final shape is reached.
+-- The dev pipeline had been failing on exactly this since 2026-10-04.
+--
+-- "Later wins" is the convention here and it holds for a seed -- a DELETE or an
+-- UPDATE simply runs again. It does not hold for a view or a constraint, where
+-- the earlier statement ERRORS first and the later one never runs.
+--
+-- GUARDED ON A COLUMN, not on the view existing. Skipping whenever the view is
+-- present would be wrong in the other direction: on a FRESH database this file
+-- has to create it so the later ones can extend it, and a bare existence check
+-- would leave a new database stuck on this definition for ever. `local_currency`
+-- is added by 20261004-07, so its presence means the later shape is already in
+-- place and this statement would only undo it.
+--
+-- DROP and recreate is not the answer either, for the reason 20261004-07 writes
+-- out: the GRANTs on these views are issued by files that run earlier in
+-- filename order, so a drop would re-grant against a view that no longer exists
+-- and the console would lose its billing screens.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'control_plane'
+                  AND table_name = 'ctl_billing_facts_current'
+                  AND column_name = 'local_currency') THEN
+        RAISE NOTICE 'ctl_billing_facts_current already carries local_currency; 20261004-07 owns its shape';
+        RETURN;
+    END IF;
+    EXECUTE $view$
 CREATE OR REPLACE VIEW control_plane.ctl_billing_facts_current AS
 SELECT DISTINCT ON (source_db, tenant_id, app_id, period, line_type)
        id, report_id, source_db, host, tier, silo_key,
@@ -200,6 +235,8 @@ SELECT DISTINCT ON (source_db, tenant_id, app_id, period, line_type)
        line_count, paid_line_count, billable_units, observed_at
   FROM control_plane.ctl_billing_facts
  ORDER BY source_db, tenant_id, app_id, period, line_type, observed_at DESC, id DESC;
+$view$;
+END $$;
 
 COMMENT ON VIEW control_plane.ctl_billing_facts_current IS
     'The current figure for each billing key: the most recent snapshot reported.';
