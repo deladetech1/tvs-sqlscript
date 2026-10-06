@@ -137,13 +137,48 @@ BEGIN
         RAISE EXCEPTION '% user(s) point at an identity that does not exist', n;
     END IF;
 
-    -- Exactly one identity per address, which is the point of the table.
-    SELECT count(*) INTO n FROM core_platform.cp_identities
-     WHERE delete_status = 'NOT_DELETED';
-    SELECT count(DISTINCT lower(email)) INTO m FROM core_platform.cp_users
-     WHERE delete_status = 'NOT_DELETED' AND email IS NOT NULL AND btrim(email) <> '';
-    IF n <> m THEN
-        RAISE EXCEPTION '% identities for % distinct addresses', n, m;
+    -- One identity per address, which is the point of the table.
+    --
+    -- NOT AN EQUALITY. The first version asserted
+    --   count(identities) = count(DISTINCT lower(email) FROM live users)
+    -- and brought the dev deploy down with "12 identities for 11 distinct
+    -- addresses" the first time anybody was deleted.
+    --
+    -- An identity has no tenant_id -- deliberately, it spans tenants -- so
+    -- nothing removes it when a user row goes. This file's own header says so
+    -- and says phase 4 owns that cleanup. The check contradicted the design it
+    -- was shipped with: an orphaned identity is a KNOWN state, not a fault, and
+    -- a migration that re-runs every deploy must not fail on one.
+    --
+    -- What actually has to hold is one identity per ADDRESS, and that is
+    -- guaranteed by ix_cp_identities_email rather than by counting. So this
+    -- asserts the direction that matters -- no live address is missing one --
+    -- and reports the orphans instead of dying on them.
+    SELECT count(*) INTO n
+      FROM (SELECT DISTINCT lower(u.email) AS e
+              FROM core_platform.cp_users u
+             WHERE u.delete_status = 'NOT_DELETED'
+               AND u.email IS NOT NULL AND btrim(u.email) <> ''
+               AND NOT EXISTS (SELECT 1 FROM core_platform.cp_identities i
+                                WHERE lower(i.email) = lower(u.email)
+                                  AND i.delete_status = 'NOT_DELETED')) d;
+    IF n > 0 THEN
+        RAISE EXCEPTION '% live address(es) have no identity', n;
+    END IF;
+
+    -- The orphans: an identity whose last user row is gone. Reported, because
+    -- it is a person's credential still sitting in the table after their
+    -- account was removed -- which is a privacy matter for phase 4 to settle,
+    -- not a reason to refuse the deploy.
+    SELECT count(*) INTO n FROM core_platform.cp_identities i
+     WHERE i.delete_status = 'NOT_DELETED'
+       AND NOT EXISTS (SELECT 1 FROM core_platform.cp_users u
+                        WHERE lower(u.email) = lower(i.email)
+                          AND u.delete_status = 'NOT_DELETED');
+    IF n > 0 THEN
+        RAISE NOTICE '% identity(ies) have no live user -- their accounts were '
+                     'removed and the credential is still here. Phase 4 owns '
+                     'that cleanup', n;
     END IF;
 
     -- An identity with no password cannot be signed in as once phase 2 lands. Reported
