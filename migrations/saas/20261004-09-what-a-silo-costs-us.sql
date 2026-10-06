@@ -97,6 +97,33 @@ COMMENT ON VIEW control_plane.ctl_silo_costs_current IS
 -- MRR run rate -- not a month's bill, which would make a client who joined on the 28th
 -- look unprofitable. Cost is converted only when the currencies match; where they do
 -- not, margin is NULL rather than a figure computed across two currencies.
+-- STANDS ASIDE ONCE 20261004-12 HAS REDEFINED THIS VIEW.
+--
+-- 20261004-12 DROPs ctl_silo_margin and recreates it with a different shape --
+-- itemised lines, monthly_charge, the unbilled counts -- and re-grants, as its
+-- own comment explains. Every migration re-runs on every deploy, so this file
+-- then replaced that with ITS column list and got
+--
+--     42P16: cannot drop columns from view
+--
+-- which stopped the deploy before 20261004-12 was reached. The dev pipeline had
+-- been failing on this since 2026-10-04.
+--
+-- GUARDED ON monthly_charge, a column 20261004-12 adds and this definition does
+-- not have. Not on the view existing: on a FRESH database this file must create
+-- it so 20261004-12 has something to drop, and an existence check would leave a
+-- new database on this shape for ever.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'control_plane'
+                  AND table_name = 'ctl_silo_margin'
+                  AND column_name = 'monthly_charge') THEN
+        RAISE NOTICE 'ctl_silo_margin already carries monthly_charge; '
+                     '20261004-12 owns its shape';
+        RETURN;
+    END IF;
+    EXECUTE $view$
 CREATE OR REPLACE VIEW control_plane.ctl_silo_margin AS
 SELECT c.silo_key,
        c.monthly_cost,
@@ -123,6 +150,8 @@ SELECT c.silo_key,
          WHERE silo_key IS NOT NULL
          GROUP BY silo_key
   ) r ON r.silo_key = c.silo_key;
+$view$;
+END $$;
 
 COMMENT ON VIEW control_plane.ctl_silo_margin IS
     'Revenue beside cost per silo. margin is NULL where the cost currency and the '

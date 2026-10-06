@@ -78,6 +78,41 @@ SELECT DISTINCT ON (source_db, tenant_id, app_id, period, line_type)
   FROM control_plane.ctl_billing_facts
  ORDER BY source_db, tenant_id, app_id, period, line_type, observed_at DESC, id DESC;
 
+-- STANDS ASIDE ONCE 20261004-13 HAS EXTENDED THIS VIEW.
+--
+-- Every migration re-runs on every deploy, so re-asserting this column list
+-- after a later file appended to it gives
+--
+--     42P16: cannot drop columns from view
+--
+-- and the deploy stops before the file that owns the final shape is reached.
+-- The dev pipeline had been failing on exactly this since 2026-10-04.
+--
+-- "Later wins" is the convention here and it holds for a seed -- a DELETE or an
+-- UPDATE simply runs again. It does not hold for a view or a constraint, where
+-- the earlier statement ERRORS first and the later one never runs.
+--
+-- GUARDED ON A COLUMN, not on the view existing. Skipping whenever the view is
+-- present would be wrong in the other direction: on a FRESH database this file
+-- has to create it so the later ones can extend it, and a bare existence check
+-- would leave a new database stuck on this definition for ever. `charges_mrr`
+-- is added by 20261004-13, so its presence means the later shape is already in
+-- place and this statement would only undo it.
+--
+-- DROP and recreate is not the answer either, for the reason 20261004-07 writes
+-- out: the GRANTs on these views are issued by files that run earlier in
+-- filename order, so a drop would re-grant against a view that no longer exists
+-- and the console would lose its billing screens.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'control_plane'
+                  AND table_name = 'ctl_billing_customers_current'
+                  AND column_name = 'charges_mrr') THEN
+        RAISE NOTICE 'ctl_billing_customers_current already carries charges_mrr; 20261004-13 owns its shape';
+        RETURN;
+    END IF;
+    EXECUTE $view$
 CREATE OR REPLACE VIEW control_plane.ctl_billing_customers_current AS
 SELECT DISTINCT ON (source_db, tenant_id)
        id, report_id, source_db, host, tier, silo_key, tenant_id,
@@ -88,6 +123,8 @@ SELECT DISTINCT ON (source_db, tenant_id)
        local_currency, rate
   FROM control_plane.ctl_billing_customers
  ORDER BY source_db, tenant_id, observed_at DESC, id DESC;
+$view$;
+END $$;
 
 -- A rate of zero or below would make every local figure wrong in a way that reads as
 -- configured rather than missing. NULL stays allowed: "the rows disagreed" is a real
