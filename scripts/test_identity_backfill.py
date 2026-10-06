@@ -199,6 +199,41 @@ def main():
         check("...and creates no second identity for anybody", before == after,
               f"{before} -> {after}")
 
+        # ------------------------------------------- a user deleted AFTERWARDS
+        # The case that brought the dev deploy down. There was already a check
+        # for a user deleted BEFORE the backfill, which is a different thing
+        # entirely: that person never gets an identity. This is somebody who HAS
+        # one and is then removed, leaving the identity behind -- cp_identities
+        # has no tenant_id, so nothing cleans it up, and the migration's own
+        # header says phase 4 owns that.
+        #
+        # The check that failed asserted count(identities) = count(distinct live
+        # emails), which held right up until anybody was deleted. On a file that
+        # re-runs every deploy, that is a time bomb with a fuse the length of
+        # "nobody has left yet".
+        pg.run("UPDATE core_platform.cp_users SET delete_status='DELETED' "
+               "WHERE id='u_nana'", db="ident")
+        orphans = pg.value(
+            "SELECT count(*) FROM core_platform.cp_identities i "
+            " WHERE i.delete_status='NOT_DELETED' AND NOT EXISTS ("
+            "   SELECT 1 FROM core_platform.cp_users u "
+            "    WHERE lower(u.email)=lower(i.email) "
+            "      AND u.delete_status='NOT_DELETED')")
+        check("deleting a user leaves its identity orphaned", orphans != "0", orphans)
+
+        r = pg.run(str(MIGRATION), db="ident", file=True)
+        check("...and the migration still applies over that state",
+              r.returncode == 0,
+              next((l for l in (r.stderr or "").splitlines() if "ERROR" in l), "")[:200])
+        check("...reporting the orphan rather than failing on it",
+              "have no live user" in (r.stderr or ""),
+              "no NOTICE about orphaned identities")
+        # ...and it must not quietly re-create an identity for the deleted
+        # person either, which would undo the removal.
+        check("...and does not resurrect the deleted user's link",
+              pg.value("SELECT count(*) FROM core_platform.cp_users "
+                       "WHERE id='u_nana' AND delete_status='NOT_DELETED'") == "0")
+
         # --------------------------------------------- a new user joins afterwards
         pg.run("INSERT INTO core_platform.cp_users (id,tenant_id,email,contact,login_password) "
                "VALUES ('u_late','tnt_b','late@example.com','+233200000009','hash-late')",
