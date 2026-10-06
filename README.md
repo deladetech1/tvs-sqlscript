@@ -24,7 +24,9 @@ tvs-sqlscript/
 ├── Trovesuite.Database.sln
 ├── Directory.Build.props                   # central package versions
 ├── .github/workflows/
-│   ├── schema-dispatch.yml               # manual workflow_dispatch entrypoint
+│   ├── saas.yml / silos.yml / enterprise.yml  # one per class of target
+│   ├── apply.yml                         # the reusable runner all three call
+│   ├── migrate.yml                       # reusable entrypoint for the app repos
 │   └── schema-saas-pool.yml        # auto deploy on push (dev → saas-dev, main → saas-prod)
 ├── src/
 │   ├── Trovesuite.Database.Common/         # shared base entities, fluent helpers, IModule
@@ -148,7 +150,7 @@ Manual dispatch inputs:
 | `module` | `all` (most commands) or `core_platform` / `loandrift` / `mystoreguard` / `human_resource` |
 
 See the comments at the top of
-[`.github/workflows/schema-dispatch.yml`](.github/workflows/schema-dispatch.yml)
+the class workflows in [`.github/workflows/`](.github/workflows/)
 for the full onboarding runbook for new enterprises.
 
 ## CLI actions (Runner)
@@ -217,7 +219,7 @@ for the full onboarding runbook for new enterprises.
    - Name: `enterprise-<slug>-<env>` — e.g. `enterprise-bgclt-prod`.
    - Add environment secret: `DATABASE_URL` = the libpq URL.
    - *(Recommended for `*-prod`)* Add required reviewers.
-3. Edit [`.github/workflows/schema-dispatch.yml`](.github/workflows/schema-dispatch.yml):
+3. Edit the class workflows in [`.github/workflows/`](.github/workflows/):
    add `- enterprise-<slug>` to `scope.options`. Commit, push.
 4. *(Optional)* `mkdir migrations/enterprise/<slug>` if they need custom SQL.
 5. Run the workflow with `scope=enterprise-<slug>`, `environment=prod`,

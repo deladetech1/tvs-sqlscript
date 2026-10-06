@@ -1,21 +1,12 @@
-# Schema for the enterprise databases: one, several, or all of them.
+# Schema for the enterprise databases -- customers hosting it themselves.
 #
-# An enterprise customer is self-hosted: their database lives in THEIR cloud
-# account, which is why they cannot be discovered the way silos are. A silo's
-# route row sits in our control plane; an enterprise's database is somewhere we
-# can only reach because they gave us a federated identity and a Key Vault. So
-# the roster lives here, in ENTERPRISES, and onboarding one is an edit to this
-# file plus the org variables it names.
+# Their database is in THEIR cloud account, which is why they cannot be
+# discovered the way silos are: a silo's route row sits in our control plane, an
+# enterprise's database is somewhere we reach only because they gave us a
+# federated identity and a Key Vault. So the roster is a dropdown here, and
+# onboarding one is an edit to this file plus two org variables.
 #
-# That is the honest difference between this workflow and schema-silos.yml, and
-# the reason they are not one workflow with a flag.
-#
-# Each enterprise is its own matrix job with fail-fast off, so one customer whose
-# Key Vault is unreachable does not stop the rest getting the schema.
-#
-#   migrations/shared/              every database there is
-#   migrations/enterprise/          every enterprise, none of the pool or silos
-#   migrations/enterprise/<slug>/   one customer
+# Never automatic. A merge is not consent to touch someone else's database.
 
 name: enterprise
 
@@ -26,173 +17,80 @@ on:
         description: "Which enterprise (add new ones to this list as they are onboarded)"
         type: choice
         required: true
-        default: all
+        default: bgclt
         options:
-          - all
           - bgclt
       environment:
-        description: "Which of their environments (tenants are prod-only today)"
+        description: "Which of their environments"
         type: choice
         required: true
         default: prod
         options: [prod, dev]
       module:
-        description: "Module to target"
         type: choice
         required: true
         default: all
         options: [all, core_platform, loandrift, mystoreguard, zeloshr, attendance]
       command:
-        description: What to do
         type: choice
         required: true
         default: validate
-        options: [validate, verify, deploy]
+        options: [validate, verify, status, deploy, migrations-list, rollback]
+      destructive_ack:
+        description: 'For rollback only: type exactly YESDestructive'
+        type: string
+        default: ""
 
 concurrency:
-  group: enterprise-${{ inputs.environment }}
+  group: enterprise-${{ inputs.target }}-${{ inputs.environment }}
   cancel-in-progress: false
 
 permissions:
   contents: read
   id-token: write
 
-env:
-  # The roster. One entry per enterprise: slug:client-id-var:subscription-var.
-  # Adding a customer means adding a line here and setting those two org
-  # variables -- deliberately a visible edit, because reaching into someone
-  # else's cloud account should never be something a workflow discovers.
-  ENTERPRISES: "bgclt:BGCLT_AZURE_CLIENT_ID:BGCLT_SUBSCRIPTION_ID"
-
 jobs:
-  discover:
-    name: 🔎 which enterprises
+  resolve:
+    name: ${{ inputs.target }}
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.pick.outputs.matrix }}
-      count: ${{ steps.pick.outputs.count }}
+      client_id: ${{ steps.who.outputs.client_id }}
+      subscription: ${{ steps.who.outputs.subscription }}
+      secret_uri: ${{ steps.who.outputs.secret_uri }}
     steps:
-      - name: Select from the roster
-        id: pick
-        env:
-          WANTED: ${{ inputs.target }}
+      - name: Which identity and vault
+        id: who
         run: |
           set -euo pipefail
-          python3 - <<'PY' >> "$GITHUB_OUTPUT"
-          import json, os, sys
-          roster = {}
-          for entry in os.environ["ENTERPRISES"].split():
-              slug, client_var, sub_var = entry.split(":")
-              roster[slug] = {"slug": slug, "client_var": client_var, "sub_var": sub_var}
-
-          wanted = os.environ["WANTED"].strip()
-          if wanted.lower() == "all":
-              picked = list(roster.values())
-          else:
-              asked = [s.strip() for s in wanted.split(",") if s.strip()]
-              missing = [s for s in asked if s not in roster]
-              if missing:
-                  # Deploying the rest and staying quiet about a typo'd slug is how
-                  # a customer silently never gets a migration.
-                  print(f"::error::unknown enterprise slug(s): {', '.join(missing)}. "
-                        f"Known: {', '.join(sorted(roster))}", file=sys.stderr)
-                  raise SystemExit(1)
-              picked = [roster[s] for s in asked]
-
-          print("matrix=" + json.dumps({"include": picked}))
-          print(f"count={len(picked)}")
-          PY
-
-      - name: 📍 Summary
-        run: |
-          {
-            echo "## Enterprises selected: ${{ steps.pick.outputs.count }}"
-            echo ""
-            echo '${{ steps.pick.outputs.matrix }}' | python3 -c "
-          import json,sys
-          for e in json.load(sys.stdin)['include']:
-              print(f\"- \`{e['slug']}\`\")"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  deploy:
-    name: ${{ inputs.command }} → ${{ matrix.slug }}
-    needs: discover
-    if: needs.discover.outputs.count != '0'
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      max-parallel: 2
-      matrix: ${{ fromJson(needs.discover.outputs.matrix) }}
-    env:
-      DOTNET_NOLOGO: "1"
-      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
-      TVS_SSL: Require
-      TVS_TARGET_CLASS: enterprise
-      TVS_ENTERPRISE: ${{ matrix.slug }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - run: dotnet build Trovesuite.Database.sln -c Release --nologo
-
-      - name: Resolve this customer's identity and vault
-        id: az
-        run: |
-          set -euo pipefail
-          # Indirect through the roster's variable NAMES, so a new customer needs
-          # no change here -- only the ENTERPRISES line and their two org vars.
-          CLIENT="${{ vars[matrix.client_var] }}"
-          SUB="${{ vars[matrix.sub_var] }}"
-          [ -n "$CLIENT" ] && [ -n "$SUB" ] || {
-            echo "::error::${{ matrix.slug }}: org variables ${{ matrix.client_var }} / ${{ matrix.sub_var }} are not set"; exit 1; }
-          echo "client=$CLIENT" >> "$GITHUB_OUTPUT"
-          echo "sub=$SUB" >> "$GITHUB_OUTPUT"
-          echo "kv=${{ matrix.slug }}-${{ inputs.environment }}-kv" >> "$GITHUB_OUTPUT"
-
-      - uses: azure/login@v2
-        with:
-          client-id: ${{ steps.az.outputs.client }}
-          tenant-id: ${{ vars.TVS_TENANT_ID }}
-          subscription-id: ${{ steps.az.outputs.sub }}
-
-      - name: Read their migrator-db-url
-        id: db
-        run: |
-          set -euo pipefail
-          DATABASE_URL="$(az keyvault secret show --vault-name '${{ steps.az.outputs.kv }}' --name migrator-db-url --query value -o tsv)"
-          [ -n "$DATABASE_URL" ] || { echo "::error::migrator-db-url missing in ${{ steps.az.outputs.kv }}"; exit 1; }
-          echo "::add-mask::$DATABASE_URL"
-          proto="${DATABASE_URL#postgresql://}"; proto="${proto#postgres://}"
-          creds="${proto%%@*}"; rest="${proto#*@}"
-          DB_USER="${creds%%:*}"; PGPASSWORD="${creds#*:}"
-          hostport="${rest%%/*}"; DB_HOST="${hostport%%:*}"; DB_PORT="${hostport#*:}"
-          [[ "$DB_PORT" == "$hostport" ]] && DB_PORT=5432
-          dbpart="${rest#*/}"; DB_NAME="${dbpart%%\?*}"
-          echo "::add-mask::$PGPASSWORD"; echo "::add-mask::$DB_USER"; echo "::add-mask::$DB_HOST"
-          {
-            echo "DB_HOST=$DB_HOST"; echo "DB_PORT=$DB_PORT"; echo "DB_USER=$DB_USER"
-            echo "PGPASSWORD=$PGPASSWORD"; echo "DB_NAME=$DB_NAME"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: 🚀 ${{ inputs.command }} → ${{ matrix.slug }}
-        env:
-          DB_HOST: ${{ steps.db.outputs.DB_HOST }}
-          DB_PORT: ${{ steps.db.outputs.DB_PORT }}
-          DB_USER: ${{ steps.db.outputs.DB_USER }}
-          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
-          DB_NAME: ${{ steps.db.outputs.DB_NAME }}
-        run: |
-          set -euo pipefail
-          case "${{ inputs.module }}" in
-            core_platform) PICK=1 ;; loandrift) PICK=2 ;; mystoreguard) PICK=3 ;;
-            zeloshr) PICK=4 ;; attendance) PICK=5 ;; all) PICK=0 ;;
+          # One case per enterprise. Deliberately a visible edit: reaching into
+          # someone else's cloud account should never be something a workflow
+          # discovers for itself.
+          case "${{ inputs.target }}" in
+            bgclt)
+              CLIENT="${{ vars.BGCLT_AZURE_CLIENT_ID }}"
+              SUB="${{ vars.BGCLT_SUBSCRIPTION_ID }}"
+              ;;
+            *) echo "::error::no identity mapping for '${{ inputs.target }}'"; exit 1 ;;
           esac
-          echo "::notice title=Target::${{ matrix.slug }} (${{ inputs.environment }})"
-          printf '%s\n' "$PICK" \
-            | dotnet run --no-build -c Release \
-                --project src/Trovesuite.Database.Runner -- \
-                "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "${{ inputs.command }}"
+          [ -n "$CLIENT" ] && [ -n "$SUB" ] || {
+            echo "::error::${{ inputs.target }}: its client-id / subscription org variables are not set"; exit 1; }
+          KV="${{ inputs.target }}-${{ inputs.environment }}-kv"
+          echo "client_id=$CLIENT" >> "$GITHUB_OUTPUT"
+          echo "subscription=$SUB" >> "$GITHUB_OUTPUT"
+          echo "secret_uri=https://$KV.vault.azure.net/secrets/migrator-db-url" >> "$GITHUB_OUTPUT"
+
+  apply:
+    needs: resolve
+    uses: ./.github/workflows/apply.yml
+    with:
+      label: ${{ inputs.target }} (${{ inputs.environment }})
+      module: ${{ inputs.module }}
+      command: ${{ inputs.command }}
+      destructive_ack: ${{ inputs.destructive_ack }}
+      target_class: enterprise
+      enterprise_slug: ${{ inputs.target }}
+      source: keyvault
+      secret_uri: ${{ needs.resolve.outputs.secret_uri }}
+      subscription_id: ${{ needs.resolve.outputs.subscription }}
+      azure_client_id: ${{ needs.resolve.outputs.client_id }}
+      azure_tenant_id: ${{ vars.TVS_TENANT_ID }}

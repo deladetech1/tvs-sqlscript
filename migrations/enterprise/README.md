@@ -45,6 +45,6 @@ SQL from `enterprise/<slug>/` to `shared/`.
 
 1. `mkdir migrations/enterprise/<slug>` (slug = lowercase customer id).
 2. Add `- enterprise-<slug>` to `scope.options` in
-   [`.github/workflows/schema-dispatch.yml`](../../.github/workflows/schema-dispatch.yml).
+   the class workflows in [`.github/workflows/`](../../.github/workflows/).
 3. Create the matching GitHub Environment(s) (e.g. `enterprise-<slug>-prod`)
    with a `DATABASE_URL` secret. See the workflow header for the full runbook.
