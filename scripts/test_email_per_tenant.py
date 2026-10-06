@@ -37,6 +37,11 @@ from test_route_migration_order import Cluster  # noqa: E402
 
 MIGRATION = (HERE.parent / "migrations" / "shared"
              / "20261005-09-an-email-names-one-person-per-client.sql")
+# The follow-up, which folds case. Applied in the same order a deploy applies
+# them, because 09 leaves the address case-sensitive on purpose and 10 is what
+# makes uniqueness agree with the LOWER(email) the sign-in compares.
+FOLD = (HERE.parent / "migrations" / "shared"
+        / "20261006-01-uniqueness-matches-how-sign-in-compares.sql")
 
 # The shape off dev, trimmed to what this migration touches. The FK on tenant_id
 # is real and is why the probe has to create tenants at all.
@@ -149,12 +154,65 @@ def main():
                        "AND indexname IN ('ix_cp_users_email','ix_cp_users_contact')")
         check("the global indexes are dropped", left == "(none)", left)
 
-        # CASE. The index is on the raw column, so a capital letter is a different
-        # address -- stated as a test because it is the migration's one compromise
-        # and the next person needs to know it is deliberate, not an oversight.
+        # CASE, before folding. 20261005-09 indexes the raw column, so a capital
+        # letter is a different address -- its one compromise, and the pair that
+        # forced it has since been removed from dev.
         ok, err = insert_user(c, "u_b4", "tnt_b", "CONSULTANT@x.test", "+333")
-        check("case-different addresses are allowed in one client (deliberate)",
-              ok, str(err))
+        check("before folding, case-different addresses are allowed", ok, str(err))
+
+        # ===================================================== the follow-up
+        # 20261006-01 cannot build while that pair exists, which is the whole
+        # reason it is a separate file -- so prove it REFUSES first.
+        import subprocess as sp
+
+        def apply(path):
+            return sp.run(["psql", "-h", c.dir, "-p", "5482", "-U", "postgres",
+                           "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-f", str(path)],
+                          capture_output=True, text=True)
+
+        r = apply(FOLD)
+        check("folding is refused while a client holds a case-duplicate pair",
+              r.returncode != 0, "it applied over the top of the pair")
+        check("...and the refusal names the rows",
+              "differ only by case" in (r.stderr or ""),
+              (r.stderr or "").strip()[-160:])
+        # The old index must survive a refused run, or a failure would leave the
+        # table less protected than before.
+        still = c.value("SELECT count(*) FROM pg_indexes "
+                        "WHERE indexname='ix_cp_users_tenant_email'")
+        check("...and leaves the case-sensitive index in place", still == "1", still)
+
+        # Resolve the pair the way it was resolved on dev, then fold.
+        c.sql("UPDATE core_platform.cp_users SET delete_status='DELETED' WHERE id='u_b4'")
+        for attempt in (1, 2):
+            r = apply(FOLD)
+            err = next((l for l in (r.stderr or "").splitlines() if "ERROR" in l), "")
+            check(f"folding applies once the pair is gone (pass {attempt})",
+                  r.returncode == 0, err)
+            if r.returncode != 0:
+                return 1
+
+        ok, _ = insert_user(c, "u_b5", "tnt_b", "CONSULTANT@x.test", "+444")
+        check("after folding, one client cannot hold both cases", not ok,
+              "the folded index is not being enforced")
+        # ...and the thing 09 opened up must not have closed again. A FRESH
+        # address, because both clients already hold consultant@x.test -- so
+        # reusing it here would be refused for the right reason and read as the
+        # wrong one. (It was, the first time this test was written.)
+        ok, err = insert_user(c, "u_a6", "tnt_a", "Folded.Case@x.test", "+666")
+        check("a fresh address goes into one client", ok, str(err))
+        ok, err = insert_user(c, "u_b6", "tnt_b", "folded.case@x.test", "+777")
+        check("...while a DIFFERENT client may hold it in any case", ok, str(err))
+        ok, _ = insert_user(c, "u_a7", "tnt_a", "FOLDED.CASE@x.test", "+888")
+        check("...but the first client may not hold it twice", not ok,
+              "folding is not enforced within a client")
+        gone = c.value("SELECT count(*) FROM pg_indexes "
+                       "WHERE indexname='ix_cp_users_tenant_email'")
+        check("the case-sensitive index is replaced, not kept alongside",
+              gone == "0", gone)
+        kept = c.value("SELECT count(*) FROM pg_indexes "
+                       "WHERE indexname='ix_cp_users_tenant_contact'")
+        check("the contact index is left alone, deliberately", kept == "1", kept)
     finally:
         c.stop()
 
