@@ -74,14 +74,43 @@ ALTER TABLE control_plane.ctl_tenant_routes
 --
 -- A customer's address is never pooled, and a pooled address never belongs to one
 -- customer. Both directions, because either one alone leaves the other open.
-ALTER TABLE control_plane.ctl_tenant_routes
-    DROP CONSTRAINT IF EXISTS ck_ctl_routes_tenant_kind_not_pooled;
-ALTER TABLE control_plane.ctl_tenant_routes
-    ADD CONSTRAINT ck_ctl_routes_tenant_kind_not_pooled CHECK (
-        (route_kind = 'TENANT' AND tier <> 'POOLED')
-        OR
-        (route_kind = 'PLATFORM' AND tier = 'POOLED')
-    );
+--
+-- SUPERSEDED BY 20261005-07, and this file has to stand down for it rather than
+-- re-assert itself. Every migration re-runs on every deploy, so on the next one
+-- this ran BEFORE 20261005-07 and re-added a rule the database had deliberately
+-- replaced -- against a row 20261005-07 had already created:
+--
+--     23514: check constraint "ck_ctl_routes_tenant_kind_not_pooled" of
+--            relation "ctl_tenant_routes" is violated by some row
+--
+-- which is bgclt.dev.trovesuite.com, a POOLED client with an address of its own.
+-- "Later wins" is the convention in this tree and it works for a seed, because a
+-- DELETE or an UPDATE simply runs again. It does NOT work for a constraint: the
+-- earlier file errors before the later one is reached, so the deploy dies and the
+-- replacement never gets the chance to win.
+--
+-- So the guard is explicit. The second half of the old rule -- that a PLATFORM
+-- address may never name a customer -- survives in ck_ctl_routes_kind_owns_tenant,
+-- which is strictly more protective; nothing is left unenforced by skipping here.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_ctl_routes_kind_owns_tenant'
+                  AND conrelid = 'control_plane.ctl_tenant_routes'::regclass) THEN
+        RAISE NOTICE 'ck_ctl_routes_kind_owns_tenant (20261005-07) is in place; '
+                     'not re-adding the rule it replaced';
+        RETURN;
+    END IF;
+
+    ALTER TABLE control_plane.ctl_tenant_routes
+        DROP CONSTRAINT IF EXISTS ck_ctl_routes_tenant_kind_not_pooled;
+    ALTER TABLE control_plane.ctl_tenant_routes
+        ADD CONSTRAINT ck_ctl_routes_tenant_kind_not_pooled CHECK (
+            (route_kind = 'TENANT' AND tier <> 'POOLED')
+            OR
+            (route_kind = 'PLATFORM' AND tier = 'POOLED')
+        );
+END $$;
 
 -- ----------------------------------------------------------------------------- checks
 DO $$
@@ -103,15 +132,24 @@ BEGIN
 
     -- A customer's address resolving to the shared database is the thing this
     -- exists to stop, so prove the constraint refuses it rather than trusting it.
-    BEGIN
-        INSERT INTO control_plane.ctl_tenant_routes
-            (host, tier, cell_key, status, is_wildcard, route_kind)
-        VALUES ('probe-kind.example.invalid', 'POOLED', 'uksouth-dev', 'ACTIVE', false,
-                'TENANT');
-        RAISE EXCEPTION 'a TENANT route was accepted as POOLED';
-    EXCEPTION WHEN check_violation THEN
-        NULL;  -- refused, as it should be
-    END;
+    --
+    -- ONLY WHILE THIS FILE'S RULE IS THE ONE IN FORCE. 20261005-07 deliberately
+    -- ALLOWS a pooled client to own an address -- that is its whole purpose --
+    -- so once it has run, this probe is asserting the opposite of the current
+    -- rule and fails on a database that is behaving correctly.
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                    WHERE conname = 'ck_ctl_routes_kind_owns_tenant'
+                      AND conrelid = 'control_plane.ctl_tenant_routes'::regclass) THEN
+        BEGIN
+            INSERT INTO control_plane.ctl_tenant_routes
+                (host, tier, cell_key, status, is_wildcard, route_kind)
+            VALUES ('probe-kind.example.invalid', 'POOLED', 'uksouth-dev', 'ACTIVE', false,
+                    'TENANT');
+            RAISE EXCEPTION 'a TENANT route was accepted as POOLED';
+        EXCEPTION WHEN check_violation THEN
+            NULL;  -- refused, as it should be
+        END;
+    END IF;
 
     -- ...and the reverse: a platform address claiming a silo tier.
     BEGIN

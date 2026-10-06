@@ -100,6 +100,19 @@ class Cluster:
         self.sql("CREATE TABLE IF NOT EXISTS core_platform.cp_tenants ("
                  "id text PRIMARY KEY, tenant_name text, "
                  "delete_status text NOT NULL DEFAULT 'NOT_DELETED')")
+        # AND A BGCLT ROW. 20261005-07 looks the tenant up BY NAME before giving
+        # it an address, so a fixture with the table but no row means that seed
+        # inserts nothing -- the pooled TENANT route is never created, and the
+        # second pass has nothing for 20261003-07's old constraint to trip over.
+        #
+        # That is exactly what happened: this suite passed while the real dev
+        # deploy died on
+        #   23514: check constraint "ck_ctl_routes_tenant_kind_not_pooled" ...
+        #          is violated by some row
+        # The row is the test.
+        self.sql("INSERT INTO core_platform.cp_tenants (id, tenant_name) "
+                 "VALUES ('tnt_bgclt_fixture', 'BGCLT') "
+                 "ON CONFLICT (id) DO NOTHING")
 
     def stop(self):
         if self.dir:
