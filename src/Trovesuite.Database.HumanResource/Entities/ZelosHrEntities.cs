@@ -175,22 +175,6 @@ public class ZhrTimeSetting
     public string? UpdatedBy { get; set; }
 }
 
-/// <summary>Employee portal hostname slug — one row per org; globally unique subdomain.</summary>
-public class ZhrEmployeePortalSubdomain
-{
-    public Guid Id { get; set; }
-    public string TenantId { get; set; } = default!;
-    public string OrgId { get; set; } = default!;
-    public string BusId { get; set; } = default!;
-    public string LocId { get; set; } = default!;
-    /// <summary>Lowercase DNS label (e.g. btl) — maps to btl.zeloshr.com.</summary>
-    public string Subdomain { get; set; } = default!;
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
-    public string? CreatedBy { get; set; }
-    public string? UpdatedBy { get; set; }
-}
-
 public class ZhrEmployeeIdFormat
 {
     public Guid Id { get; set; }
@@ -208,15 +192,12 @@ public class ZhrEmployeeIdFormat
     public string? UpdatedBy { get; set; }
 }
 
+/// <summary>Regional formats and the year start. Time zone and currency are the tenant's, kept in Core Platform.</summary>
 public class ZhrCompanyLocalization
 {
     public Guid Id { get; set; }
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
-    /// <summary>IANA time zone id (e.g. "Africa/Accra").</summary>
-    public string TimeZone { get; set; } = default!;
-    /// <summary>FK to core_platform.cp_currencies (seeded per tenant).</summary>
-    public string CurrencyId { get; set; } = default!;
     public string DateFormat { get; set; } = default!;
     public string NumberFormat { get; set; } = default!;
     public string FirstDayOfWeek { get; set; } = default!;
@@ -670,6 +651,41 @@ public class ZhrJobPosting
     public int ApplicantsCount { get; set; }
     public DateOnly PostedAt { get; set; }
     public DateOnly? ClosingDate { get; set; }
+    public int Openings { get; set; } = 1;
+    /// <summary>Monthly pay budgeted per opening, in the company currency.</summary>
+    public decimal? BudgetMonthly { get; set; }
+    public Guid? HiringManagerId { get; set; }
+    public DateOnly? TargetStartDate { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>Someone applying for a requisition, moved through the hiring stages.</summary>
+public class ZhrCandidate
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid JobPostingId { get; set; }
+    public string FullName { get; set; } = default!;
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    /// <summary>Careers page, LinkedIn, Referral, Job board, Walk-in…</summary>
+    public string? Source { get; set; }
+    /// <summary>applied · screening · interview · assessment · offer · hired · rejected</summary>
+    public string Stage { get; set; } = "applied";
+    /// <summary>1–5, or null when nobody has rated them yet.</summary>
+    public int? Rating { get; set; }
+    public string? Notes { get; set; }
+    public DateOnly AppliedOn { get; set; }
+    /// <summary>The pre-hire employee record created when they were hired.</summary>
+    public Guid? EmployeeId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrOnboardingTask
@@ -684,6 +700,8 @@ public class ZhrOnboardingTask
     public DateOnly DueDate { get; set; }
     public string Status { get; set; } = default!;
     public string? AssignedTo { get; set; }
+    /// <summary>onboarding · offboarding — the same checklist shape serves both ends.</summary>
+    public string Kind { get; set; } = "onboarding";
 }
 
 public class ZhrPerformanceReview
@@ -698,6 +716,33 @@ public class ZhrPerformanceReview
     public string? OverallRating { get; set; }
     public string Status { get; set; } = default!;
     public DateOnly DueDate { get; set; }
+    /// <summary>The manager who owns the review.</summary>
+    public Guid? ReviewerId { get; set; }
+    /// <summary>1.0–5.0 once the manager has rated it.</summary>
+    public decimal? Rating { get; set; }
+    public DateOnly? SharedOn { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>A manager's private note about someone. Only its author reads it until it is escalated, which cannot be undone.</summary>
+public class ZhrCoachingNote
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    /// <summary>Platform user id of the author.</summary>
+    public string AuthorId { get; set; } = default!;
+    public string Body { get; set; } = default!;
+    public bool Escalated { get; set; }
+    public DateTimeOffset? EscalatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrDisciplinaryCase
@@ -712,6 +757,14 @@ public class ZhrDisciplinaryCase
     public string Status { get; set; } = default!;
     public DateOnly OpenedAt { get; set; }
     public string? Description { get; set; }
+    /// <summary>What was decided when the case was finalised or dismissed.</summary>
+    public string? Outcome { get; set; }
+    public DateOnly? ClosedOn { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    /// <summary>Who raised the case.</summary>
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
 
 public class ZhrEmployeeChangeRequest
@@ -755,4 +808,379 @@ public class ZhrEmployeeDocument
     public string? Status { get; set; }
     public int? FileSizeKb { get; set; }
     public string? DocumentName { get; set; }
+    /// <summary>When the document stops being valid; feeds the compliance alerts.</summary>
+    public DateOnly? ExpiresOn { get; set; }
+    /// <summary>The file registry id (core_platform.cp_document_paths) the file was stored under.</summary>
+    public string? FileDocumentId { get; set; }
+}
+
+/// <summary>
+/// One version of an employee's pay. Pay is never edited in place: every change is a new
+/// version, proposed by one person and approved by another, so past pay stays readable.
+/// The version in force on a date is the latest approved one effective on or before it.
+/// </summary>
+public class ZhrCompensationVersion
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public int VersionNumber { get; set; }
+    public DateOnly EffectiveFrom { get; set; }
+    /// <summary>Monthly basic salary: the SSNIT base.</summary>
+    public decimal BaseAmount { get; set; }
+    /// <summary>Recurring allowances: [{"name","amount","taxable"}].</summary>
+    public string ComponentsJson { get; set; } = "[]";
+    public string Currency { get; set; } = "GHS";
+    public string PayFrequency { get; set; } = "monthly";
+    public string Reason { get; set; } = default!;
+    /// <summary>pending · approved · rejected · cancelled</summary>
+    public string Status { get; set; } = default!;
+    public Guid? SupersedesVersionId { get; set; }
+    /// <summary>Shared by every version a single proposal wrote (a bulk change writes one per person).</summary>
+    public Guid? ChangeRequestId { get; set; }
+    /// <summary>percent · fixed_increase · new_amount — how the proposal was expressed.</summary>
+    public string? ChangeType { get; set; }
+    public decimal? ChangeValue { get; set; }
+    public string ProposedBy { get; set; } = default!;
+    public DateTimeOffset ProposedAt { get; set; }
+    public string? DecidedBy { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
+    public string? DecisionNote { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>A payroll run for one period. Its figures are on its lines; totals are kept for listing.</summary>
+public class ZhrPayrollRun
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    /// <summary>yyyy-MM</summary>
+    public string Period { get; set; } = default!;
+    public DateOnly PeriodStart { get; set; }
+    public DateOnly PeriodEnd { get; set; }
+    public DateOnly PayDate { get; set; }
+    /// <summary>regular · off_cycle</summary>
+    public string Kind { get; set; } = "regular";
+    /// <summary>draft · calculated · pending_approval · approved · paid · cancelled</summary>
+    public string Status { get; set; } = default!;
+    public string Currency { get; set; } = "GHS";
+    public string? RulePackVersion { get; set; }
+    public int EmployeeCount { get; set; }
+    public decimal TotalGross { get; set; }
+    public decimal TotalDeductions { get; set; }
+    public decimal TotalEmployerCost { get; set; }
+    public decimal TotalNet { get; set; }
+    public string? PreparedBy { get; set; }
+    public DateTimeOffset? SubmittedAt { get; set; }
+    public string? ApprovedBy { get; set; }
+    public DateTimeOffset? ApprovedAt { get; set; }
+    public DateTimeOffset? PaidAt { get; set; }
+    /// <summary>Append-only history: [{"at","by","action","note"}].</summary>
+    public string EventsJson { get; set; } = "[]";
+    /// <summary>Warnings acknowledged before calculating: [{"check_id","by","reason","at"}].</summary>
+    public string AcknowledgementsJson { get; set; } = "[]";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>One person's pay in a run, as calculated. A payslip is a statement of this line.</summary>
+public class ZhrPayrollLine
+{
+    public Guid Id { get; set; }
+    public Guid RunId { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public string EmployeeName { get; set; } = default!;
+    public string? EmployeeCode { get; set; }
+    public string? DepartmentName { get; set; }
+    public Guid? CompensationVersionId { get; set; }
+    /// <summary>[{"code","label","amount"}]</summary>
+    public string EarningsJson { get; set; } = "[]";
+    public string DeductionsJson { get; set; } = "[]";
+    public string EmployerContributionsJson { get; set; } = "[]";
+    public decimal Gross { get; set; }
+    public decimal TotalDeductions { get; set; }
+    public decimal TotalEmployerContributions { get; set; }
+    public decimal Net { get; set; }
+    public decimal? PreviousNet { get; set; }
+    public string Currency { get; set; } = "GHS";
+    public string? PaymentChannel { get; set; }
+    public string? PaymentDestinationMasked { get; set; }
+    /// <summary>["net_change","new_payee",...]</summary>
+    public string FlagsJson { get; set; } = "[]";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+/// <summary>
+/// A fixed weekly pattern of working hours. What attendance measures lateness and hours against
+/// for staff who are not rostered. Kept once assigned, so history still resolves.
+/// </summary>
+public class ZhrWorkPattern
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    /// <summary>[{"weekday":1..7,"start":"HH:mm","end":"HH:mm"}]; days not listed are non-working.</summary>
+    public string DaysJson { get; set; } = "[]";
+    public int BreakMinutes { get; set; }
+    public bool BreakPaid { get; set; }
+    /// <summary>Null takes the company figure from attendance rules.</summary>
+    public int? GraceMinutes { get; set; }
+    public bool Archived { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>
+/// Who follows which pattern, from when. Never edited: a later assignment supersedes it. A null
+/// pattern means rostered — the person's expectation comes from published shifts.
+/// </summary>
+public class ZhrPatternAssignment
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid? PatternId { get; set; }
+    /// <summary>company · branch · department · employee</summary>
+    public string Scope { get; set; } = default!;
+    /// <summary>Employee id, department id or branch id; null for company.</summary>
+    public string? Target { get; set; }
+    public DateOnly EffectiveFrom { get; set; }
+    public string Reason { get; set; } = default!;
+    public string? CreatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+/// <summary>One day's rostered expectation. A published shift beats any pattern underneath it.</summary>
+public class ZhrShift
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    /// <summary>Null is an open shift with nobody on it yet.</summary>
+    public Guid? EmployeeId { get; set; }
+    public DateOnly Date { get; set; }
+    /// <summary>HH:mm</summary>
+    public string Start { get; set; } = default!;
+    public string End { get; set; } = default!;
+    public int BreakMinutes { get; set; }
+    public string Position { get; set; } = default!;
+    public Guid? BranchId { get; set; }
+    public Guid? DepartmentId { get; set; }
+    public string? Note { get; set; }
+    /// <summary>draft · published</summary>
+    public string State { get; set; } = default!;
+    public DateTimeOffset? PublishedAt { get; set; }
+    public bool ChangedSincePublish { get; set; }
+    public bool Cancelled { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>The roster's trail. Append-only.</summary>
+public class ZhrShiftChange
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid ShiftId { get; set; }
+    /// <summary>created · edited · assigned · cancelled · published</summary>
+    public string Action { get; set; } = default!;
+    public string Summary { get; set; } = default!;
+    public string? Reason { get; set; }
+    public string? By { get; set; }
+    public DateTimeOffset At { get; set; }
+}
+
+/// <summary>
+/// Someone looked at a disagreement between attendance and leave and said what they did. The key
+/// is "kind:employee:first date", so the record survives the item being recomputed.
+/// </summary>
+public class ZhrLeaveReconciliation
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Key { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public string Action { get; set; } = default!;
+    public string? Note { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+/// <summary>One change to an employee's employment status. Append-only.</summary>
+public class ZhrEmployeeStatusChange
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public string? FromStatus { get; set; }
+    public string ToStatus { get; set; } = default!;
+    public DateOnly EffectiveDate { get; set; }
+    public string? Reason { get; set; }
+    /// <summary>manual · lifecycle · registration</summary>
+    public string Source { get; set; } = "manual";
+    public string? ChangedBy { get; set; }
+    public DateTimeOffset ChangedAt { get; set; }
+}
+
+/// <summary>One person leaving: clearance and final settlement. Opened from an exit event.</summary>
+public class ZhrOffboardingCase
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Reference { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public Guid? LifecycleEventId { get; set; }
+    public string Reason { get; set; } = default!;
+    public DateOnly NoticeGivenOn { get; set; }
+    public DateOnly LastWorkingDay { get; set; }
+    public int NoticePeriodDays { get; set; }
+    public string State { get; set; } = "open";
+    public bool AssetsReturned { get; set; }
+    public bool AccessRevoked { get; set; }
+    public bool SettlementCalculated { get; set; }
+    public bool HandoverDone { get; set; }
+    public bool ExitInterviewDone { get; set; }
+    public decimal? AccruedLeaveDays { get; set; }
+    public decimal? FinalSettlement { get; set; }
+    public string Currency { get; set; } = "GHS";
+    public DateTimeOffset? SentToPayrollAt { get; set; }
+    public DateTimeOffset? ClosedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>One person's timesheet for a pay period ("yyyy-MM"): the review decision on their hours.</summary>
+public class ZhrTimesheet
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Period { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    /// <summary>pending_review, changes_requested or approved.</summary>
+    public string Status { get; set; } = default!;
+    public string? Comment { get; set; }
+    public string? DecidedBy { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>A pay period that has been closed. Its days, corrections and approvals are read-only afterwards.</summary>
+public class ZhrPayPeriodClosure
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Period { get; set; } = default!;
+    public string? ClosedBy { get; set; }
+    public DateTimeOffset ClosedAt { get; set; }
+}
+
+/// <summary>Pay outside somebody's package (a bonus, an award, a settlement), paid by the runs after its date.</summary>
+public class ZhrPayrollOneOff
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public string Component { get; set; } = default!;
+    public decimal Amount { get; set; }
+    /// <summary>gross · net (grossed up so the person receives the amount).</summary>
+    public string Basis { get; set; } = "gross";
+    public bool Taxable { get; set; } = true;
+    public DateOnly PayFrom { get; set; }
+    /// <summary>once · monthly</summary>
+    public string Recurrence { get; set; } = "once";
+    public int? Months { get; set; }
+    public string Note { get; set; } = default!;
+    public bool Cancelled { get; set; }
+    public string? CancelReason { get; set; }
+    /// <summary>Runs whose calculation included it: ["run id", …].</summary>
+    public string IncludedRunIdsJson { get; set; } = "[]";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>The lines of an approved run going out on one channel, tracked until each has settled.</summary>
+public class ZhrPaymentBatch
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid RunId { get; set; }
+    /// <summary>bank_transfer · mobile_money</summary>
+    public string Channel { get; set; } = default!;
+    public string Reference { get; set; } = default!;
+    /// <summary>initiated · sent · confirmed · failed</summary>
+    public string Status { get; set; } = default!;
+    /// <summary>[{employee_id, name, amount, currency, destination_masked, status, failure_reason, attempts}]</summary>
+    public string ItemsJson { get; set; } = "[]";
+    public string EventsJson { get; set; } = "[]";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>Someone recorded a decision on a compliance alert. Keyed "kind:source id:yyyyMMdd", so a new date raises a new alert.</summary>
+public class ZhrAlertAcknowledgement
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string AlertKey { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public string? Note { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
+
+/// <summary>A request to correct a day's clock-in or clock-out. Nothing changes until someone else approves it.</summary>
+public class ZhrAttendanceCorrection
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public DateOnly AttendanceDate { get; set; }
+    public TimeOnly? OriginalClockIn { get; set; }
+    public TimeOnly? OriginalClockOut { get; set; }
+    public TimeOnly? ClockIn { get; set; }
+    public TimeOnly? ClockOut { get; set; }
+    public string Reason { get; set; } = default!;
+    /// <summary>pending · approved · rejected · cancelled</summary>
+    public string Status { get; set; } = "pending";
+    public string? DecidedBy { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
+    public string? DecisionNote { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
 }
