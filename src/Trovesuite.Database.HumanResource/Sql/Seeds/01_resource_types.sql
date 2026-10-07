@@ -24,7 +24,9 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-zeloshr-performance', 'ZelosHR Performance', 'Performance reviews', 'rt-subscribed-app-zeloshr'),
 ('rt-zeloshr-disciplinary', 'ZelosHR Disciplinary', 'Disciplinary cases', 'rt-subscribed-app-zeloshr'),
 ('rt-zeloshr-documents', 'ZelosHR Documents', 'Employee document metadata', 'rt-subscribed-app-zeloshr'),
-('rt-zeloshr-custom-fields', 'ZelosHR Custom Fields', 'Tenant-defined fields and values', 'rt-subscribed-app-zeloshr')
+('rt-zeloshr-custom-fields', 'ZelosHR Custom Fields', 'Tenant-defined fields and values', 'rt-subscribed-app-zeloshr'),
+('rt-zeloshr-payroll', 'ZelosHR Payroll', 'Payroll runs, payslips and statutory exports', 'rt-subscribed-app-zeloshr'),
+('rt-zeloshr-compensation', 'ZelosHR Compensation', 'Versioned pay: proposals and approvals', 'rt-subscribed-app-zeloshr')
 ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
     description        = EXCLUDED.description,

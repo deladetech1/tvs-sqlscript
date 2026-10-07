@@ -107,7 +107,18 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-zeloshr-custom-field-values-delete', 'ZelosHR Custom Field Values Delete', 'rt-zeloshr-custom-fields', 'Clear custom field values on entities', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 
 -- Sensitive Fields
-('permission-zeloshr-sensitive-fields-reveal', 'ZelosHR Sensitive Fields Reveal', 'rt-zeloshr-custom-fields', 'Reveal masked sensitive custom field values', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-zeloshr-sensitive-fields-reveal', 'ZelosHR Sensitive Fields Reveal', 'rt-zeloshr-custom-fields', 'Reveal masked sensitive custom field values', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Payroll
+('permission-zeloshr-payroll-get', 'ZelosHR Payroll Get', 'rt-zeloshr-payroll', 'View payroll runs, lines and payslips', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-payroll-create', 'ZelosHR Payroll Create', 'rt-zeloshr-payroll', 'Open a payroll run and prepare it', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-payroll-update', 'ZelosHR Payroll Update', 'rt-zeloshr-payroll', 'Approve, reject and mark payroll runs paid', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-payroll-delete', 'ZelosHR Payroll Delete', 'rt-zeloshr-payroll', 'Cancel a payroll run before approval', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+
+-- Compensation
+('permission-zeloshr-compensation-get', 'ZelosHR Compensation Get', 'rt-zeloshr-compensation', 'View pay and its history', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-compensation-create', 'ZelosHR Compensation Create', 'rt-zeloshr-compensation', 'Propose a pay change', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-zeloshr-compensation-update', 'ZelosHR Compensation Update', 'rt-zeloshr-compensation', 'Approve or reject a pay change', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
     resource_type_id = EXCLUDED.resource_type_id,
