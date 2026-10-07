@@ -68,15 +68,35 @@ COMMENT ON COLUMN control_plane.ctl_billing_customers.rate IS
 -- run BEFORE this file in filename order -- so on the very deploy that dropped them,
 -- the grants would be re-applied to a view that no longer existed and the console
 -- would lose the billing screens. Ugly column order is the cheaper price.
-CREATE OR REPLACE VIEW control_plane.ctl_billing_facts_current AS
-SELECT DISTINCT ON (source_db, tenant_id, app_id, period, line_type)
-       id, report_id, source_db, host, tier, silo_key, tenant_id, app_id,
-       period, period_label, line_type, currency,
-       amount_due, amount_paid, line_count, paid_line_count, billable_units,
-       observed_at,
-       local_currency, rate
-  FROM control_plane.ctl_billing_facts
- ORDER BY source_db, tenant_id, app_id, period, line_type, observed_at DESC, id DESC;
+-- STANDS ASIDE ONCE 20261007-01 HAS EXTENDED THIS VIEW, for exactly the reason
+-- written out below for ctl_billing_customers_current: re-asserting this column
+-- list after a later file appended to it gives 42P16 and stops the deploy before
+-- the file that owns the final shape is reached.
+--
+-- Guarded on `amount_waived`, which 20261007-01 adds. A fresh database has to
+-- get this definition first so that file has something to extend, which is why
+-- the test is for the COLUMN and not for the view existing.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'control_plane'
+                  AND table_name = 'ctl_billing_facts_current'
+                  AND column_name = 'amount_waived') THEN
+        RAISE NOTICE 'ctl_billing_facts_current already carries amount_waived; 20261007-01 owns its shape';
+        RETURN;
+    END IF;
+    EXECUTE $view$
+        CREATE OR REPLACE VIEW control_plane.ctl_billing_facts_current AS
+        SELECT DISTINCT ON (source_db, tenant_id, app_id, period, line_type)
+               id, report_id, source_db, host, tier, silo_key, tenant_id, app_id,
+               period, period_label, line_type, currency,
+               amount_due, amount_paid, line_count, paid_line_count, billable_units,
+               observed_at,
+               local_currency, rate
+          FROM control_plane.ctl_billing_facts
+         ORDER BY source_db, tenant_id, app_id, period, line_type, observed_at DESC, id DESC
+    $view$;
+END $$;
 
 -- STANDS ASIDE ONCE 20261004-13 HAS EXTENDED THIS VIEW.
 --
