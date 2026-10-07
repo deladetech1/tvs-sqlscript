@@ -144,7 +144,7 @@ DECLARE
     bad_calender integer;
     coll_mgr     integer;
     coll_off     integer;
-    zeloshr_live integer;
+    zeloshr_zombies integer;  -- retired permissions found alive
     billing_pay  integer;
 BEGIN
     SELECT (SELECT count(*) FROM core_platform.cp_permissions      WHERE resource_key = 'calender')
@@ -162,8 +162,35 @@ BEGIN
      WHERE r.role_name = 'Collections Officer' AND rp.resource_key = 'collections'
        AND rp.delete_status = 'NOT_DELETED';
 
-    SELECT count(*) INTO zeloshr_live FROM core_platform.cp_permissions
-     WHERE app_prefix = 'zeloshr' AND delete_status = 'NOT_DELETED' AND is_active;
+    -- NOT A COUNT ANY MORE, and that is the fix rather than a weakening.
+    --
+    -- This was `count(*) = 68`, meaning "82 less the 14 retired above". It
+    -- aborted every migration run from 2026-10-07 15:38 onward, and NEITHER
+    -- constant could have been right, because the number depends on whether a
+    -- LATER migration has already run:
+    --
+    --   20261006-01-zeloshr-payroll-and-compensation.sql sorts after this file
+    --   and adds seven permissions (payroll get/create/update/delete,
+    --   compensation get/create/update). On a fresh database this file runs
+    --   first and sees 68. On a database that has been migrated once, every
+    --   file re-runs each deploy, so this one sees 75.
+    --
+    -- So 68 fails on every existing database and 75 fails on every new one. A
+    -- total count cannot express the invariant while the catalogue is allowed
+    -- to grow -- and it must be allowed to grow; that is how a feature adds
+    -- its own permissions now that nothing is auto-assigned.
+    --
+    -- The invariant was never the total. It is that the fourteen permissions
+    -- which name nothing are not live. Asserted directly, against the same
+    -- predicate that retires them, it is order-independent, survives the
+    -- catalogue growing, and names the one that came back instead of
+    -- reporting a total that is off by some amount.
+    SELECT count(*) INTO zeloshr_zombies FROM core_platform.cp_permissions p
+     WHERE p.app_prefix = 'zeloshr'
+       AND p.delete_status = 'NOT_DELETED' AND p.is_active
+       AND ( p.resource_key IN ('attendance-employees', 'custom-field-values', 'sensitive-fields')
+          OR (p.resource_key = 'audit'     AND p.action IN ('create', 'update'))
+          OR (p.resource_key = 'dashboard' AND p.action IN ('create', 'update', 'delete')) );
 
     SELECT count(*) INTO billing_pay FROM core_platform.cp_role_permissions rp
       JOIN core_platform.cp_roles r ON r.id = rp.role_id AND r.delete_status = 'NOT_DELETED'
@@ -178,15 +205,21 @@ BEGIN
     IF coll_off <> 3 THEN
         RAISE EXCEPTION 'Collections Officer should hold 3 collections permissions, holds %', coll_off;
     END IF;
-    IF zeloshr_live <> 68 THEN
-        RAISE EXCEPTION 'expected 68 live ZelosHR permissions (82 less the 14 that name nothing), found %', zeloshr_live;
+    IF zeloshr_zombies <> 0 THEN
+        RAISE EXCEPTION 'ZelosHR permissions that name nothing are still live: % of them. A permission that grants nothing is worse than a missing one -- somebody grants it and nothing happens.', zeloshr_zombies;
     END IF;
     IF billing_pay = 0 THEN
         RAISE EXCEPTION 'no role holds billing|pay; gating /payments/initialize on it would lock everybody out';
     END IF;
 
-    RAISE NOTICE 'calendar fixed; collections % / %; ZelosHR % live permissions; billing|pay held by % role(s)',
-        coll_mgr, coll_off, zeloshr_live, billing_pay;
+    -- The live total is reported rather than asserted: worth seeing in a
+    -- deploy log, not worth failing on, since it moves whenever a feature
+    -- brings its own permissions.
+    RAISE NOTICE 'calendar fixed; collections % / %; ZelosHR % live permissions, % retired-but-alive; billing|pay held by % role(s)',
+        coll_mgr, coll_off,
+        (SELECT count(*) FROM core_platform.cp_permissions
+          WHERE app_prefix = 'zeloshr' AND delete_status = 'NOT_DELETED' AND is_active),
+        zeloshr_zombies, billing_pay;
 END $$;
 
 COMMIT;
