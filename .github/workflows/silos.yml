@@ -6,6 +6,13 @@
 #   shared      SILO_SHARED     own database on the shared server
 #   dedicated   SILO_DEDICATED  own PostgreSQL server, possibly its own region
 #                               and subscription
+#   byod        SILO_BYOD       the CLIENT'S OWN database, in their cloud or
+#                               data centre, which we did not build
+#
+# BYOD was missing from this workflow entirely until 20261008, which meant a
+# client could have a correct route, correct credentials in our vault, and a
+# database with no tables in it -- nothing applied the schema, and nothing said
+# so. It is the one place a tier list being out of date is silent.
 #
 # Merging to the `silo` branch auto-deploys to BOTH kinds in DEV. Dev has exactly
 # one of each, so "all" there is two databases and deploying them on merge is how
@@ -40,7 +47,7 @@ on:
         type: choice
         required: true
         default: all
-        options: [all, shared, dedicated]
+        options: [all, shared, dedicated, byod]
       environment:
         description: "Which environment's silos"
         type: choice
@@ -54,8 +61,12 @@ on:
         default: all
         options:
           - all
-          - siloshared.dev.trovesuite.com
-          - silodedicated.dev.trovesuite.com
+          # The dev silos, named after the tenant rather than the kind -- they
+          # were siloshared/silodedicated until 20261002, and those options
+          # stayed here afterwards, so choosing either failed the check against
+          # ctl_tenant_routes rather than deploying anything.
+          - itech.dev.trovesuite.com
+          - accesspoint.dev.trovesuite.com
       module:
         type: choice
         required: true
@@ -141,21 +152,30 @@ jobs:
           # Host, tier and silo key only -- never a credential. apply.yml reads
           # each silo's own secret itself, so nothing sensitive crosses a job.
           #
-          # silo_key, not db_secret_uri. The route row's secret column was the
-          # right source while a silo had ONE credential; it now has a login per
-          # APP, so the column is NULL and five db-url-<app>-<silo> secrets stand
-          # in its place -- none of which this workflow should use. Migrations run
-          # as the MIGRATOR, which Terraform writes to migrator-db-url-<silo>, so
-          # the key is what this needs and the name is derived from it below.
+          # silo_key, not db_secret_uri -- FOR THE SILOS WE BUILD. The route
+          # row's secret column was the right source while a silo had ONE
+          # credential; it now has a login per APP, so the column is NULL and
+          # five db-url-<app>-<silo> secrets stand in its place -- none of which
+          # this workflow should use. Migrations run as the MIGRATOR, which
+          # Terraform writes to migrator-db-url-<silo>, so the key is what this
+          # needs and the name is derived from it below.
+          #
+          # SILO_BYOD IS THE OPPOSITE, which is why db_secret_uri is selected
+          # too. Nothing of ours built that database: there is no Terraform, no
+          # per-app role and no migrator-db-url-<silo> to compose. The single
+          # credential the client gave us IS the route's db_secret_uri, and for
+          # that tier it is the only thing that can run a migration.
           export ROWS="$(psql "$CP_URL" -At -F'|' -c "
-            SELECT host, tier, db_name, silo_key
+            SELECT host, tier, db_name, silo_key, coalesce(db_secret_uri, '')
               FROM control_plane.ctl_tenant_routes
-             WHERE status = 'ACTIVE' AND tier IN ('SILO_SHARED','SILO_DEDICATED')
+             WHERE status = 'ACTIVE'
+               AND tier IN ('SILO_SHARED','SILO_DEDICATED','SILO_BYOD')
              ORDER BY tier, host")"
 
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, os, sys
-          TIER = {"shared": "SILO_SHARED", "dedicated": "SILO_DEDICATED"}
+          TIER = {"shared": "SILO_SHARED", "dedicated": "SILO_DEDICATED",
+                  "byod": "SILO_BYOD"}
           kind, target = os.environ["KIND"], os.environ["TARGET"]
           VAULT = f"https://{os.environ['KV']}.vault.azure.net"
 
@@ -163,19 +183,48 @@ jobs:
           for line in os.environ["ROWS"].strip().splitlines():
               if not line.strip():
                   continue
-              host, tier, db, silo_key = line.split("|")
+              host, tier, db, silo_key, db_secret_uri = line.split("|")
               if not silo_key:
                   print(f"::error::{host} is {tier} but names no silo_key, so its "
                         f"migrator credential cannot be found. Refusing.", file=sys.stderr)
                   sys.exit(1)
-              live[host] = {
-                  "host": host, "tier": tier, "db": db, "silo_key": silo_key,
+
+              if tier == "SILO_BYOD":
+                  # THEIR credential, named on the row. There is no
+                  # migrator-db-url-<silo> for a database we did not build, and
+                  # composing that name would point at a secret that does not
+                  # exist -- so this refuses rather than letting the run fail
+                  # later with a vault 404 that reads like a permissions problem.
+                  #
+                  # It is also the one credential we have for them, so it has to
+                  # be allowed to run migrations: a client who hands us a login
+                  # that cannot create tables has handed us a database we cannot
+                  # use, and that is a conversation to have at onboarding.
+                  if not db_secret_uri:
+                      print(f"::error::{host} is SILO_BYOD but names no "
+                            f"db_secret_uri. That column is the only credential "
+                            f"we have for a database we did not build, so there "
+                            f"is nothing to migrate with. Refusing.",
+                            file=sys.stderr)
+                      sys.exit(1)
+                  secret_uri = db_secret_uri
+                  # NOT `kind`: that name holds the FILTER the dispatch asked
+                  # for, and assigning it here overwrote it with whichever row
+                  # happened to be last -- so every choice of kind returned the
+                  # last silo. The test caught it; reading the diff did not.
+                  silo_kind = "byod"
+              else:
                   # The migrator for THIS silo, which Terraform's migrator-secret
                   # unit writes. The pooled migrator-db-url names dev-db, so using
                   # it would run a silo's migration against the shared database and
                   # report success.
-                  "secret_uri": f"{VAULT}/secrets/migrator-db-url-{silo_key}",
-                  "kind": "shared" if tier == "SILO_SHARED" else "dedicated",
+                  secret_uri = f"{VAULT}/secrets/migrator-db-url-{silo_key}"
+                  silo_kind = "shared" if tier == "SILO_SHARED" else "dedicated"
+
+              live[host] = {
+                  "host": host, "tier": tier, "db": db, "silo_key": silo_key,
+                  "secret_uri": secret_uri,
+                  "kind": silo_kind,
               }
 
           picked = list(live.values())
