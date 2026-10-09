@@ -1187,6 +1187,18 @@ public sealed class ZhrPayrollSettingsConfiguration : IEntityTypeConfiguration<Z
         b.Property(x => x.StandardDailyHours).HasPrecision(6, 2);
         b.Property(x => x.StandardMonthlyHours).HasPrecision(8, 2);
         b.Property(x => x.MinNetPercentOfGross).HasPrecision(6, 2);
+        b.Property(x => x.PayDayRule).HasMaxLength(20).HasDefaultValue("day");
+        b.Property(x => x.NonWorkingDayRule).HasMaxLength(10).HasDefaultValue("before");
+        b.Property(x => x.EnabledPaymentMethodsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        b.Property(x => x.DisbursementBank).HasMaxLength(120);
+        b.Property(x => x.DisbursementAccountName).HasMaxLength(160);
+        b.Property(x => x.DisbursementAccountNumber).HasMaxLength(60);
+        b.Property(x => x.DisbursementBranch).HasMaxLength(120);
+        b.Property(x => x.PayslipOptionsJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
+        b.Property(x => x.PayslipRelease).HasMaxLength(20).HasDefaultValue("approved");
+        b.Property(x => x.PayrollPreparerIdsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        b.Property(x => x.PayrollApproverIdsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        b.Property(x => x.CompensationApproverIdsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
         b.Property(x => x.CreatedBy).HasColumnType("text");
         b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId }).IsUnique();
@@ -1251,6 +1263,43 @@ public sealed class ZhrEmployeeLoanConfiguration : IEntityTypeConfiguration<ZhrE
         b.Property(x => x.CreatedBy).HasColumnType("text");
         b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId });
+    }
+}
+
+public sealed class ZhrPayGroupConfiguration : IEntityTypeConfiguration<ZhrPayGroup>
+{
+    public void Configure(EntityTypeBuilder<ZhrPayGroup> b)
+    {
+        b.ToZelosHrTable("zhr_pay_groups");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Name).HasMaxLength(80);
+        b.Property(x => x.EntityName).HasMaxLength(160);
+        b.Property(x => x.Country).HasMaxLength(2);
+        b.Property(x => x.Currency).HasMaxLength(3);
+        b.Property(x => x.Frequency).HasMaxLength(20);
+        b.Property(x => x.VarianceThresholdPercent).HasPrecision(6, 2);
+        b.Property(x => x.PaymentChannelsJson).HasColumnType("jsonb");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId });
+    }
+}
+
+public sealed class ZhrPayGroupMemberConfiguration : IEntityTypeConfiguration<ZhrPayGroupMember>
+{
+    public void Configure(EntityTypeBuilder<ZhrPayGroupMember> b)
+    {
+        b.ToZelosHrTable("zhr_pay_group_members");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.PayGroupId });
     }
 }
 

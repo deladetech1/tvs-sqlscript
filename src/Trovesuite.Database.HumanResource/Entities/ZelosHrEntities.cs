@@ -864,6 +864,8 @@ public class ZhrPayrollRun
     public DateOnly PeriodStart { get; set; }
     public DateOnly PeriodEnd { get; set; }
     public DateOnly PayDate { get; set; }
+    /// <summary>The pay group this run pays; null on runs from before pay groups existed.</summary>
+    public Guid? PayGroupId { get; set; }
     /// <summary>regular · off_cycle</summary>
     public string Kind { get; set; } = "regular";
     /// <summary>draft · calculated · pending_approval · approved · paid · cancelled</summary>
@@ -1209,6 +1211,27 @@ public class ZhrPayrollSettings
     public bool OvertimeTaxable { get; set; } = true;
     /// <summary>Flag anyone whose deductions leave less than this share of gross. 0 is off.</summary>
     public decimal MinNetPercentOfGross { get; set; }
+    /// <summary>day · last_working_day</summary>
+    public string PayDayRule { get; set; } = "day";
+    /// <summary>When pay day lands on a weekend or holiday: before · after</summary>
+    public string NonWorkingDayRule { get; set; } = "before";
+    /// <summary>Payment methods the company pays through: ["bank_transfer","mtn_momo",…]</summary>
+    public string EnabledPaymentMethodsJson { get; set; } = "[]";
+    public string? DisbursementBank { get; set; }
+    public string? DisbursementAccountName { get; set; }
+    public string? DisbursementAccountNumber { get; set; }
+    public string? DisbursementBranch { get; set; }
+    /// <summary>What a payslip shows: {"allowances":true,"deductions":true,…}</summary>
+    public string PayslipOptionsJson { get; set; } = "{}";
+    /// <summary>When employees see a payslip: approved · pay_date · paid</summary>
+    public string PayslipRelease { get; set; } = "approved";
+    /// <summary>Who may prepare and approve runs, and decide pay changes: employee ids. Empty: anyone with the permission.</summary>
+    public string PayrollPreparerIdsJson { get; set; } = "[]";
+    public string PayrollApproverIdsJson { get; set; } = "[]";
+    public string CompensationApproverIdsJson { get; set; } = "[]";
+    /// <summary>Acts for the approvers while they are away.</summary>
+    public Guid? ApprovalDelegateId { get; set; }
+    public DateOnly? ApprovalDelegateUntil { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }
@@ -1281,5 +1304,43 @@ public class ZhrEmployeeLoan
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }
     public string? UpdatedBy { get; set; }
+}
+
+/// <summary>One entity, one country, one currency, one cycle. Everyone is paid through exactly one.</summary>
+public class ZhrPayGroup
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? EntityName { get; set; }
+    /// <summary>ISO country code, e.g. GH.</summary>
+    public string Country { get; set; } = "GH";
+    public string Currency { get; set; } = "GHS";
+    /// <summary>monthly</summary>
+    public string Frequency { get; set; } = "monthly";
+    /// <summary>Net pay moving by more than this asks the preparer to explain it.</summary>
+    public decimal VarianceThresholdPercent { get; set; } = 10m;
+    /// <summary>["bank_transfer","mobile_money"]</summary>
+    public string PaymentChannelsJson { get; set; } = "[]";
+    /// <summary>Where anyone not placed in a group is paid.</summary>
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>Which pay group a person is paid through. Anyone without a row is in the default group.</summary>
+public class ZhrPayGroupMember
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid PayGroupId { get; set; }
+    public Guid EmployeeId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public string? CreatedBy { get; set; }
 }
 
