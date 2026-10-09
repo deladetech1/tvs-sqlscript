@@ -35,6 +35,10 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrTimesheet> ZhrTimesheets => Set<ZhrTimesheet>();
     public DbSet<ZhrPayPeriodClosure> ZhrPayPeriodClosures => Set<ZhrPayPeriodClosure>();
     public DbSet<ZhrPayrollOneOff> ZhrPayrollOneOffs => Set<ZhrPayrollOneOff>();
+    public DbSet<ZhrPayrollSettings> ZhrPayrollSettings => Set<ZhrPayrollSettings>();
+    public DbSet<ZhrPayComponent> ZhrPayComponents => Set<ZhrPayComponent>();
+    public DbSet<ZhrPayComponentAssignment> ZhrPayComponentAssignments => Set<ZhrPayComponentAssignment>();
+    public DbSet<ZhrEmployeeLoan> ZhrEmployeeLoans => Set<ZhrEmployeeLoan>();
     public DbSet<ZhrPaymentBatch> ZhrPaymentBatches => Set<ZhrPaymentBatch>();
     public DbSet<ZhrAlertAcknowledgement> ZhrAlertAcknowledgements => Set<ZhrAlertAcknowledgement>();
     public DbSet<ZhrCandidate> ZhrCandidates => Set<ZhrCandidate>();

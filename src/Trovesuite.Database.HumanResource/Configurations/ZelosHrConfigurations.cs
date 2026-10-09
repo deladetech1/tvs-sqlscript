@@ -1170,3 +1170,87 @@ public sealed class ZhrAttendanceCorrectionConfiguration : IEntityTypeConfigurat
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.AttendanceDate });
     }
 }
+
+public sealed class ZhrPayrollSettingsConfiguration : IEntityTypeConfiguration<ZhrPayrollSettings>
+{
+    public void Configure(EntityTypeBuilder<ZhrPayrollSettings> b)
+    {
+        b.ToZelosHrTable("zhr_payroll_settings");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.EmployeeSocialSecurityPercent).HasPrecision(6, 3);
+        b.Property(x => x.EmployerSocialSecurityPercent).HasPrecision(6, 3);
+        b.Property(x => x.OvertimeRate).HasPrecision(6, 3);
+        b.Property(x => x.OvertimeRestDayRate).HasPrecision(6, 3);
+        b.Property(x => x.StandardDailyHours).HasPrecision(6, 2);
+        b.Property(x => x.StandardMonthlyHours).HasPrecision(8, 2);
+        b.Property(x => x.MinNetPercentOfGross).HasPrecision(6, 2);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId }).IsUnique();
+    }
+}
+
+public sealed class ZhrPayComponentConfiguration : IEntityTypeConfiguration<ZhrPayComponent>
+{
+    public void Configure(EntityTypeBuilder<ZhrPayComponent> b)
+    {
+        b.ToZelosHrTable("zhr_pay_components");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Name).HasMaxLength(80);
+        b.Property(x => x.Kind).HasMaxLength(20);
+        b.Property(x => x.Calculation).HasMaxLength(20);
+        b.Property(x => x.Value).HasPrecision(14, 3);
+        b.Property(x => x.AppliesTo).HasMaxLength(20);
+        b.Property(x => x.Description).HasMaxLength(500);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Kind });
+    }
+}
+
+public sealed class ZhrPayComponentAssignmentConfiguration : IEntityTypeConfiguration<ZhrPayComponentAssignment>
+{
+    public void Configure(EntityTypeBuilder<ZhrPayComponentAssignment> b)
+    {
+        b.ToZelosHrTable("zhr_pay_component_assignments");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Value).HasPrecision(14, 3);
+        b.Property(x => x.FromPeriod).HasMaxLength(7);
+        b.Property(x => x.ToPeriod).HasMaxLength(7);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.ComponentId });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId });
+    }
+}
+
+public sealed class ZhrEmployeeLoanConfiguration : IEntityTypeConfiguration<ZhrEmployeeLoan>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmployeeLoan> b)
+    {
+        b.ToZelosHrTable("zhr_employee_loans");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Name).HasMaxLength(80);
+        b.Property(x => x.Principal).HasPrecision(14, 2);
+        b.Property(x => x.Installment).HasPrecision(14, 2);
+        b.Property(x => x.StartPeriod).HasMaxLength(7);
+        b.Property(x => x.Status).HasMaxLength(20);
+        b.Property(x => x.Note).HasMaxLength(500);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId });
+    }
+}
+
