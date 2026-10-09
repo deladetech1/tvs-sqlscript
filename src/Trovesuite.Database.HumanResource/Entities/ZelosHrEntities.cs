@@ -1184,3 +1184,102 @@ public class ZhrAttendanceCorrection
     public string? CreatedBy { get; set; }
     public string? UpdatedBy { get; set; }
 }
+
+/// <summary>How one organisation runs payroll, on top of the country's rules. One row per org.</summary>
+public class ZhrPayrollSettings
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public bool DeductSocialSecurity { get; set; } = true;
+    /// <summary>Overrides the country's employee rate when set.</summary>
+    public decimal? EmployeeSocialSecurityPercent { get; set; }
+    public decimal? EmployerSocialSecurityPercent { get; set; }
+    public bool DeductIncomeTax { get; set; } = true;
+    public bool ProrateNewStarters { get; set; } = true;
+    /// <summary>Use the salary on the employee record when nobody has approved a pay version yet.</summary>
+    public bool UseRecordSalary { get; set; } = true;
+    public int? PayDay { get; set; }
+    public int? CutOffDay { get; set; }
+    public bool OvertimeEnabled { get; set; }
+    public decimal OvertimeRate { get; set; } = 1.5m;
+    public decimal OvertimeRestDayRate { get; set; } = 2m;
+    public decimal StandardDailyHours { get; set; } = 8m;
+    public decimal StandardMonthlyHours { get; set; } = 173.33m;
+    public bool OvertimeTaxable { get; set; } = true;
+    /// <summary>Flag anyone whose deductions leave less than this share of gross. 0 is off.</summary>
+    public decimal MinNetPercentOfGross { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>A company-defined allowance, deduction or employer contribution.</summary>
+public class ZhrPayComponent
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    /// <summary>earning · deduction · employer</summary>
+    public string Kind { get; set; } = default!;
+    /// <summary>fixed · percent_of_basic · percent_of_gross</summary>
+    public string Calculation { get; set; } = "fixed";
+    public decimal Value { get; set; }
+    /// <summary>Earnings: whether PAYE applies.</summary>
+    public bool Taxable { get; set; } = true;
+    /// <summary>Deductions: taken before PAYE is worked out.</summary>
+    public bool PreTax { get; set; }
+    /// <summary>all · selected</summary>
+    public string AppliesTo { get; set; } = "all";
+    public bool IsActive { get; set; } = true;
+    public int SortOrder { get; set; }
+    public string? Description { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>One person on a component that applies to selected people, optionally at their own amount.</summary>
+public class ZhrPayComponentAssignment
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid ComponentId { get; set; }
+    public Guid EmployeeId { get; set; }
+    /// <summary>Their own amount or percentage, instead of the component's.</summary>
+    public decimal? Value { get; set; }
+    /// <summary>yyyy-MM: first and last month it applies.</summary>
+    public string? FromPeriod { get; set; }
+    public string? ToPeriod { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>A loan or salary advance repaid from pay, a fixed amount a month until it is cleared.</summary>
+public class ZhrEmployeeLoan
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    public string Name { get; set; } = default!;
+    public decimal Principal { get; set; }
+    public decimal Installment { get; set; }
+    /// <summary>yyyy-MM: the first month repayment comes off.</summary>
+    public string StartPeriod { get; set; } = default!;
+    /// <summary>active · paused · settled · cancelled</summary>
+    public string Status { get; set; } = "active";
+    public string? Note { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
