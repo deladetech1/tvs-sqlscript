@@ -801,3 +801,51 @@ public class AffiliateCommission
     public string? CreatedBy { get; set; }
     public string? UpdatedBy { get; set; }
 }
+
+/// <summary>
+/// Extra photographs kept against a sale — whatever the paperwork did not cover.
+///
+/// The agreements a sale needs are TEMPLATED: a policy names them, each is
+/// issued once, and each takes one signed copy back. That is right for a thing
+/// somebody signs and wrong for everything else at the counter — the customer's
+/// ID, the handset before it went in the box, the receipt they were given. Those
+/// have no template, there is no fixed number of them, and which ones matter is
+/// not knowable in advance.
+///
+/// So this is a plain bucket: many rows per sale, no template, no "required".
+///
+/// Keyed on SaleId and nothing finer. An installment plan passes the sale it was
+/// made from, so one bucket serves both screens and a photograph taken from the
+/// plan is the same photograph the sale shows.
+/// </summary>
+public class SaleImage
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+
+    /// <summary>
+    /// Where it was taken. NOT NULL, because msg_document_paths' own loc_id is
+    /// NOT NULL with a foreign key to cp_locations — a row here without one
+    /// could never have had a file behind it.
+    /// </summary>
+    public string LocId { get; set; } = default!;
+
+    public string SaleId { get; set; } = default!;
+
+    /// <summary>What FileUploadService returns, and what the download reads.</summary>
+    public string DocumentPath { get; set; } = default!;
+
+    /// <summary>Optional, and usually absent — "ID card", "screen before boxing".</summary>
+    public string? Caption { get; set; }
+
+    public string? Cdate { get; set; }
+    public string? Ctime { get; set; }
+    public DateTimeOffset? Cdatetime { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    public string? DeletedBy { get; set; }
+    public string DeleteStatus { get; set; } = "NOT_DELETED";
+    public bool IsActive { get; set; } = true;
+}
