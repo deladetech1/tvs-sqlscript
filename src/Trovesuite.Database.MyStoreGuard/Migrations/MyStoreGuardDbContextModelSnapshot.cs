@@ -626,6 +626,11 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_trial_reminder_sent_at");
 
+                    b.Property<string>("TenantName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_name");
+
                     b.HasKey("Id")
                         .HasName("pk_cp_tenants");
 
@@ -5309,8 +5314,9 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.HasIndex("ResourceType")
                         .HasDatabaseName("ix_msg_activity_logs_resource_type");
 
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_msg_activity_logs_tenant_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Cdatetime")
+                        .IsDescending(false, false, false, true)
+                        .HasDatabaseName("idx_msg_activity_logs_scope");
 
                     b.ToTable("msg_activity_logs", "mystoreguard");
                 });

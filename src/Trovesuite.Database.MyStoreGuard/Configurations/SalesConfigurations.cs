@@ -164,6 +164,13 @@ public sealed class MsgActivityLogConfiguration : IEntityTypeConfiguration<MsgAc
         b.Property(x => x.OldData).HasColumnType("jsonb");
         b.Property(x => x.NewData).HasColumnType("jsonb");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
+        // Matches every per-entity audit table's idx_..._scope. The Activities
+        // feed reads all 39 log tables at once as one UNION ordered by time,
+        // and this was the only one of them without the index for it -- it had
+        // tenant_id alone, so its share of the query was a scan of the table.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Cdatetime })
+            .HasDatabaseName("idx_msg_activity_logs_scope")
+            .IsDescending(false, false, false, true);
         b.WithTenantFk();
         b.HasOne<ResourceType>().WithMany().HasForeignKey(x => x.ResourceType).OnDelete(DeleteBehavior.Restrict);
     }
