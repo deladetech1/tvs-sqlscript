@@ -9581,6 +9581,106 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                     b.ToTable("msg_sale_guarantors", "mystoreguard");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.SaleImage", b =>
+                {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("OrgId")
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("BusId")
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()::text");
+
+                    b.Property<string>("Caption")
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("caption");
+
+                    b.Property<string>("Cdate")
+                        .HasColumnType("text")
+                        .HasColumnName("cdate");
+
+                    b.Property<DateTimeOffset?>("Cdatetime")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("cdatetime");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Ctime")
+                        .HasColumnType("text")
+                        .HasColumnName("ctime");
+
+                    b.Property<string>("DeleteStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("NOT_DELETED")
+                        .HasColumnName("delete_status");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("DocumentPath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("document_path");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LocId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("loc_id");
+
+                    b.Property<string>("SaleId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("sale_id");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("TenantId", "OrgId", "BusId", "Id")
+                        .HasName("pk_msg_sale_images");
+
+                    b.HasIndex("BusId", "TenantId")
+                        .HasDatabaseName("ix_msg_sale_images_bus_id_tenant_id");
+
+                    b.HasIndex("CreatedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_sale_images_created_by_tenant_id");
+
+                    b.HasIndex("DeletedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_sale_images_deleted_by_tenant_id");
+
+                    b.HasIndex("OrgId", "TenantId")
+                        .HasDatabaseName("ix_msg_sale_images_org_id_tenant_id");
+
+                    b.HasIndex("UpdatedBy", "TenantId")
+                        .HasDatabaseName("ix_msg_sale_images_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SaleId", "Cdatetime")
+                        .HasDatabaseName("ix_msg_sale_images_tenant_id_org_id_bus_id_sale_id_cdatetime");
+
+                    b.ToTable("msg_sale_images", "mystoreguard");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.SaleItem", b =>
                 {
                     b.Property<string>("TenantId")
@@ -14690,6 +14790,48 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_msg_sale_guarantors_msg_sales_tenant_id_org_id_bus_id_loc_i");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.SaleImage", b =>
+                {
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_sale_images_cp_tenants_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Business", null)
+                        .WithMany()
+                        .HasForeignKey("BusId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_sale_images_cp_businesses_bus_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_sale_images_cp_users_created_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("DeletedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_sale_images_cp_users_deleted_by_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_msg_sale_images_cp_organizations_org_id_tenant_id");
+
+                    b.HasOne("Trovesuite.Database.CorePlatform.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy", "TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_msg_sale_images_cp_users_updated_by_tenant_id");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.MyStoreGuard.Entities.SaleItem", b =>

@@ -769,3 +769,23 @@ public sealed class AffiliateCommissionConfiguration : IEntityTypeConfiguration<
         b.WithCrossSchemaCreateUpdateUserFks();
     }
 }
+
+public sealed class SaleImageConfiguration : IEntityTypeConfiguration<SaleImage>
+{
+    public void Configure(EntityTypeBuilder<SaleImage> b)
+    {
+        b.ToTable("msg_sale_images");
+        b.HasKey(x => new { x.TenantId, x.OrgId, x.BusId, x.Id });
+        b.Property(x => x.Id).AsTextUuidDefault();
+        b.Property(x => x.DocumentPath).HasColumnType("text");
+        b.Property(x => x.Caption).HasColumnType("varchar(255)");
+        b.Property(x => x.DeleteStatus).HasDefaultValue("NOT_DELETED");
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.Cdatetime).HasColumnType("timestamptz");
+        // Every read is "the pictures for this sale, oldest first", so the index
+        // leads with the scope and ends with the order the screen wants.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.SaleId, x.Cdatetime });
+        b.WithTenantOrgBusFks();
+        b.WithCrossSchemaAuditUserFks();
+    }
+}

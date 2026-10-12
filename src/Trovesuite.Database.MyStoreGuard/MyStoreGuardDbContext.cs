@@ -34,6 +34,8 @@ public class MyStoreGuardDbContext : DbContext
 
     public DbSet<PricingRule> PricingRules => Set<PricingRule>();
     public DbSet<ReturnPolicy> ReturnPolicies => Set<ReturnPolicy>();
+    /// <summary>Extra photographs against a sale — no template, no fixed number.</summary>
+    public DbSet<SaleImage> SaleImages => Set<SaleImage>();
     public DbSet<OpenAndClosingStock> OpenAndClosingStocks => Set<OpenAndClosingStock>();
     public DbSet<Tax> Taxes => Set<Tax>();
     public DbSet<TaxRule> TaxRules => Set<TaxRule>();
