@@ -55,6 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       client_id: ${{ steps.who.outputs.client_id }}
+      tenant_id: ${{ steps.who.outputs.tenant_id }}
       subscription: ${{ steps.who.outputs.subscription }}
       secret_uri: ${{ steps.who.outputs.secret_uri }}
     steps:
@@ -69,13 +70,21 @@ jobs:
             bgclt)
               CLIENT="${{ vars.BGCLT_AZURE_CLIENT_ID }}"
               SUB="${{ vars.BGCLT_SUBSCRIPTION_ID }}"
+              # THEIR directory, not ours. An enterprise hosts itself, which
+              # means its subscription sits in its OWN Entra tenant and the
+              # identity we sign in as is registered there. Signing in to the
+              # platform tenant with their client id fails with AADSTS700016
+              # ("application not found in the directory") — which reads like a
+              # missing app registration rather than the wrong directory.
+              TENANT="${{ vars.BGCLT_TENANT_ID }}"
               ;;
             *) echo "::error::no identity mapping for '${{ inputs.target }}'"; exit 1 ;;
           esac
-          [ -n "$CLIENT" ] && [ -n "$SUB" ] || {
-            echo "::error::${{ inputs.target }}: its client-id / subscription org variables are not set"; exit 1; }
+          [ -n "$CLIENT" ] && [ -n "$SUB" ] && [ -n "$TENANT" ] || {
+            echo "::error::${{ inputs.target }}: its client-id / tenant-id / subscription org variables are not set"; exit 1; }
           KV="${{ inputs.target }}-${{ inputs.environment }}-kv"
           echo "client_id=$CLIENT" >> "$GITHUB_OUTPUT"
+          echo "tenant_id=$TENANT" >> "$GITHUB_OUTPUT"
           echo "subscription=$SUB" >> "$GITHUB_OUTPUT"
           echo "secret_uri=https://$KV.vault.azure.net/secrets/migrator-db-url" >> "$GITHUB_OUTPUT"
 
@@ -93,4 +102,4 @@ jobs:
       secret_uri: ${{ needs.resolve.outputs.secret_uri }}
       subscription_id: ${{ needs.resolve.outputs.subscription }}
       azure_client_id: ${{ needs.resolve.outputs.client_id }}
-      azure_tenant_id: ${{ vars.TVS_TENANT_ID }}
+      azure_tenant_id: ${{ needs.resolve.outputs.tenant_id }}
