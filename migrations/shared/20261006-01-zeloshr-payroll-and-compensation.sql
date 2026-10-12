@@ -10,7 +10,8 @@
 -- create and update to the same role is therefore safe — it still takes two people.
 --
 -- Every grant is explicit (the auto-assign triggers were removed in 20260929-10), and the
--- assertion at the end fails the deploy if a new permission is left unheld.
+-- assertion at the end fails the deploy if a new permission is left unheld. It is skipped
+-- where ZelosHR's seed has not run, because this is a SHARED file and the seed is not.
 -- Idempotent: re-run on every deploy.
 
 BEGIN;
@@ -63,8 +64,40 @@ ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
 DO $$
 DECLARE
-    unheld text;
+    seeded   int;
+    unheld   text;
+    unpaired text;
 BEGIN
+    -- HAS ZELOSHR'S PERMISSION SEED RUN IN *THIS* DATABASE?
+    --
+    -- This file lives in migrations/shared, so it runs on every deploy of
+    -- every module. The permissions it grants are created by the zeloshr
+    -- module SEED, which only runs when zeloshr is among the selected
+    -- modules. So `module=mystoreguard` against a database where ZelosHR was
+    -- never deployed legitimately has none of them — and the old assertion
+    -- ("expected 7") then failed the whole deploy on a ZelosHR invariant.
+    --
+    -- Because shared files run in name order and the runner stops at the
+    -- first failure, that blocked every shared file after this one from ever
+    -- reaching production: the LoanDrift agreement templates, the employee
+    -- membership change, the address work. Production SQL had been stuck
+    -- behind it since 2026-10-06.
+    SELECT count(*) INTO seeded
+      FROM core_platform.cp_permissions
+     WHERE app_prefix = 'zeloshr'
+       AND resource_key IN ('payroll', 'compensation');
+
+    IF seeded = 0 THEN
+        RAISE NOTICE 'ZelosHR pay permissions are not seeded here; nothing to check.';
+        RETURN;
+    END IF;
+
+    -- THE INVARIANT WORTH KEEPING: no pay permission is left ungranted.
+    --
+    -- This is what the assertion was for — a new permission added to the seed
+    -- and forgotten here. It holds at ANY count, where "= 7" breaks the next
+    -- time somebody adds an eighth pay permission, in a file that has nothing
+    -- to do with this one.
     SELECT string_agg(p.id, ', ' ORDER BY p.id) INTO unheld
       FROM core_platform.cp_permissions p
      WHERE p.app_prefix = 'zeloshr'
@@ -78,9 +111,23 @@ BEGIN
         RAISE EXCEPTION 'Pay permissions no live role holds: %', unheld;
     END IF;
 
-    IF (SELECT count(*) FROM core_platform.cp_permissions
-         WHERE app_prefix = 'zeloshr' AND resource_key IN ('payroll', 'compensation')) <> 7 THEN
-        RAISE EXCEPTION 'Expected 7 pay permissions with their pairs set; the seed did not run first.';
+    -- And every one this file names has the pair the API compares, so a row
+    -- that exists but was never updated above is still caught.
+    SELECT string_agg(p.id, ', ' ORDER BY p.id) INTO unpaired
+      FROM core_platform.cp_permissions p
+     WHERE p.id IN (
+            'permission-zeloshr-payroll-get',
+            'permission-zeloshr-payroll-create',
+            'permission-zeloshr-payroll-update',
+            'permission-zeloshr-payroll-delete',
+            'permission-zeloshr-compensation-get',
+            'permission-zeloshr-compensation-create',
+            'permission-zeloshr-compensation-update')
+       AND (p.app_prefix IS DISTINCT FROM 'zeloshr'
+            OR coalesce(p.resource_key, '') = ''
+            OR coalesce(p.action, '') = '');
+    IF unpaired IS NOT NULL THEN
+        RAISE EXCEPTION 'Pay permissions with no comparison pair: %', unpaired;
     END IF;
 END $$;
 
