@@ -36,6 +36,12 @@ on:
         required: true
         default: validate
         options: [validate, verify, status, deploy, migrations-list, rollback]
+      credential:
+        description: "Where the connection string comes from"
+        type: choice
+        required: true
+        default: keyvault
+        options: [keyvault, secret]
       destructive_ack:
         description: 'For rollback only: type exactly YESDestructive'
         type: string
@@ -80,8 +86,12 @@ jobs:
               ;;
             *) echo "::error::no identity mapping for '${{ inputs.target }}'"; exit 1 ;;
           esac
-          [ -n "$CLIENT" ] && [ -n "$SUB" ] && [ -n "$TENANT" ] || {
-            echo "::error::${{ inputs.target }}: its client-id / tenant-id / subscription org variables are not set"; exit 1; }
+          # Only needed to READ THE VAULT. With credential=secret nothing here
+          # is used and no Azure login happens at all -- see the note below.
+          if [ "${{ inputs.credential }}" = "keyvault" ]; then
+            [ -n "$CLIENT" ] && [ -n "$SUB" ] && [ -n "$TENANT" ] || {
+              echo "::error::${{ inputs.target }}: its client-id / tenant-id / subscription org variables are not set"; exit 1; }
+          fi
           KV="${{ inputs.target }}-${{ inputs.environment }}-kv"
           echo "client_id=$CLIENT" >> "$GITHUB_OUTPUT"
           echo "tenant_id=$TENANT" >> "$GITHUB_OUTPUT"
@@ -98,8 +108,25 @@ jobs:
       destructive_ack: ${{ inputs.destructive_ack }}
       target_class: enterprise
       enterprise_slug: ${{ inputs.target }}
-      source: keyvault
-      secret_uri: ${{ needs.resolve.outputs.secret_uri }}
+      # AZURE IS ONLY HOW THE CONNECTION STRING IS FETCHED.
+      #
+      # The migration itself needs a Postgres URL and nothing else. `keyvault`
+      # signs in with OIDC purely to read migrator-db-url out of the customer's
+      # vault; `secret` takes the same string straight from a GitHub secret and
+      # skips the login entirely (apply.yml guards that step on source).
+      #
+      # keyvault is the default because it is the better arrangement for
+      # somebody else's database: the credential stays in THEIR vault, is
+      # rotated in one place, and we never hold a copy. `secret` exists for
+      # when that path is unavailable -- an enterprise whose directory we
+      # cannot add a federated credential to should not block their schema.
+      source: ${{ inputs.credential }}
+      secret_uri: ${{ inputs.credential == 'keyvault' && needs.resolve.outputs.secret_uri || '' }}
       subscription_id: ${{ needs.resolve.outputs.subscription }}
       azure_client_id: ${{ needs.resolve.outputs.client_id }}
       azure_tenant_id: ${{ needs.resolve.outputs.tenant_id }}
+    secrets:
+      # One line per enterprise, like the identity mapping above: reaching for
+      # a secret by a name built from an input would silently pass an empty
+      # string for a target nobody had set one up for.
+      database_url: ${{ inputs.target == 'bgclt' && secrets.BGCLT_DATABASE_URL || '' }}
