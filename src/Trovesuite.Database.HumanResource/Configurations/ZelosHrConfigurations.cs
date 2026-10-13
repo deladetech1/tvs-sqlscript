@@ -309,9 +309,11 @@ public sealed class ZhrEmployeeConfiguration : IEntityTypeConfiguration<ZhrEmplo
         b.HasIndex(x => new { x.TenantId, x.GhanaCardNumber })
             .IsUnique()
             .HasFilter("ghana_card_number IS NOT NULL AND ghana_card_number <> ''");
+        // One live employee per platform user. A deleted employee no longer holds the user,
+        // so the same person can be imported again.
         b.HasIndex(x => new { x.TenantId, x.UserId })
             .IsUnique()
-            .HasFilter("user_id IS NOT NULL");
+            .HasFilter("user_id IS NOT NULL AND NOT is_deleted");
         b.Property(x => x.LifecycleState).HasDefaultValue("Pre-hire");
         b.Property(x => x.LifecycleStatus).HasDefaultValue("draft");
         b.Property(x => x.IsDraft).HasDefaultValue(true);
