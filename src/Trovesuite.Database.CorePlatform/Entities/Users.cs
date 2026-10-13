@@ -90,6 +90,25 @@ public class MultiFactorSetting
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public bool IsMultiFactor { get; set; }
+
+    /// <summary>
+    /// How long a sign-in code stays usable, in minutes.
+    ///
+    /// It was a constant of ONE minute for everybody. That is tight enough to
+    /// lose people honestly: an email takes a few seconds to arrive, a phone is
+    /// in another room, and a code that expires while somebody is walking to
+    /// fetch it reads as the system being broken rather than careful.
+    ///
+    /// Three is the new default — long enough to go and get the phone, short
+    /// enough that a code left on a screen is not a standing key. A tenant who
+    /// wants it tighter or looser says so here.
+    ///
+    /// Only the sign-in and password-reset code. Tenant VERIFICATION keeps its
+    /// own twenty-four hours: that code goes to our admins rather than to the
+    /// account holder, and the two must not share a number.
+    /// </summary>
+    public int OtpExpiryMinutes { get; set; } = 3;
+
     public bool IsActive { get; set; } = true;
     public string? Description { get; set; }
     public string? Cdate { get; set; }

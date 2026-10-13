@@ -2493,6 +2493,12 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_multi_factor");
 
+                    b.Property<int>("OtpExpiryMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3)
+                        .HasColumnName("otp_expiry_minutes");
+
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text")
                         .HasColumnName("updated_by");
