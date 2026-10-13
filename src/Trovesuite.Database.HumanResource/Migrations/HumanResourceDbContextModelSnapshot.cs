@@ -2598,7 +2598,7 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.HasIndex("TenantId", "UserId")
                         .IsUnique()
                         .HasDatabaseName("ix_zhr_employees_tenant_id_user_id")
-                        .HasFilter("user_id IS NOT NULL");
+                        .HasFilter("user_id IS NOT NULL AND NOT is_deleted");
 
                     b.HasIndex("TenantId", "OrgId", "EmploymentStatus", "DepartmentId", "BranchId")
                         .HasDatabaseName("ix_zhr_employees_tenant_id_org_id_employment_status_department");
