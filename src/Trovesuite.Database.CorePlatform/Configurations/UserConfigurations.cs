@@ -155,6 +155,10 @@ public sealed class MultiFactorSettingConfiguration : IEntityTypeConfiguration<M
         b.HasKey(x => new { x.Id, x.TenantId });
         b.Property(x => x.Id).AsTextUuidDefault();
         b.Property(x => x.IsMultiFactor).HasDefaultValue(false);
+        // Defaulted in the DATABASE as well as the entity: rows already there
+        // predate the column, and a null would read as "no expiry" to anything
+        // that forgets to coalesce.
+        b.Property(x => x.OtpExpiryMinutes).HasDefaultValue(3);
         b.Property(x => x.IsActive).HasDefaultValue(true);
         b.HasIndex(x => x.TenantId).IsUnique();
 
