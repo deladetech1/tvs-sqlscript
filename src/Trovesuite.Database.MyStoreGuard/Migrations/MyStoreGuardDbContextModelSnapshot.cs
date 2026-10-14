@@ -6374,7 +6374,7 @@ namespace Trovesuite.Database.MyStoreGuard.Migrations
 
                     b.ToTable("msg_task_steps", "mystoreguard", t =>
                         {
-                            t.HasCheckConstraint("ck_msg_task_steps_status", "status IN ('TODO','IN_PROGRESS','DONE','COMPLETED','CANCELLED')");
+                            t.HasCheckConstraint("ck_msg_task_steps_status", "status IN ('BACKLOG','TODO','IN_PROGRESS','DONE','COMPLETED','CANCELLED')");
                         });
                 });
 
