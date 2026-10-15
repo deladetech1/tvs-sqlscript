@@ -362,7 +362,7 @@ BEGIN
     $fn$;
 
     -- What the CRM lists: a product, or one row per kind (product_size) of a product sold in
-    -- kinds. source_id is the product's id, or "<product id>::<kind>".
+    -- kinds at different prices. source_id is the product's id, or "<product id>::<kind>".
     -- Dropped and made again: CREATE OR REPLACE cannot move a column, and the hashed view's
     -- s.* moves whenever this one gains one. Nothing else depends on them.
     EXECUTE 'DROP VIEW IF EXISTS crm.src_mystoreguard_sellables_hashed';
@@ -370,21 +370,35 @@ BEGIN
     EXECUTE $v$
     CREATE OR REPLACE VIEW crm.src_mystoreguard_sellables AS
     WITH kinds AS (
-        SELECT DISTINCT ON (b.product_id, btrim(b.product_size))
-               b.product_id, b.tenant_id, b.bus_id, btrim(b.product_size) AS kind, b.id AS batch_id, b.currency_id
+        -- The latest delivery of each kind. The size is typed by hand, so "256 GB" and
+        -- "256gb" are one kind: compared without spaces or case, shown as last typed.
+        SELECT DISTINCT ON (b.product_id, lower(regexp_replace(b.product_size, '\s+', '', 'g')))
+               b.product_id, b.tenant_id, b.bus_id, btrim(b.product_size) AS kind, b.id AS batch_id, b.currency_id,
+               b.base_selling_price
           FROM mystoreguard.msg_purchase_batches b
          WHERE b.delete_status = 'NOT_DELETED' AND NULLIF(btrim(b.product_size), '') IS NOT NULL
-         ORDER BY b.product_id, btrim(b.product_size), b.cdatetime DESC, b.id DESC
+         ORDER BY b.product_id, lower(regexp_replace(b.product_size, '\s+', '', 'g')), b.cdatetime DESC, b.id DESC
+    ), split AS (
+        -- Split into kinds only where the kinds really sell at different prices: their
+        -- deliveries' prices differ and no price row sets one price over all of them.
+        SELECT k.product_id, k.tenant_id, k.bus_id
+          FROM kinds k
+         GROUP BY k.product_id, k.tenant_id, k.bus_id
+        HAVING count(DISTINCT k.base_selling_price) > 1
+           AND NOT EXISTS (SELECT 1 FROM mystoreguard.msg_product_prices x
+                            WHERE x.product_id = k.product_id AND x.tenant_id = k.tenant_id AND x.bus_id = k.bus_id
+                              AND x.channel = 'STORE' AND (x.deleted_by IS NULL OR x.deleted_by = ''))
     )
     SELECT p.tenant_id, p.org_id, p.bus_id, p.id || '::' || k.kind AS source_id, p.id AS product_id, k.batch_id,
            btrim(p.name) || ' – ' || k.kind AS name, NULLIF(btrim(p.sku), '') AS sku, NULLIF(btrim(p.description), '') AS description,
            (p.delete_status <> 'NOT_DELETED' OR p.is_active IS FALSE OR p.retired_at IS NOT NULL) AS is_removed,
            k.currency_id
       FROM mystoreguard.msg_products p
+      JOIN split sp ON sp.product_id = p.id AND sp.tenant_id = p.tenant_id AND sp.bus_id = p.bus_id
       JOIN kinds k ON k.product_id = p.id AND k.tenant_id = p.tenant_id AND k.bus_id = p.bus_id
     UNION ALL
-    -- The product itself: unless every delivery it has is a kind. Its currency: its latest
-    -- delivery's, or, with no delivery, the currency its price is in.
+    -- The product itself: unless it is split and every delivery it has is a kind. Its
+    -- currency: its latest delivery's, or, with no delivery, the currency its price is in.
     SELECT p.tenant_id, p.org_id, p.bus_id, p.id, p.id, NULL::text,
            btrim(p.name), NULLIF(btrim(p.sku), ''), NULLIF(btrim(p.description), ''),
            (p.delete_status <> 'NOT_DELETED' OR p.is_active IS FALSE OR p.retired_at IS NOT NULL),
@@ -396,7 +410,7 @@ BEGIN
                         AND (x.deleted_by IS NULL OR x.deleted_by = '')
                       ORDER BY x.priority DESC LIMIT 1))
       FROM mystoreguard.msg_products p
-     WHERE NOT EXISTS (SELECT 1 FROM kinds k WHERE k.product_id = p.id AND k.tenant_id = p.tenant_id AND k.bus_id = p.bus_id)
+     WHERE NOT EXISTS (SELECT 1 FROM split sp WHERE sp.product_id = p.id AND sp.tenant_id = p.tenant_id AND sp.bus_id = p.bus_id)
         OR EXISTS (SELECT 1 FROM mystoreguard.msg_purchase_batches b
                     WHERE b.product_id = p.id AND b.tenant_id = p.tenant_id AND b.bus_id = p.bus_id
                       AND b.delete_status = 'NOT_DELETED' AND NULLIF(btrim(b.product_size), '') IS NULL)
