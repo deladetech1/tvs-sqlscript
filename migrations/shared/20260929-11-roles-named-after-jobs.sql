@@ -275,6 +275,9 @@ BEGIN
              WHEN r.id LIKE 'role-loandrift%' THEN 'loandrift'
              WHEN r.id LIKE 'role-zeloshr%'   THEN 'zeloshr'
              WHEN r.id LIKE 'role-attendance%' THEN 'zeloshr'
+             -- The CRM's job roles (20261015-02). A new app's roles are added here, or
+             -- every one of their grants reads as a leak and this file fails every deploy.
+             WHEN r.id LIKE 'role-crm%'       THEN 'crm'
              ELSE '-' END;
 
     IF leftover > 0 THEN
