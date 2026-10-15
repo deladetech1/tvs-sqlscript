@@ -49,7 +49,7 @@ PLATFORM_HOSTS = [
     "dev.trovesuite.com", "staging.trovesuite.com", "trovesuite.com",
     "loandrift.trovesuite.com", "mystoreguard.trovesuite.com",
     "zeloshr.dev.trovesuite.com", "zeloshr-admin.trovesuite.com",
-    "dev.qpickstore.com", "localhost",
+    "dev.qpickstore.com", "localhost", "crm.dev.trovesuite.com",
 ]
 
 # Addresses a client holds, or could reasonably be given. Every one of these must
