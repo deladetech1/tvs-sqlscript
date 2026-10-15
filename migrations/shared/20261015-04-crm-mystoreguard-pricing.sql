@@ -24,6 +24,15 @@
 --      together; exclusive taxes are added to it.
 --   4. The currency: the latest batch's.
 --
+-- Variants. A product sold in kinds -- "Mason Chisel": Pointed Long 30, Flat Short 50 --
+-- records each kind as its own delivery with a product_size and a price, and the till
+-- prices whichever delivery is sold. There is no one price for the product, so the CRM
+-- lists one product per kind (crm.src_mystoreguard_sellables) and prices each from that
+-- kind's latest delivery: p_batch names it, and rules and taxes aimed at that delivery
+-- apply, as they do at the till. Deliveries recorded in the same instant are told apart by
+-- their id, so the answer never changes between runs (MyStoreGuard's own screens order by
+-- time alone there).
+--
 -- The quantity matters: a quantity break, and a tax condition on quantity or the line
 -- total, change the price of a line of 20 from a line of 1. The CRM prices each quote
 -- line at its own quantity.
@@ -72,13 +81,15 @@ BEGIN
         RETURN; -- no MyStoreGuard in this database: nothing to price from
     END IF;
 
+    EXECUTE 'DROP FUNCTION IF EXISTS crm.msg_product_price(text, text, text, numeric, timestamptz)';
     EXECUTE $fn$
     CREATE OR REPLACE FUNCTION crm.msg_product_price(
         p_tenant  text,
         p_bus     text,
         p_product text,
         p_qty     numeric     DEFAULT 1,
-        p_at      timestamptz DEFAULT now()
+        p_at      timestamptz DEFAULT now(),
+        p_batch   text        DEFAULT NULL
     ) RETURNS TABLE (
         has_price     boolean,  -- a price row or a batch price exists
         list_price    numeric,  -- step 1
@@ -130,12 +141,13 @@ BEGIN
          WHERE amp.tenant_id = p_tenant AND amp.org_id = v_org AND amp.bus_id = p_bus
            AND amp.product_id = p_product AND pm.delete_status = 'NOT_DELETED';
 
-        -- The latest delivery: its base selling price is the fallback, its currency the currency.
+        -- The delivery: the one named (a variant), else the latest. Its base selling price is
+        -- the fallback, its currency the currency.
         SELECT b.base_selling_price, b.currency_id INTO v_base, v_currency
           FROM mystoreguard.msg_purchase_batches b
          WHERE b.product_id = p_product AND b.tenant_id = p_tenant AND b.org_id = v_org AND b.bus_id = p_bus
-           AND b.delete_status = 'NOT_DELETED'
-         ORDER BY b.cdatetime DESC
+           AND b.delete_status = 'NOT_DELETED' AND (p_batch IS NULL OR b.id = p_batch)
+         ORDER BY b.cdatetime DESC, b.id DESC
          LIMIT 1;
 
         -- 1. The price.
@@ -177,6 +189,7 @@ BEGIN
                AND (r.start_datetime IS NULL OR r.start_datetime <= p_at)
                AND (r.end_datetime IS NULL OR r.end_datetime >= p_at)
                AND (   r.rule_target_type = 'ALL_PRODUCTS'
+                    OR (r.rule_target_type = 'BATCH' AND r.rule_target_id = p_batch)
                     OR (r.rule_target_type = 'SKU' AND r.rule_target_id = v_sku)
                     OR (r.rule_target_type = 'PRODUCT' AND r.rule_target_id = p_product)
                     OR (r.rule_target_type = 'CATEGORY' AND r.rule_target_id = ANY(v_cat))
@@ -229,6 +242,7 @@ BEGIN
              WHERE r.tenant_id = p_tenant AND r.org_id = v_org AND r.bus_id = p_bus
                AND r.is_active = TRUE AND t.is_active = TRUE
                AND (   r.rule_type = 'ALL_PRODUCTS'
+                    OR (r.rule_type = 'BATCH' AND r.rule_target_id = p_batch)
                     OR (r.rule_type = 'SKU' AND r.rule_target_id = v_sku)
                     OR (r.rule_type = 'PRODUCT' AND r.rule_target_id = p_product)
                     OR (r.rule_type = 'CATEGORY' AND r.rule_target_id = ANY(v_cat))
@@ -346,6 +360,52 @@ BEGIN
     END;
     $body$
     $fn$;
+
+    -- What the CRM lists: a product, or one row per kind (product_size) of a product sold in
+    -- kinds. source_id is the product's id, or "<product id>::<kind>".
+    -- Dropped and made again: CREATE OR REPLACE cannot move a column, and the hashed view's
+    -- s.* moves whenever this one gains one. Nothing else depends on them.
+    EXECUTE 'DROP VIEW IF EXISTS crm.src_mystoreguard_sellables_hashed';
+    EXECUTE 'DROP VIEW IF EXISTS crm.src_mystoreguard_sellables';
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW crm.src_mystoreguard_sellables AS
+    WITH kinds AS (
+        SELECT DISTINCT ON (b.product_id, btrim(b.product_size))
+               b.product_id, b.tenant_id, b.bus_id, btrim(b.product_size) AS kind, b.id AS batch_id, b.currency_id
+          FROM mystoreguard.msg_purchase_batches b
+         WHERE b.delete_status = 'NOT_DELETED' AND NULLIF(btrim(b.product_size), '') IS NOT NULL
+         ORDER BY b.product_id, btrim(b.product_size), b.cdatetime DESC, b.id DESC
+    )
+    SELECT p.tenant_id, p.org_id, p.bus_id, p.id || '::' || k.kind AS source_id, p.id AS product_id, k.batch_id,
+           btrim(p.name) || ' – ' || k.kind AS name, NULLIF(btrim(p.sku), '') AS sku, NULLIF(btrim(p.description), '') AS description,
+           (p.delete_status <> 'NOT_DELETED' OR p.is_active IS FALSE OR p.retired_at IS NOT NULL) AS is_removed,
+           k.currency_id
+      FROM mystoreguard.msg_products p
+      JOIN kinds k ON k.product_id = p.id AND k.tenant_id = p.tenant_id AND k.bus_id = p.bus_id
+    UNION ALL
+    -- The product itself: unless every delivery it has is a kind. Its currency: its latest
+    -- delivery's, or, with no delivery, the currency its price is in.
+    SELECT p.tenant_id, p.org_id, p.bus_id, p.id, p.id, NULL::text,
+           btrim(p.name), NULLIF(btrim(p.sku), ''), NULLIF(btrim(p.description), ''),
+           (p.delete_status <> 'NOT_DELETED' OR p.is_active IS FALSE OR p.retired_at IS NOT NULL),
+           coalesce((SELECT b.currency_id FROM mystoreguard.msg_purchase_batches b
+                      WHERE b.product_id = p.id AND b.tenant_id = p.tenant_id AND b.bus_id = p.bus_id AND b.delete_status = 'NOT_DELETED'
+                      ORDER BY b.cdatetime DESC, b.id DESC LIMIT 1),
+                    (SELECT x.currency FROM mystoreguard.msg_product_prices x
+                      WHERE x.product_id = p.id AND x.tenant_id = p.tenant_id AND x.bus_id = p.bus_id AND x.channel = 'STORE'
+                        AND (x.deleted_by IS NULL OR x.deleted_by = '')
+                      ORDER BY x.priority DESC LIMIT 1))
+      FROM mystoreguard.msg_products p
+     WHERE NOT EXISTS (SELECT 1 FROM kinds k WHERE k.product_id = p.id AND k.tenant_id = p.tenant_id AND k.bus_id = p.bus_id)
+        OR EXISTS (SELECT 1 FROM mystoreguard.msg_purchase_batches b
+                    WHERE b.product_id = p.id AND b.tenant_id = p.tenant_id AND b.bus_id = p.bus_id
+                      AND b.delete_status = 'NOT_DELETED' AND NULLIF(btrim(b.product_size), '') IS NULL)
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW crm.src_mystoreguard_sellables_hashed AS
+    SELECT s.*, md5(row(s.name, s.sku, s.description, s.is_removed)::text) AS row_hash
+      FROM crm.src_mystoreguard_sellables s
+    $v$;
 
 END $$;
 
