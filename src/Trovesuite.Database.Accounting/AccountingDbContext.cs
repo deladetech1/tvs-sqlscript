@@ -14,6 +14,11 @@ public class AccountingDbContext : DbContext
     public DbSet<AccFiscalPeriod> FiscalPeriods => Set<AccFiscalPeriod>();
     public DbSet<AccJournalEntry> JournalEntries => Set<AccJournalEntry>();
     public DbSet<AccJournalLine> JournalLines => Set<AccJournalLine>();
+    public DbSet<AccDimension> Dimensions => Set<AccDimension>();
+    public DbSet<AccCurrency> Currencies => Set<AccCurrency>();
+    public DbSet<AccTaxCode> TaxCodes => Set<AccTaxCode>();
+    public DbSet<AccAccountingRule> AccountingRules => Set<AccAccountingRule>();
+    public DbSet<AccAccountingRuleLine> AccountingRuleLines => Set<AccAccountingRuleLine>();
     public DbSet<AccAuditEvent> AuditEvents => Set<AccAuditEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

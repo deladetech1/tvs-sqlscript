@@ -126,6 +126,91 @@ public class AccJournalLine
     public AccJournalEntry? Journal { get; set; }
 }
 
+public class AccDimension
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Kind { get; set; } = default!;
+    public string Code { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? Description { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
+}
+
+public class AccCurrency
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Code { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string Symbol { get; set; } = default!;
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
+}
+
+public class AccTaxCode
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Code { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public decimal Rate { get; set; }
+    public string Kind { get; set; } = default!;
+    public string? OutputAccountId { get; set; }
+    public string? InputAccountId { get; set; }
+    public string? Description { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
+}
+
+public class AccAccountingRule
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string Event { get; set; } = default!;
+    public string SourceId { get; set; } = default!;
+    public string? Description { get; set; }
+    public bool IsActive { get; set; } = true;
+    public int PostingsCount { get; set; }
+    public string SampleJson { get; set; } = "{}";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
+
+    public List<AccAccountingRuleLine> Lines { get; set; } = [];
+}
+
+public class AccAccountingRuleLine
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string RuleId { get; set; } = default!;
+    public int LineNo { get; set; }
+    public string AccountId { get; set; } = default!;
+    public string Side { get; set; } = default!;
+    public string AmountBasis { get; set; } = default!;
+    public string? Description { get; set; }
+
+    public AccAccountingRule? Rule { get; set; }
+}
+
 /// <summary>Append-only product audit trail (not application request logs).</summary>
 public class AccAuditEvent
 {

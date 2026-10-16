@@ -75,6 +75,61 @@ public sealed class AccJournalLineConfiguration : IEntityTypeConfiguration<AccJo
     }
 }
 
+public sealed class AccDimensionConfiguration : IEntityTypeConfiguration<AccDimension>
+{
+    public void Configure(EntityTypeBuilder<AccDimension> b)
+    {
+        b.ToAccountingTable("acc_dimensions");
+        b.HasKey(x => x.Id);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Kind, x.Code }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Kind });
+    }
+}
+
+public sealed class AccCurrencyConfiguration : IEntityTypeConfiguration<AccCurrency>
+{
+    public void Configure(EntityTypeBuilder<AccCurrency> b)
+    {
+        b.ToAccountingTable("acc_currencies");
+        b.HasKey(x => x.Id);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Code }).IsUnique();
+    }
+}
+
+public sealed class AccTaxCodeConfiguration : IEntityTypeConfiguration<AccTaxCode>
+{
+    public void Configure(EntityTypeBuilder<AccTaxCode> b)
+    {
+        b.ToAccountingTable("acc_tax_codes");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Rate).HasPrecision(8, 6);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Code }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Kind });
+    }
+}
+
+public sealed class AccAccountingRuleConfiguration : IEntityTypeConfiguration<AccAccountingRule>
+{
+    public void Configure(EntityTypeBuilder<AccAccountingRule> b)
+    {
+        b.ToAccountingTable("acc_accounting_rules");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.SampleJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.SourceId, x.Event }).IsUnique();
+        b.HasMany(x => x.Lines).WithOne(x => x.Rule!).HasForeignKey(x => x.RuleId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class AccAccountingRuleLineConfiguration : IEntityTypeConfiguration<AccAccountingRuleLine>
+{
+    public void Configure(EntityTypeBuilder<AccAccountingRuleLine> b)
+    {
+        b.ToAccountingTable("acc_accounting_rule_lines");
+        b.HasKey(x => x.Id);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.RuleId });
+    }
+}
+
 public sealed class AccAuditEventConfiguration : IEntityTypeConfiguration<AccAuditEvent>
 {
     public void Configure(EntityTypeBuilder<AccAuditEvent> b)
