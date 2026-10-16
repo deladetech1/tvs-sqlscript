@@ -97,9 +97,9 @@ CREATE TABLE IF NOT EXISTS projects.prj_templates (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS prj_templates_source_uq ON projects.prj_templates (project_id, source, source_id) WHERE source_id IS NOT NULL;
 
-ALTER TABLE projects.prj_notifications DROP CONSTRAINT IF EXISTS prj_notifications_kind_check;
-ALTER TABLE projects.prj_notifications ADD CONSTRAINT prj_notifications_kind_check
-    CHECK (kind IN ('assigned', 'mentioned', 'commented', 'moved', 'done', 'approval', 'automation'));
+-- The notification kinds (approval, automation and later ones) are set in ONE place,
+-- 20261017-04-projects-reminders.sql. Every migration re-runs on every deploy, so a list here
+-- would drop the newer kinds again and fail on the rows that use them.
 
 -- MyStoreGuard's workflow templates, read-only, where they exist.
 DO $$
