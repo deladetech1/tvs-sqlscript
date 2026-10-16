@@ -5,6 +5,7 @@ using Npgsql;
 using Trovesuite.Database.Common.Abstractions;
 using Trovesuite.Database.CorePlatform;
 using Trovesuite.Database.Attendance;
+using Trovesuite.Database.Accounting;
 using Trovesuite.Database.HumanResource;
 using Trovesuite.Database.LoanDrift;
 using Trovesuite.Database.MyStoreGuard;
@@ -31,6 +32,7 @@ internal static class Program
         new MyStoreGuardModule(),
         new HumanResourceModule(),
         new AttendanceModule(),
+        new AccountingModule(),
     ];
 
     private static int Main(string[] args)

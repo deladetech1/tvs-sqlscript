@@ -13,5 +13,7 @@
     <ProjectReference Include="..\Trovesuite.Database.MyStoreGuard\Trovesuite.Database.MyStoreGuard.csproj" />
     <ProjectReference Include="..\Trovesuite.Database.HumanResource\Trovesuite.Database.HumanResource.csproj" />
     <ProjectReference Include="..\Trovesuite.Database.Attendance\Trovesuite.Database.Attendance.csproj" />
+    <ProjectReference Include="..\Trovesuite.Database.Accounting\Trovesuite.Database.Accounting.csproj" />
+
   </ItemGroup>
 </Project>
