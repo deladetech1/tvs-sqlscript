@@ -325,6 +325,321 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.ToTable("acc_audit_events", "accounting");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBankAccount", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_number");
+
+                    b.Property<string>("Bank")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bank");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("GlAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("gl_account_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<DateTimeOffset?>("LastReconciledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_reconciled_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("StatementBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("statement_balance");
+
+                    b.Property<DateOnly>("StatementDate")
+                        .HasColumnType("date")
+                        .HasColumnName("statement_date");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_bank_accounts");
+
+                    b.HasIndex("TenantId", "OrgId", "GlAccountId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_bank_accounts_tenant_id_org_id_gl_account_id");
+
+                    b.ToTable("acc_bank_accounts", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBankStatementLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("BankAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bank_account_id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("ImportId")
+                        .HasColumnType("text")
+                        .HasColumnName("import_id");
+
+                    b.Property<string>("MatchedJournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("matched_journal_id");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("Reference")
+                        .HasColumnType("text")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SuggestedJournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("suggested_journal_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_bank_statement_lines");
+
+                    b.HasIndex("TenantId", "OrgId", "MatchedJournalId")
+                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_matched_journal_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BankAccountId", "Date")
+                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_bank_account_id_d");
+
+                    b.ToTable("acc_bank_statement_lines", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNote", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("BaseAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("base_amount");
+
+                    b.Property<string>("BranchId")
+                        .HasColumnType("text")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("DocumentId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("document_id");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PartyId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("party_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_credit_notes");
+
+                    b.HasIndex("TenantId", "OrgId", "DocumentId")
+                        .HasDatabaseName("ix_acc_credit_notes_tenant_id_org_id_document_id");
+
+                    b.HasIndex("TenantId", "OrgId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_credit_notes_tenant_id_org_id_number");
+
+                    b.ToTable("acc_credit_notes", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNoteLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("CreditNoteId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("credit_note_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_no");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("TaxCodeId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tax_code_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_credit_note_lines");
+
+                    b.HasIndex("CreditNoteId")
+                        .HasDatabaseName("ix_acc_credit_note_lines_credit_note_id");
+
+                    b.HasIndex("TenantId", "OrgId", "CreditNoteId")
+                        .HasDatabaseName("ix_acc_credit_note_lines_tenant_id_org_id_credit_note_id");
+
+                    b.ToTable("acc_credit_note_lines", "accounting");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCurrency", b =>
                 {
                     b.Property<string>("Id")
@@ -384,6 +699,323 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasDatabaseName("ix_acc_currencies_tenant_id_org_id_code");
 
                     b.ToTable("acc_currencies", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCustomField", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("DefaultValue")
+                        .HasColumnType("text")
+                        .HasColumnName("default_value");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Entity")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("entity");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("label");
+
+                    b.Property<string>("OptionsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("options_json")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<bool>("Required")
+                        .HasColumnType("boolean")
+                        .HasColumnName("required");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("scope");
+
+                    b.Property<bool>("ShowInList")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_in_list");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_custom_fields");
+
+                    b.HasIndex("TenantId", "OrgId", "Entity", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_custom_fields_tenant_id_org_id_entity_key");
+
+                    b.ToTable("acc_custom_fields", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCustomer", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("city");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<decimal>("CreditLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("credit_limit");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("CustomFieldsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("custom_fields_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<string>("ExternalReference")
+                        .HasColumnType("text")
+                        .HasColumnName("external_reference");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<int>("PaymentTermsDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_terms_days");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Tin")
+                        .HasColumnType("text")
+                        .HasColumnName("tin");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_customers");
+
+                    b.HasIndex("TenantId", "OrgId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_customers_tenant_id_org_id_code");
+
+                    b.HasIndex("TenantId", "OrgId", "Name")
+                        .HasDatabaseName("ix_acc_customers_tenant_id_org_id_name");
+
+                    b.ToTable("acc_customers", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccDataSource", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ConnectionJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("connection_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("EntitiesJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("entities_json")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<int>("ErrorCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("error_count");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastRunAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_run_at");
+
+                    b.Property<string>("LastRunStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("last_run_status");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("provider");
+
+                    b.Property<int>("RecordsSynced")
+                        .HasColumnType("integer")
+                        .HasColumnName("records_synced");
+
+                    b.Property<string>("Schedule")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("schedule");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StatusMessage")
+                        .HasColumnType("text")
+                        .HasColumnName("status_message");
+
+                    b.Property<string>("SyncDirection")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("sync_direction");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_data_sources");
+
+                    b.HasIndex("TenantId", "OrgId", "Name")
+                        .HasDatabaseName("ix_acc_data_sources_tenant_id_org_id_name");
+
+                    b.ToTable("acc_data_sources", "accounting");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccDimension", b =>
@@ -452,6 +1084,122 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasDatabaseName("ix_acc_dimensions_tenant_id_org_id_kind_code");
 
                     b.ToTable("acc_dimensions", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccExchangeRate", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency_code");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("rate");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_exchange_rates");
+
+                    b.HasIndex("TenantId", "OrgId", "CurrencyCode", "Date", "Source")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_exchange_rates_tenant_id_org_id_currency_code_date_sour");
+
+                    b.ToTable("acc_exchange_rates", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFieldMapping", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Entity")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("entity");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<bool>("Required")
+                        .HasColumnType("boolean")
+                        .HasColumnName("required");
+
+                    b.Property<string>("SourceField")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_field");
+
+                    b.Property<string>("SourceId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("TargetField")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("target_field");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Transform")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("transform");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_field_mappings");
+
+                    b.HasIndex("TenantId", "OrgId", "SourceId", "Entity", "TargetField")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_field_mappings_tenant_id_org_id_source_id_entity_target");
+
+                    b.ToTable("acc_field_mappings", "accounting");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFiscalPeriod", b =>
@@ -527,6 +1275,292 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasDatabaseName("ix_acc_fiscal_periods_tenant_id_org_id_start_date_end_date");
 
                     b.ToTable("acc_fiscal_periods", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFxRevaluation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("AsAt")
+                        .HasColumnType("date")
+                        .HasColumnName("as_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("JournalId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<decimal>("NetDifference")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("net_difference");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PeriodId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("period_id");
+
+                    b.Property<string>("RatesJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rates_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("ReversalJournalId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reversal_journal_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_fx_revaluations");
+
+                    b.HasIndex("TenantId", "OrgId", "PeriodId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_fx_revaluations_tenant_id_org_id_period_id");
+
+                    b.ToTable("acc_fx_revaluations", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFxRevaluationLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<decimal>("AmountFc")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount_fc");
+
+                    b.Property<decimal>("CarryingBase")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("carrying_base");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<decimal>("Difference")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("difference");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("label");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("rate");
+
+                    b.Property<string>("RevaluationId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("revaluation_id");
+
+                    b.Property<decimal>("RevaluedBase")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("revalued_base");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_fx_revaluation_lines");
+
+                    b.HasIndex("RevaluationId")
+                        .HasDatabaseName("ix_acc_fx_revaluation_lines_revaluation_id");
+
+                    b.HasIndex("TenantId", "OrgId", "RevaluationId")
+                        .HasDatabaseName("ix_acc_fx_revaluation_lines_tenant_id_org_id_revaluation_id");
+
+                    b.ToTable("acc_fx_revaluation_lines", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccImportBatch", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<int>("RowsHeld")
+                        .HasColumnType("integer")
+                        .HasColumnName("rows_held");
+
+                    b.Property<int>("RowsPosted")
+                        .HasColumnType("integer")
+                        .HasColumnName("rows_posted");
+
+                    b.Property<int>("RowsReceived")
+                        .HasColumnType("integer")
+                        .HasColumnName("rows_received");
+
+                    b.Property<string>("SourceId")
+                        .HasColumnType("text")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_import_batches");
+
+                    b.HasIndex("TenantId", "OrgId", "Status")
+                        .HasDatabaseName("ix_acc_import_batches_tenant_id_org_id_status");
+
+                    b.ToTable("acc_import_batches", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccImportRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("BatchId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("batch_id");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("text")
+                        .HasColumnName("error");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_no");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_import_records");
+
+                    b.HasIndex("BatchId")
+                        .HasDatabaseName("ix_acc_import_records_batch_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BatchId")
+                        .HasDatabaseName("ix_acc_import_records_tenant_id_org_id_batch_id");
+
+                    b.ToTable("acc_import_records", "accounting");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccJournalEntry", b =>
@@ -887,6 +1921,779 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.ToTable("acc_org_settings", "accounting");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPayment", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("BankAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bank_account_id");
+
+                    b.Property<decimal>("BaseAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("base_amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("direction");
+
+                    b.Property<string>("DocumentId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("document_id");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<decimal>("FxGainLoss")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("fx_gain_loss");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("method");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PartyId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("party_id");
+
+                    b.Property<string>("Reference")
+                        .HasColumnType("text")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_payments");
+
+                    b.HasIndex("TenantId", "OrgId", "DocumentId")
+                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_document_id");
+
+                    b.HasIndex("TenantId", "OrgId", "PartyId")
+                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_party_id");
+
+                    b.HasIndex("TenantId", "OrgId", "Direction", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_direction_number");
+
+                    b.ToTable("acc_payments", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPurchaseBill", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AmountPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount_paid");
+
+                    b.Property<decimal>("AmountPaidBase")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount_paid_base");
+
+                    b.Property<string>("BranchId")
+                        .HasColumnType("text")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("CustomFieldsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("custom_fields_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<DateOnly>("IssueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("issue_date");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("SourceDocumentId")
+                        .HasColumnType("text")
+                        .HasColumnName("source_document_id");
+
+                    b.Property<string>("SourceReference")
+                        .HasColumnType("text")
+                        .HasColumnName("source_reference");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_type");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.Property<string>("SupplierId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<string>("SupplierReference")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("supplier_reference");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_purchase_bills");
+
+                    b.HasIndex("TenantId", "OrgId", "IssueDate")
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_issue_date");
+
+                    b.HasIndex("TenantId", "OrgId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_number");
+
+                    b.HasIndex("TenantId", "OrgId", "State")
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_state");
+
+                    b.HasIndex("TenantId", "OrgId", "SupplierId")
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_supplier_id");
+
+                    b.ToTable("acc_purchase_bills", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPurchaseBillLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("BillId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bill_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_no");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("TaxCodeId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tax_code_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_purchase_bill_lines");
+
+                    b.HasIndex("BillId")
+                        .HasDatabaseName("ix_acc_purchase_bill_lines_bill_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BillId")
+                        .HasDatabaseName("ix_acc_purchase_bill_lines_tenant_id_org_id_bill_id");
+
+                    b.ToTable("acc_purchase_bill_lines", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSalesInvoice", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AmountPaid")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount_paid");
+
+                    b.Property<decimal>("AmountPaidBase")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount_paid_base");
+
+                    b.Property<string>("BranchId")
+                        .HasColumnType("text")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("CustomFieldsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("custom_fields_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<DateOnly>("IssueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("issue_date");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("SourceDocumentId")
+                        .HasColumnType("text")
+                        .HasColumnName("source_document_id");
+
+                    b.Property<string>("SourceReference")
+                        .HasColumnType("text")
+                        .HasColumnName("source_reference");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_type");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_sales_invoices");
+
+                    b.HasIndex("TenantId", "OrgId", "CustomerId")
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_customer_id");
+
+                    b.HasIndex("TenantId", "OrgId", "IssueDate")
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_issue_date");
+
+                    b.HasIndex("TenantId", "OrgId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_number");
+
+                    b.HasIndex("TenantId", "OrgId", "State")
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_state");
+
+                    b.ToTable("acc_sales_invoices", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSalesInvoiceLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("InvoiceId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("invoice_id");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_no");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("TaxCodeId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tax_code_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_sales_invoice_lines");
+
+                    b.HasIndex("InvoiceId")
+                        .HasDatabaseName("ix_acc_sales_invoice_lines_invoice_id");
+
+                    b.HasIndex("TenantId", "OrgId", "InvoiceId")
+                        .HasDatabaseName("ix_acc_sales_invoice_lines_tenant_id_org_id_invoice_id");
+
+                    b.ToTable("acc_sales_invoice_lines", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplier", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("city");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<decimal>("CreditLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("credit_limit");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("CustomFieldsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("custom_fields_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<string>("ExternalReference")
+                        .HasColumnType("text")
+                        .HasColumnName("external_reference");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<int>("PaymentTermsDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_terms_days");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<string>("Tin")
+                        .HasColumnType("text")
+                        .HasColumnName("tin");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_suppliers");
+
+                    b.HasIndex("TenantId", "OrgId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_suppliers_tenant_id_org_id_code");
+
+                    b.HasIndex("TenantId", "OrgId", "Name")
+                        .HasDatabaseName("ix_acc_suppliers_tenant_id_org_id_name");
+
+                    b.ToTable("acc_suppliers", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplierCredit", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("BaseAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("base_amount");
+
+                    b.Property<string>("BranchId")
+                        .HasColumnType("text")
+                        .HasColumnName("branch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<string>("DocumentId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("document_id");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PartyId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("party_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("state");
+
+                    b.Property<string>("SupplierReference")
+                        .HasColumnType("text")
+                        .HasColumnName("supplier_reference");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_supplier_credits");
+
+                    b.HasIndex("TenantId", "OrgId", "DocumentId")
+                        .HasDatabaseName("ix_acc_supplier_credits_tenant_id_org_id_document_id");
+
+                    b.HasIndex("TenantId", "OrgId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_supplier_credits_tenant_id_org_id_number");
+
+                    b.ToTable("acc_supplier_credits", "accounting");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplierCreditLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_no");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("SupplierCreditId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("supplier_credit_id");
+
+                    b.Property<string>("TaxCodeId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tax_code_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_supplier_credit_lines");
+
+                    b.HasIndex("SupplierCreditId")
+                        .HasDatabaseName("ix_acc_supplier_credit_lines_supplier_credit_id");
+
+                    b.HasIndex("TenantId", "OrgId", "SupplierCreditId")
+                        .HasDatabaseName("ix_acc_supplier_credit_lines_tenant_id_org_id_supplier_credit_");
+
+                    b.ToTable("acc_supplier_credit_lines", "accounting");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccTaxCode", b =>
                 {
                     b.Property<string>("Id")
@@ -980,6 +2787,42 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Navigation("Rule");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNoteLine", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccCreditNote", "CreditNote")
+                        .WithMany("Lines")
+                        .HasForeignKey("CreditNoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_credit_note_lines_acc_credit_notes_credit_note_id");
+
+                    b.Navigation("CreditNote");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFxRevaluationLine", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccFxRevaluation", "Revaluation")
+                        .WithMany("Lines")
+                        .HasForeignKey("RevaluationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_fx_revaluation_lines_acc_fx_revaluations_revaluation_id");
+
+                    b.Navigation("Revaluation");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccImportRecord", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccImportBatch", "Batch")
+                        .WithMany("Records")
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_import_records_acc_import_batches_batch_id");
+
+                    b.Navigation("Batch");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccJournalLine", b =>
                 {
                     b.HasOne("Trovesuite.Database.Accounting.Entities.AccJournalEntry", "Journal")
@@ -992,12 +2835,78 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Navigation("Journal");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPurchaseBillLine", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccPurchaseBill", "Bill")
+                        .WithMany("Lines")
+                        .HasForeignKey("BillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_purchase_bill_lines_acc_purchase_bills_bill_id");
+
+                    b.Navigation("Bill");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSalesInvoiceLine", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccSalesInvoice", "Invoice")
+                        .WithMany("Lines")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_sales_invoice_lines_acc_sales_invoices_invoice_id");
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplierCreditLine", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccSupplierCredit", "SupplierCredit")
+                        .WithMany("Lines")
+                        .HasForeignKey("SupplierCreditId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_supplier_credit_lines_acc_supplier_credits_supplier_cre");
+
+                    b.Navigation("SupplierCredit");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAccountingRule", b =>
                 {
                     b.Navigation("Lines");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNote", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFxRevaluation", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccImportBatch", b =>
+                {
+                    b.Navigation("Records");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccJournalEntry", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPurchaseBill", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSalesInvoice", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplierCredit", b =>
                 {
                     b.Navigation("Lines");
                 });

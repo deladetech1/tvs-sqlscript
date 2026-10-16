@@ -20,6 +20,27 @@ public class AccountingDbContext : DbContext
     public DbSet<AccAccountingRule> AccountingRules => Set<AccAccountingRule>();
     public DbSet<AccAccountingRuleLine> AccountingRuleLines => Set<AccAccountingRuleLine>();
     public DbSet<AccAuditEvent> AuditEvents => Set<AccAuditEvent>();
+    public DbSet<AccCustomer> Customers => Set<AccCustomer>();
+    public DbSet<AccSupplier> Suppliers => Set<AccSupplier>();
+    public DbSet<AccSalesInvoice> SalesInvoices => Set<AccSalesInvoice>();
+    public DbSet<AccSalesInvoiceLine> SalesInvoiceLines => Set<AccSalesInvoiceLine>();
+    public DbSet<AccPurchaseBill> PurchaseBills => Set<AccPurchaseBill>();
+    public DbSet<AccPurchaseBillLine> PurchaseBillLines => Set<AccPurchaseBillLine>();
+    public DbSet<AccCreditNote> CreditNotes => Set<AccCreditNote>();
+    public DbSet<AccCreditNoteLine> CreditNoteLines => Set<AccCreditNoteLine>();
+    public DbSet<AccSupplierCredit> SupplierCredits => Set<AccSupplierCredit>();
+    public DbSet<AccSupplierCreditLine> SupplierCreditLines => Set<AccSupplierCreditLine>();
+    public DbSet<AccPayment> Payments => Set<AccPayment>();
+    public DbSet<AccBankAccount> BankAccounts => Set<AccBankAccount>();
+    public DbSet<AccBankStatementLine> BankStatementLines => Set<AccBankStatementLine>();
+    public DbSet<AccExchangeRate> ExchangeRates => Set<AccExchangeRate>();
+    public DbSet<AccFxRevaluation> FxRevaluations => Set<AccFxRevaluation>();
+    public DbSet<AccFxRevaluationLine> FxRevaluationLines => Set<AccFxRevaluationLine>();
+    public DbSet<AccCustomField> CustomFields => Set<AccCustomField>();
+    public DbSet<AccDataSource> DataSources => Set<AccDataSource>();
+    public DbSet<AccFieldMapping> FieldMappings => Set<AccFieldMapping>();
+    public DbSet<AccImportBatch> ImportBatches => Set<AccImportBatch>();
+    public DbSet<AccImportRecord> ImportRecords => Set<AccImportRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
