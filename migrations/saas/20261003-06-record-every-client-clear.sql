@@ -71,6 +71,12 @@ BEGIN
         EXECUTE format('GRANT USAGE ON SCHEMA deladetech TO %I', grp);
         EXECUTE format(
             'GRANT SELECT, INSERT, UPDATE ON deladetech.dlt_client_clears TO %I', grp);
+        -- And DELETE taken back, every deploy. tvs-iac's db-app-group grants the app
+        -- group DML on every table in each schema it lists, deladetech included, so
+        -- applying it hands this table DELETE too -- which failed the check below and
+        -- with it every dev deploy (2026-10-15). The rule is this table's, so it is
+        -- enforced here rather than left to whatever else grants on the schema.
+        EXECUTE format('REVOKE DELETE, TRUNCATE ON deladetech.dlt_client_clears FROM %I', grp);
         RAISE NOTICE 'dlt_client_clears: granted to %', grp;
     END LOOP;
 END $$;

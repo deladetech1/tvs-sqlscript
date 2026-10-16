@@ -43,6 +43,31 @@ BEGIN
             'GRANT DELETE ON deladetech.dlt_client_setups TO %I', grp);
         RAISE NOTICE 'the clear may now free a host: granted to %', grp;
     END LOOP;
+
+    -- DELETE on every OTHER console table is taken back, every deploy.
+    --
+    -- tvs-iac's db-app-group lists deladetech and grants the app group DML on every table
+    -- in it -- exactly "the obvious over-correction" above. Applying it (2026-10-15) gave
+    -- the app groups DELETE on dlt_operators and dlt_client_clears and failed the checks
+    -- below, and with them every dev deploy. The DELETE grants these files ask for are
+    -- the only ones that should exist, so they are enforced here, not left to whatever
+    -- else grants on the schema. Narrowing tvs-iac is the lasting fix; until then this
+    -- re-asserts the rule on every deploy.
+    FOR grp IN
+        SELECT rolname FROM pg_roles
+         WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin
+    LOOP
+        DECLARE t text;
+        BEGIN
+            FOR t IN
+                SELECT tablename FROM pg_tables
+                 WHERE schemaname = 'deladetech'
+                   AND tablename NOT IN ('dlt_client_setups', 'dlt_operator_sessions')
+            LOOP
+                EXECUTE format('REVOKE DELETE, TRUNCATE ON deladetech.%I FROM %I', t, grp);
+            END LOOP;
+        END;
+    END LOOP;
 END $$;
 
 -- ----------------------------------------------------------------------------- checks

@@ -1832,6 +1832,76 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.ToTable("zhr_compensation_versions", "zeloshr");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrCountryCoverage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Choice")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("choice");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DocumentIdsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("document_ids_json")
+                        .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_country_coverage");
+
+                    b.HasIndex("TenantId", "OrgId", "Country")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_country_coverage_tenant_id_org_id_country");
+
+                    b.ToTable("zhr_country_coverage", "zeloshr");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrCustomFieldAuditLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4764,6 +4834,146 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.ToTable("zhr_onboarding_tasks", "zeloshr");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPackAcknowledgement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_pack_acknowledgements");
+
+                    b.HasIndex("TenantId", "OrgId", "Country", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_pack_acknowledgements_tenant_id_org_id_country_version");
+
+                    b.ToTable("zhr_pack_acknowledgements", "zeloshr");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPackIssueReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("comment");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("field");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("sent")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_pack_issue_reports");
+
+                    b.HasIndex("TenantId", "OrgId", "Country")
+                        .HasDatabaseName("ix_zhr_pack_issue_reports_tenant_id_org_id_country");
+
+                    b.ToTable("zhr_pack_issue_reports", "zeloshr");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPatternAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5065,6 +5275,14 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("payment_channels_json");
 
+                    b.Property<string>("Proration")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("calendar_days")
+                        .HasColumnName("proration");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -5261,6 +5479,111 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasDatabaseName("ix_zhr_payment_batches_tenant_id_org_id_run_id");
 
                     b.ToTable("zhr_payment_batches", "zeloshr");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPayrollFiling", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DeadlineId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("deadline_id");
+
+                    b.Property<string>("FiledBy")
+                        .HasColumnType("text")
+                        .HasColumnName("filed_by");
+
+                    b.Property<DateOnly?>("FiledOn")
+                        .HasColumnType("date")
+                        .HasColumnName("filed_on");
+
+                    b.Property<string>("FiledRef")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("filed_ref");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PaidBy")
+                        .HasColumnType("text")
+                        .HasColumnName("paid_by");
+
+                    b.Property<DateOnly?>("PaidOn")
+                        .HasColumnType("date")
+                        .HasColumnName("paid_on");
+
+                    b.Property<string>("PaidRef")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("paid_ref");
+
+                    b.Property<string>("Period")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("period");
+
+                    b.Property<string>("ReceiptDocumentId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("receipt_document_id");
+
+                    b.Property<string>("ReceiptName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("receipt_name");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_payroll_filings");
+
+                    b.HasIndex("TenantId", "OrgId", "Country", "DeadlineId", "Period")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_payroll_filings_tenant_id_org_id_country_deadline_id_pe");
+
+                    b.ToTable("zhr_payroll_filings", "zeloshr");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPayrollLine", b =>
@@ -5522,6 +5845,14 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("text")
                         .HasColumnName("approved_by");
 
+                    b.Property<string>("CalculationMode")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("native")
+                        .HasColumnName("calculation_mode");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -5671,6 +6002,13 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("compensation_approver_ids_json")
                         .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("CountrySetupJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("country_setup_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")

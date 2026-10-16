@@ -872,6 +872,8 @@ public class ZhrPayrollRun
     public string Status { get; set; } = default!;
     public string Currency { get; set; } = "GHS";
     public string? RulePackVersion { get; set; }
+    /// <summary>native (worked out by Zelos) or external (results uploaded from the country's provider).</summary>
+    public string CalculationMode { get; set; } = "native";
     public int EmployeeCount { get; set; }
     public decimal TotalGross { get; set; }
     public decimal TotalDeductions { get; set; }
@@ -1232,6 +1234,11 @@ public class ZhrPayrollSettings
     /// <summary>Acts for the approvers while they are away.</summary>
     public Guid? ApprovalDelegateId { get; set; }
     public DateOnly? ApprovalDelegateUntil { get; set; }
+    /// <summary>
+    /// The company's side of each country it pays in, keyed by country code: the numbers it is
+    /// registered under, the providers it appointed, where remittances go and who files them.
+    /// </summary>
+    public string CountrySetupJson { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }
@@ -1323,6 +1330,8 @@ public class ZhrPayGroup
     public decimal VarianceThresholdPercent { get; set; } = 10m;
     /// <summary>["bank_transfer","mobile_money"]</summary>
     public string PaymentChannelsJson { get; set; } = "[]";
+    /// <summary>How a part period is paid: calendar_days, working_days or thirtieths.</summary>
+    public string Proration { get; set; } = "calendar_days";
     /// <summary>Where anyone not placed in a group is paid.</summary>
     public bool IsDefault { get; set; }
     public bool IsActive { get; set; } = true;
@@ -1344,3 +1353,93 @@ public class ZhrPayGroupMember
     public string? CreatedBy { get; set; }
 }
 
+
+/// <summary>
+/// One statutory return or remittance for one period, as the company has dealt with it: filed
+/// (a return) and/or paid (a remittance), with the reference each step was given.
+/// </summary>
+public class ZhrPayrollFiling
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    /// <summary>ISO country code, e.g. GH.</summary>
+    public string Country { get; set; } = "GH";
+    /// <summary>The deadline in the country's rules, e.g. paye-return.</summary>
+    public string DeadlineId { get; set; } = default!;
+    /// <summary>YYYY-MM for a monthly deadline, YYYY for an annual one.</summary>
+    public string Period { get; set; } = default!;
+    public DateOnly? FiledOn { get; set; }
+    public string? FiledRef { get; set; }
+    public string? FiledBy { get; set; }
+    public DateOnly? PaidOn { get; set; }
+    public string? PaidRef { get; set; }
+    public string? PaidBy { get; set; }
+    /// <summary>The authority's acknowledgement: a file registry id (core_platform.cp_document_paths.id).</summary>
+    public string? ReceiptDocumentId { get; set; }
+    public string? ReceiptName { get; set; }
+    public string? Note { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>
+/// Somebody confirming they have seen a version of a country's rules before it is used. Not
+/// approval of the law, but proof that a change reached a person before the first run under it.
+/// </summary>
+public class ZhrPackAcknowledgement
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Country { get; set; } = default!;
+    public string Version { get; set; } = default!;
+    public string? Note { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>Somebody telling Zelos a value in a country's rules looks wrong.</summary>
+public class ZhrPackIssueReport
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Country { get; set; } = default!;
+    public string Version { get; set; } = default!;
+    /// <summary>Which figure, in the words of the screen, e.g. "Employer pays".</summary>
+    public string Field { get; set; } = default!;
+    public string Comment { get; set; } = default!;
+    /// <summary>sent · acknowledged · resolved</summary>
+    public string Status { get; set; } = "sent";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>
+/// How a country Zelos holds no rules for gets paid: results uploaded from a provider, the
+/// company's own rules sent to Zelos to build, or a request for Zelos to cover the country.
+/// </summary>
+public class ZhrCountryCoverage
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Country { get; set; } = default!;
+    /// <summary>upload · customer_pack · request_coverage</summary>
+    public string Choice { get; set; } = default!;
+    /// <summary>What the company sent toward its own rules, or why it asked for coverage.</summary>
+    public string? Note { get; set; }
+    /// <summary>File registry ids attached to a customer pack submission.</summary>
+    public string DocumentIdsJson { get; set; } = "[]";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}

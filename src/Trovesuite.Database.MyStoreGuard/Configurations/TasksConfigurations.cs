@@ -133,7 +133,10 @@ public sealed class MsgTaskStepConfiguration : IEntityTypeConfiguration<MsgTaskS
         b.Property(x => x.DisplayOrder).HasDefaultValue(0);
         b.Property(x => x.Status).HasDefaultValue("TODO");
         b.Property(x => x.Cdatetime).HasColumnType("timestamptz").HasDefaultValueSql("NOW()");
-        b.HasInCheck("status", "TODO", "IN_PROGRESS", "DONE", "COMPLETED", "CANCELLED");
+        // BACKLOG sits before TODO: something written down but not yet
+        // planned in. A job the shop opens for itself starts as a list of
+        // these, and items move to TODO when somebody means to do them.
+        b.HasInCheck("status", "BACKLOG", "TODO", "IN_PROGRESS", "DONE", "COMPLETED", "CANCELLED");
         b.WithTenantOrgBusFks();
         b.HasOne<MsgTask>().WithMany()
             .HasForeignKey("TenantId", "OrgId", "BusId", "TaskId")
