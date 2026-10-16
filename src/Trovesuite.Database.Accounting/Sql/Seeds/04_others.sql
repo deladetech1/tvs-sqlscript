@@ -24,5 +24,6 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-journal-approve'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-journal-reverse'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-journal-delete'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-report-get'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-audit-get')
 ON CONFLICT DO NOTHING;

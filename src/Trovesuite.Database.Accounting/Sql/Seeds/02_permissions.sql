@@ -17,6 +17,7 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-accounting-journal-approve', 'Accounting Journal Approve', 'rt-accounting-journal', 'Approve or reject pending journals', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-journal-reverse', 'Accounting Journal Reverse', 'rt-accounting-journal', 'Reverse posted journals', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-journal-delete', 'Accounting Journal Delete', 'rt-accounting-journal', 'Delete draft journals', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-report-get', 'Accounting Report Get', 'rt-accounting-report', 'Run trial balance, GL, income statement, balance sheet and related reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-audit-get', 'Accounting Audit Get', 'rt-accounting-audit', 'Read the accounting audit trail', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
