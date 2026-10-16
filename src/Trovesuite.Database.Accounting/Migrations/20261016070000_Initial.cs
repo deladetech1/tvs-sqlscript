@@ -11,11 +11,6 @@ public partial class Initial : Migration
     {
         migrationBuilder.EnsureSchema(name: "accounting");
 
-        migrationBuilder.AlterDatabase()
-            .Annotation("Npgsql:PostgresExtension:pgcrypto", ",,");
-
-        migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS pgcrypto;");
-
         migrationBuilder.CreateTable(
             name: "acc_org_settings",
             schema: "accounting",

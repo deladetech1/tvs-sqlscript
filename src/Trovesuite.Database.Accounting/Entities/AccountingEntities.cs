@@ -8,10 +8,19 @@ public class AccOrgSettings
     public string OrgId { get; set; } = default!;
     public string LegalName { get; set; } = "";
     public string TradingName { get; set; } = "";
+    public string Tin { get; set; } = "";
     public string Country { get; set; } = "GH";
     public string BaseCurrency { get; set; } = "GHS";
     public int FiscalYearStartMonth { get; set; } = 1;
-    public string JournalPrefix { get; set; } = "JN-";
+    public string FiscalYearStart { get; set; } = "01-01";
+    public string Address { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Phone { get; set; } = "";
+    public decimal ApprovalThreshold { get; set; } = 50000;
+    public bool RequireApprovalForManualJournals { get; set; } = true;
+    public bool BlockPostingToLockedPeriods { get; set; } = true;
+    public DateOnly? ConversionDate { get; set; }
+    public string JournalPrefix { get; set; } = "JE-";
     public string InvoicePrefix { get; set; } = "INV-";
     public string BillPrefix { get; set; } = "BILL-";
     public string? FxRealisedAccountId { get; set; }

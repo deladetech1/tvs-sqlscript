@@ -17,6 +17,7 @@ public sealed class AccOrgSettingsConfiguration : IEntityTypeConfiguration<AccOr
         b.ToAccountingTable("acc_org_settings");
         b.HasKey(x => x.Id);
         b.Property(x => x.FxRateTolerancePct).HasPrecision(8, 4);
+        b.Property(x => x.ApprovalThreshold).HasPrecision(18, 2);
         b.HasIndex(x => new { x.TenantId, x.OrgId }).IsUnique();
     }
 }
