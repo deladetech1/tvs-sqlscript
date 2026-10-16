@@ -278,6 +278,8 @@ BEGIN
              -- The CRM's job roles (20261015-02). A new app's roles are added here, or
              -- every one of their grants reads as a leak and this file fails every deploy.
              WHEN r.id LIKE 'role-crm%'       THEN 'crm'
+             -- Projects' job roles (20261016-01).
+             WHEN r.id LIKE 'role-projects%'  THEN 'projects'
              ELSE '-' END;
 
     IF leftover > 0 THEN
