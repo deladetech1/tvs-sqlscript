@@ -469,6 +469,8 @@ public class AccPayment
     public string? Reference { get; set; }
     public string? JournalId { get; set; }
     public string State { get; set; } = "POSTED";
+    public string? VoidReason { get; set; }
+    public DateTimeOffset? VoidedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
