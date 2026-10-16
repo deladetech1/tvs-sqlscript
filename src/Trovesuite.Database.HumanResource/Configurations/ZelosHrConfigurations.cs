@@ -1201,6 +1201,7 @@ public sealed class ZhrPayrollSettingsConfiguration : IEntityTypeConfiguration<Z
         b.Property(x => x.PayrollPreparerIdsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
         b.Property(x => x.PayrollApproverIdsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
         b.Property(x => x.CompensationApproverIdsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        b.Property(x => x.CountrySetupJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
         b.Property(x => x.CreatedBy).HasColumnType("text");
         b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId }).IsUnique();
@@ -1284,6 +1285,7 @@ public sealed class ZhrPayGroupConfiguration : IEntityTypeConfiguration<ZhrPayGr
         b.Property(x => x.Frequency).HasMaxLength(20);
         b.Property(x => x.VarianceThresholdPercent).HasPrecision(6, 2);
         b.Property(x => x.PaymentChannelsJson).HasColumnType("jsonb");
+        b.Property(x => x.Proration).HasMaxLength(20).HasDefaultValue("calendar_days");
         b.Property(x => x.CreatedBy).HasColumnType("text");
         b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId });
@@ -1305,3 +1307,28 @@ public sealed class ZhrPayGroupMemberConfiguration : IEntityTypeConfiguration<Zh
     }
 }
 
+
+public sealed class ZhrPayrollFilingConfiguration : IEntityTypeConfiguration<ZhrPayrollFiling>
+{
+    public void Configure(EntityTypeBuilder<ZhrPayrollFiling> b)
+    {
+        b.ToZelosHrTable("zhr_payroll_filings");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Country).HasMaxLength(2);
+        b.Property(x => x.DeadlineId).HasMaxLength(40);
+        b.Property(x => x.Period).HasMaxLength(7);
+        b.Property(x => x.FiledRef).HasMaxLength(120);
+        b.Property(x => x.PaidRef).HasMaxLength(120);
+        b.Property(x => x.ReceiptName).HasMaxLength(200);
+        b.Property(x => x.Note).HasMaxLength(500);
+        b.Property(x => x.FiledBy).HasColumnType("text");
+        b.Property(x => x.PaidBy).HasColumnType("text");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        // One record per deadline per period: filing again updates it.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Country, x.DeadlineId, x.Period }).IsUnique();
+    }
+}

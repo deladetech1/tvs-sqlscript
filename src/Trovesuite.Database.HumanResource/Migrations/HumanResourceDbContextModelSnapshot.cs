@@ -5065,6 +5065,14 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("payment_channels_json");
 
+                    b.Property<string>("Proration")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("calendar_days")
+                        .HasColumnName("proration");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -5261,6 +5269,110 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasDatabaseName("ix_zhr_payment_batches_tenant_id_org_id_run_id");
 
                     b.ToTable("zhr_payment_batches", "zeloshr");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPayrollFiling", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DeadlineId")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("deadline_id");
+
+                    b.Property<string>("FiledBy")
+                        .HasColumnType("text")
+                        .HasColumnName("filed_by");
+
+                    b.Property<DateOnly?>("FiledOn")
+                        .HasColumnType("date")
+                        .HasColumnName("filed_on");
+
+                    b.Property<string>("FiledRef")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("filed_ref");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PaidBy")
+                        .HasColumnType("text")
+                        .HasColumnName("paid_by");
+
+                    b.Property<DateOnly?>("PaidOn")
+                        .HasColumnType("date")
+                        .HasColumnName("paid_on");
+
+                    b.Property<string>("PaidRef")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("paid_ref");
+
+                    b.Property<string>("Period")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("period");
+
+                    b.Property<Guid?>("ReceiptFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("receipt_file_id");
+
+                    b.Property<string>("ReceiptName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("receipt_name");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.HasKey("Id")
+                        .HasName("pk_zhr_payroll_filings");
+
+                    b.HasIndex("TenantId", "OrgId", "Country", "DeadlineId", "Period")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_payroll_filings_tenant_id_org_id_country_deadline_id_pe");
+
+                    b.ToTable("zhr_payroll_filings", "zeloshr");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.HumanResource.Entities.ZhrPayrollLine", b =>
@@ -5671,6 +5783,13 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("compensation_approver_ids_json")
                         .HasDefaultValueSql("'[]'::jsonb");
+
+                    b.Property<string>("CountrySetupJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("country_setup_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
