@@ -875,6 +875,7 @@ public sealed class ZhrPayrollRunConfiguration : IEntityTypeConfiguration<ZhrPay
         b.Property(x => x.Status).HasMaxLength(30);
         b.Property(x => x.Currency).HasMaxLength(3);
         b.Property(x => x.RulePackVersion).HasMaxLength(30);
+        b.Property(x => x.CalculationMode).HasMaxLength(20).HasDefaultValue("native");
         b.Property(x => x.TotalGross).HasPrecision(16, 2);
         b.Property(x => x.TotalDeductions).HasPrecision(16, 2);
         b.Property(x => x.TotalEmployerCost).HasPrecision(16, 2);
@@ -1322,6 +1323,7 @@ public sealed class ZhrPayrollFilingConfiguration : IEntityTypeConfiguration<Zhr
         b.Property(x => x.Period).HasMaxLength(7);
         b.Property(x => x.FiledRef).HasMaxLength(120);
         b.Property(x => x.PaidRef).HasMaxLength(120);
+        b.Property(x => x.ReceiptDocumentId).HasMaxLength(128);
         b.Property(x => x.ReceiptName).HasMaxLength(200);
         b.Property(x => x.Note).HasMaxLength(500);
         b.Property(x => x.FiledBy).HasColumnType("text");
@@ -1330,5 +1332,62 @@ public sealed class ZhrPayrollFilingConfiguration : IEntityTypeConfiguration<Zhr
         b.Property(x => x.UpdatedBy).HasColumnType("text");
         // One record per deadline per period: filing again updates it.
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Country, x.DeadlineId, x.Period }).IsUnique();
+    }
+}
+
+public sealed class ZhrPackAcknowledgementConfiguration : IEntityTypeConfiguration<ZhrPackAcknowledgement>
+{
+    public void Configure(EntityTypeBuilder<ZhrPackAcknowledgement> b)
+    {
+        b.ToZelosHrTable("zhr_pack_acknowledgements");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Country).HasMaxLength(2);
+        b.Property(x => x.Version).HasMaxLength(30);
+        b.Property(x => x.Note).HasMaxLength(500);
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Country, x.Version }).IsUnique();
+    }
+}
+
+public sealed class ZhrPackIssueReportConfiguration : IEntityTypeConfiguration<ZhrPackIssueReport>
+{
+    public void Configure(EntityTypeBuilder<ZhrPackIssueReport> b)
+    {
+        b.ToZelosHrTable("zhr_pack_issue_reports");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Country).HasMaxLength(2);
+        b.Property(x => x.Version).HasMaxLength(30);
+        b.Property(x => x.Field).HasMaxLength(120);
+        b.Property(x => x.Comment).HasMaxLength(2000);
+        b.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("sent");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Country });
+    }
+}
+
+public sealed class ZhrCountryCoverageConfiguration : IEntityTypeConfiguration<ZhrCountryCoverage>
+{
+    public void Configure(EntityTypeBuilder<ZhrCountryCoverage> b)
+    {
+        b.ToZelosHrTable("zhr_country_coverage");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Country).HasMaxLength(2);
+        b.Property(x => x.Choice).HasMaxLength(20);
+        b.Property(x => x.Note).HasMaxLength(4000);
+        b.Property(x => x.DocumentIdsJson).HasColumnType("jsonb").HasDefaultValueSql("'[]'::jsonb");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Country }).IsUnique();
     }
 }
