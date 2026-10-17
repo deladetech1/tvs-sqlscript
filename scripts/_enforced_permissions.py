@@ -96,8 +96,8 @@ def accounting_app(root):
     """Permissions an Accounting API endpoint grants access on.
 
     Each endpoint carries `[RequiresAccountingPermission(AccountingPermissions.X)]`, which also
-    accepts the older ids in `AccountingPermissions.LegacyAliases[X]` -- or, when the attribute sets
-    `Legacy = ...`, those instead. A grant of any of them works, so all of them count.
+    accepts the ids in the attribute's own `Legacy = ...` list (and, while the API had them, the older
+    ids in `AccountingPermissions.LegacyAliases[X]`). A grant of any of them works, so all of them count.
     Ids are split the way the Accounting seed (02_permissions.sql) sets resource_key and action.
 
     Anything this cannot read raises instead of being skipped: a partial set would be written to
@@ -108,10 +108,13 @@ def accounting_app(root):
     mod_path = auth / "AccountingPermissions.cs"
     mod = mod_path.read_text(encoding="utf-8")
     ids = dict(re.findall(r'public const string (\w+)\s*=\s*"([^"]+)"', mod))
-    block = re.search(r'LegacyAliases\s*=\s*new Dictionary<string, string\[\]>\s*\{(.*?)\n\s*\};', mod, re.S)
-    if not block:
-        raise ValueError(f"{mod_path}: LegacyAliases not found")
-    aliases = {k: re.findall(r'\w+', v) for k, v in re.findall(r'\[(\w+)\]\s*=\s*\[([^\]]*)\]', block.group(1))}
+    # The API retired its LegacyAliases (WI-19); if they come back they are read, and an unreadable block raises.
+    aliases = {}
+    if "LegacyAliases" in mod:
+        block = re.search(r'LegacyAliases\s*=\s*new Dictionary<string, string\[\]>\s*\{(.*?)\n\s*\};', mod, re.S)
+        if not block:
+            raise ValueError(f"{mod_path}: LegacyAliases present but unreadable")
+        aliases = {k: re.findall(r'\w+', v) for k, v in re.findall(r'\[(\w+)\]\s*=\s*\[([^\]]*)\]', block.group(1))}
 
     def code_of(text):
         # Comments are not code: a commented-out attribute checks nothing.

@@ -137,9 +137,17 @@ def loud_failures():
     refuses("an unknown constant", controller="[RequiresAccountingPermission(AccountingPermissions.Nope)]\n")
     refuses("an argument it cannot read",
             controller="[RequiresAccountingPermission(AccountingPermissions.JournalList, Other = 1)]\n")
-    refuses("a missing LegacyAliases block",
-            permissions=PERMISSIONS.split("    public static readonly")[0] + "}\n", controller=one)
+    refuses("an unreadable LegacyAliases block",
+            permissions=PERMISSIONS.replace("new Dictionary<string, string[]>", "BuildAliases()"), controller=one)
     refuses("no attributes at all", controller="public class Empty { }\n")
+
+
+def without_aliases():
+    # The API retired LegacyAliases; a permissions file without them is normal, not broken.
+    got = scan(permissions=PERMISSIONS.split("    public static readonly")[0] + "}\n",
+               controller="[RequiresAccountingPermission(AccountingPermissions.AccountingRuleList)]\n")
+    assert got == {("accounting", "accounting-rule", "list")}, got
+    print("without LegacyAliases: ok")
 
 
 def real_repo():
@@ -163,4 +171,5 @@ def real_repo():
 if __name__ == "__main__":
     synthetic()
     loud_failures()
+    without_aliases()
     real_repo()
