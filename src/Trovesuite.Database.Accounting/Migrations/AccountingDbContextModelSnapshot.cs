@@ -367,6 +367,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
+                    b.Property<string>("LastImport")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("last_import");
+
                     b.Property<DateTimeOffset?>("LastReconciledAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_reconciled_at");
@@ -429,6 +433,16 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("bank_account_id");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date")
                         .HasColumnName("date");
@@ -437,6 +451,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<string>("ExcludeReason")
+                        .HasColumnType("text")
+                        .HasColumnName("exclude_reason");
 
                     b.Property<string>("ImportId")
                         .HasColumnType("text")
@@ -451,9 +469,20 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("org_id");
 
+                    b.Property<DateTimeOffset?>("ReconciledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reconciled_at");
+
                     b.Property<string>("Reference")
                         .HasColumnType("text")
                         .HasColumnName("reference");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("FEED")
+                        .HasColumnName("source");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -469,6 +498,16 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tenant_id");
 
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
                     b.HasKey("Id")
                         .HasName("pk_acc_bank_statement_lines");
 
@@ -477,6 +516,9 @@ namespace Trovesuite.Database.Accounting.Migrations
 
                     b.HasIndex("TenantId", "OrgId", "BankAccountId", "Date")
                         .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_bank_account_id_d");
+
+                    b.HasIndex("TenantId", "OrgId", "BankAccountId", "ImportId")
+                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_bank_account_id_i");
 
                     b.ToTable("acc_bank_statement_lines", "accounting");
                 });
@@ -1442,10 +1484,28 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("created_by_id");
 
+                    b.Property<string>("Entity")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("entity");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("name");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
 
                     b.Property<string>("OrgId")
                         .IsRequired()
@@ -1489,6 +1549,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_import_batches");
 
+                    b.HasIndex("TenantId", "OrgId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_import_batches_tenant_id_org_id_number");
+
                     b.HasIndex("TenantId", "OrgId", "Status")
                         .HasDatabaseName("ix_acc_import_batches_tenant_id_org_id_status");
 
@@ -1530,6 +1594,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("payload_json")
                         .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<bool>("Posted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("posted");
 
                     b.Property<string>("Reference")
                         .IsRequired()

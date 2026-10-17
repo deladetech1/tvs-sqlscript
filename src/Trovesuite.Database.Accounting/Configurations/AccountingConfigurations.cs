@@ -304,6 +304,7 @@ public sealed class AccBankAccountConfiguration : IEntityTypeConfiguration<AccBa
         b.ToAccountingTable("acc_bank_accounts");
         b.HasKey(x => x.Id);
         b.Property(x => x.StatementBalance).HasPrecision(18, 2);
+        b.Property(x => x.LastImport).HasColumnType("jsonb");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.GlAccountId }).IsUnique();
     }
 }
@@ -315,6 +316,10 @@ public sealed class AccBankStatementLineConfiguration : IEntityTypeConfiguration
         b.ToAccountingTable("acc_bank_statement_lines");
         b.HasKey(x => x.Id);
         b.Property(x => x.Amount).HasPrecision(18, 2);
+        b.Property(x => x.Source).HasDefaultValue("FEED");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BankAccountId, x.ImportId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BankAccountId, x.Date });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.MatchedJournalId });
     }
@@ -399,6 +404,7 @@ public sealed class AccImportBatchConfiguration : IEntityTypeConfiguration<AccIm
         b.ToAccountingTable("acc_import_batches");
         b.HasKey(x => x.Id);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Status });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Number }).IsUnique();
         b.HasMany(x => x.Records).WithOne(x => x.Batch!).HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Cascade);
     }
 }

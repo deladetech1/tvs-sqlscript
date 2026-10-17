@@ -93,7 +93,15 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-accounting-import-delete', 'Accounting Import Delete', 'rt-accounting-import', 'Discard unposted import batches', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-user-list', 'Accounting User List', 'rt-accounting-user', 'List tenant users for Accounting', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-opening-balance-get', 'Accounting Opening Balance Get', 'rt-accounting-opening-balance', 'Read opening balances', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-opening-balance-update', 'Accounting Opening Balance Update', 'rt-accounting-opening-balance', 'Update opening balances', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-accounting-opening-balance-update', 'Accounting Opening Balance Update', 'rt-accounting-opening-balance', 'Update opening balances', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-list', 'Accounting Bank Statement List', 'rt-accounting-bank', 'List bank statement lines and bank activity', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-import', 'Accounting Bank Statement Import', 'rt-accounting-bank', 'Import, preview and undo bank statement files', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-exclude', 'Accounting Bank Statement Exclude', 'rt-accounting-bank', 'Exclude or restore bank statement lines', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-delete', 'Accounting Bank Statement Delete', 'rt-accounting-bank', 'Delete bank statement lines from a file', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-import-post', 'Accounting Import Post', 'rt-accounting-import', 'Post import batches', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-data-source-sync', 'Accounting Data Source Sync', 'rt-accounting-data-source', 'Run a manual sync of a data source', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-field-mapping-update', 'Accounting Field Mapping Update', 'rt-accounting-data-source', 'Update field mappings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-field-mapping-delete', 'Accounting Field Mapping Delete', 'rt-accounting-data-source', 'Delete field mappings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
     resource_type_id = EXCLUDED.resource_type_id,

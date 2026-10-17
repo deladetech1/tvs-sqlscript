@@ -100,5 +100,13 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-import-delete'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-user-list'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-opening-balance-get'),
-('system-tenant-id', 'role-accounting-admin', 'permission-accounting-opening-balance-update')
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-opening-balance-update'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-bank-statement-list'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-bank-statement-import'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-bank-statement-exclude'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-bank-statement-delete'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-import-post'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-data-source-sync'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-field-mapping-update'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-field-mapping-delete')
 ON CONFLICT DO NOTHING;

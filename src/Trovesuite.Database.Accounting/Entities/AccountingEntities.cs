@@ -492,6 +492,8 @@ public class AccBankAccount
     public DateTimeOffset? LastReconciledAt { get; set; }
     public bool IsActive { get; set; } = true;
     public string? Description { get; set; }
+    /// <summary>Latest statement import, kept so it can be undone (jsonb).</summary>
+    public string? LastImport { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -512,6 +514,14 @@ public class AccBankStatementLine
     public string? SuggestedJournalId { get; set; }
     public string? Reference { get; set; }
     public string? ImportId { get; set; }
+    /// <summary><c>FEED</c> or <c>FILE</c>.</summary>
+    public string Source { get; set; } = "FEED";
+    public string? ExcludeReason { get; set; }
+    public DateTimeOffset? ReconciledAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
 }
 
 public class AccExchangeRate
@@ -634,8 +644,12 @@ public class AccImportBatch
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string? SourceId { get; set; }
+    public string Number { get; set; } = default!;
+    public string Entity { get; set; } = "Journals";
+    public string? FileName { get; set; }
+    public string? JournalId { get; set; }
     public string Name { get; set; } = default!;
-    public string Status { get; set; } = "DRAFT";
+    public string Status { get; set; } = "NEEDS_REVIEW";
     public int RowsReceived { get; set; }
     public int RowsPosted { get; set; }
     public int RowsHeld { get; set; }
@@ -659,6 +673,7 @@ public class AccImportRecord
     public decimal Amount { get; set; }
     public string Status { get; set; } = "VALID";
     public string? Error { get; set; }
+    public bool Posted { get; set; }
     public string PayloadJson { get; set; } = "{}";
 
     public AccImportBatch? Batch { get; set; }
