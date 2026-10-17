@@ -28,7 +28,7 @@ on:
         required: true
         type: string
       module:
-        description: "core_platform | loandrift | mystoreguard | zeloshr | attendance | all"
+        description: "core_platform | loandrift | mystoreguard | zeloshr | attendance | accounting | all"
         required: false
         type: string
         default: all

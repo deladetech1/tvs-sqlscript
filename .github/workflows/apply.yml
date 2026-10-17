@@ -36,7 +36,7 @@ on:
         type: string
         required: true
       module:
-        description: "all | core_platform | loandrift | mystoreguard | zeloshr | attendance"
+        description: "all | core_platform | loandrift | mystoreguard | zeloshr | attendance | accounting"
         type: string
         required: false
         default: all
@@ -235,6 +235,7 @@ jobs:
             mystoreguard)           PICK=3 ;;
             zeloshr|human_resource) PICK=4 ;;   # human_resource kept as an alias
             attendance)             PICK=5 ;;
+            accounting)             PICK=6 ;;
             all)                    PICK=0 ;;
             *) echo "::error::unknown module '${{ inputs.module }}'"; exit 1 ;;
           esac
@@ -277,7 +278,7 @@ jobs:
 
           # Modules to query.
           if [[ "${{ inputs.module }}" == "all" ]]; then
-            MODULES="CorePlatform LoanDrift MyStoreGuard HumanResource Attendance"
+            MODULES="CorePlatform LoanDrift MyStoreGuard HumanResource Attendance Accounting"
           else
             case "${{ inputs.module }}" in
               core_platform)  MODULES="CorePlatform" ;;
@@ -285,6 +286,7 @@ jobs:
               mystoreguard)   MODULES="MyStoreGuard" ;;
               zeloshr)        MODULES="HumanResource" ;;
               attendance)     MODULES="Attendance" ;;
+              accounting)     MODULES="Accounting" ;;
               *) echo "::error::unknown module '${{ inputs.module }}'"; exit 1 ;;
             esac
           fi
@@ -308,6 +310,7 @@ jobs:
             [MyStoreGuard]=mystoreguard
             [HumanResource]=zeloshr
             [Attendance]=attendance
+            [Accounting]=accounting
           )
 
           DB_HOST="${{ steps.db.outputs.DB_HOST }}"

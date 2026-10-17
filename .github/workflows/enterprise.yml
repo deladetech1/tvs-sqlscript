@@ -30,7 +30,7 @@ on:
         type: choice
         required: true
         default: all
-        options: [all, core_platform, loandrift, mystoreguard, zeloshr, attendance]
+        options: [all, core_platform, loandrift, mystoreguard, zeloshr, attendance, accounting]
       command:
         type: choice
         required: true

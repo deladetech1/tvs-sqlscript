@@ -5,7 +5,6 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-accounting-admin', 'permission-business-get'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-organization-get'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-business-app-get'),
-('system-tenant-id', 'role-accounting-admin', 'permission-business-app-subscribe'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-business-app-get-locations'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-user-get-locations'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-organisation-get'),
