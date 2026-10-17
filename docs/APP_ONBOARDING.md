@@ -90,7 +90,7 @@ database even without your change.
    change that adds its permissions, or every run marks them "checked by nothing". Python apps use
    `python_app(root, prefix)` (reads `perm(R.X, A.Y)`); .NET apps need a reader for their own permission check
    (`dotnet_app` for ZelosHR, `accounting_app` for Accounting's `[RequiresAccountingPermission]`, including the
-   legacy ids it accepts). Cover the reader with a test like `scripts/test_accounting_enforced_permissions.py`.
+   ids an endpoint's own `Legacy` list accepts). Cover the reader with a test like `scripts/test_accounting_enforced_permissions.py`.
    `check_permission_refs.py` is for Python apps only (in C# an undefined name does not compile), and
    `audit_role_permissions.py` reads Python controllers and React hooks.
 
