@@ -196,6 +196,10 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- Projects: the project manager, hosted by the shared apps backend like the CRM; frontend
 -- tvs-projects-ft. Registration beyond this row is migrations/shared/20261016-01-projects-joins-the-platform.sql.
 ('app-projects', 'PROJECTS', 'Boards & Backlogs', 'Sprints & Planning', 'Docs & Wikis', 'Time & Budgets', 'Reports & Automations', 'Plan and track every project in one place: boards, backlogs and sprints, docs, time and budgets, connected to the rest of the suite', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Invoicing: invoices, quotes and payments for any business in any country, hosted by the
+-- shared apps backend; frontend tvs-invoicing-ft. Registration beyond this row is
+-- migrations/shared/20261019-01-invoicing-joins-the-platform.sql.
+('app-invoicing', 'INVOICING', 'Invoices & Quotes', 'Online Payments', 'Taxes for Any Country', 'Recurring Billing', 'Reports & Reminders', 'Bill any customer anywhere: invoices and quotes in their currency and language, your own taxes, paid online, with reminders, recurring billing and reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-accounting', 'ACCOUNTING', 'General Ledger', 'Accounts Payable', 'Accounts Receivable', 'Financial Reporting', 'Tax Management', 'Comprehensive accounting system with chart of accounts, AP/AR modules, financial reporting, and tax compliance support', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
@@ -249,7 +253,12 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-prj-basic',      'app-projects',     'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-prj-advance',    'app-projects',     'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-prj-premium',    'app-projects',     'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-prj-enterprise', 'app-projects',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('tier-cfg-prj-enterprise', 'app-projects',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Invoicing: priced as the CRM and Projects, 2026-10-19 (not yet confirmed).
+('tier-cfg-inv-basic',      'app-invoicing',    'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-advance',    'app-invoicing',    'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-premium',    'app-invoicing',    'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-enterprise', 'app-invoicing',    'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     app_id          = EXCLUDED.app_id,
     subscription_id = EXCLUDED.subscription_id,

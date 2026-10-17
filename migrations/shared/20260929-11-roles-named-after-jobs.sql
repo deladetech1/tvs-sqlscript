@@ -280,6 +280,8 @@ BEGIN
              WHEN r.id LIKE 'role-crm%'       THEN 'crm'
              -- Projects' job roles (20261016-01).
              WHEN r.id LIKE 'role-projects%'  THEN 'projects'
+             -- Invoicing's job roles (20261019-01).
+             WHEN r.id LIKE 'role-invoicing%' THEN 'invoicing'
              ELSE '-' END;
 
     IF leftover > 0 THEN
