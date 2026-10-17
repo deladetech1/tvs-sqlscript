@@ -512,7 +512,9 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasName("pk_acc_bank_statement_lines");
 
                     b.HasIndex("TenantId", "OrgId", "MatchedJournalId")
-                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_matched_journal_id");
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_matched_journal_id")
+                        .HasFilter("matched_journal_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "OrgId", "BankAccountId", "Date")
                         .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_bank_account_id_d");

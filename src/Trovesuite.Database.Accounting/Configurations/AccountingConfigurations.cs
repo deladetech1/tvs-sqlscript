@@ -321,7 +321,9 @@ public sealed class AccBankStatementLineConfiguration : IEntityTypeConfiguration
         b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BankAccountId, x.ImportId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BankAccountId, x.Date });
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.MatchedJournalId });
+        // A journal matches at most one statement line (DATA_MODEL 6.2).
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.MatchedJournalId })
+            .IsUnique().HasFilter("matched_journal_id IS NOT NULL");
     }
 }
 

@@ -131,3 +131,45 @@ ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
     resource_type_id = EXCLUDED.resource_type_id,
     description      = EXCLUDED.description;
+
+-- Catalogue metadata (app_prefix, resource_key, action) that Core Platform's Admin and Viewer Admin
+-- reconciliation reads. Accounting arrived after migrations/shared/20260928-05 backfilled other modules,
+-- so it is derived here from the id: permission-accounting-RESOURCE-VERB. Every accounting verb is one
+-- word, and the cp_actions foreign key fails the deploy if a new verb is missing from 00_actions.sql.
+UPDATE core_platform.cp_permissions SET
+    app_prefix   = 'accounting',
+    resource_key = substring(id FROM '^permission-accounting-(.+)-[a-z]+$'),
+    action       = substring(id FROM '-([a-z]+)$')
+WHERE id LIKE 'permission-accounting-%'
+  AND (app_prefix <> 'accounting'
+       OR resource_key IS DISTINCT FROM substring(id FROM '^permission-accounting-(.+)-[a-z]+$')
+       OR action IS DISTINCT FROM substring(id FROM '-([a-z]+)$'));
+
+-- Grants keep a copy of that metadata (migrations/shared/20260929-01) and copy it only when written, so
+-- refresh the copies on accounting grants. On a fresh database this seed runs before that migration adds
+-- the columns, and the migration's own backfill covers it then.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_schema = 'core_platform' AND table_name = 'cp_role_permissions'
+                 AND column_name = 'app_prefix') THEN
+        UPDATE core_platform.cp_role_permissions rp
+           SET app_prefix = p.app_prefix, resource_key = p.resource_key, action = p.action
+          FROM core_platform.cp_permissions p
+         WHERE p.id = rp.permission_id
+           AND p.id LIKE 'permission-accounting-%'
+           AND (rp.app_prefix IS DISTINCT FROM p.app_prefix
+                OR rp.resource_key IS DISTINCT FROM p.resource_key
+                OR rp.action IS DISTINCT FROM p.action);
+    END IF;
+END $$;
+
+-- While accounting permissions had no app_prefix they read as platform permissions, so other apps'
+-- system roles (role-cp-admin in particular) were given them. No role may hold another app's permission
+-- (the cross-app check in migrations/shared/20260929-11), so those grants are removed. Accounting's own
+-- roles, the subscribed-app roles and tenant custom roles (rid_*) keep theirs.
+DELETE FROM core_platform.cp_role_permissions rp
+ WHERE rp.permission_id LIKE 'permission-accounting-%'
+   AND rp.role_id NOT LIKE 'role-accounting%'
+   AND rp.role_id NOT LIKE 'role-subscribed-app-%'
+   AND rp.role_id NOT LIKE 'rid_%';
