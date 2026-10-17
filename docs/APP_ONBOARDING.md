@@ -87,7 +87,7 @@ database even without your change.
    `scripts/test_route_migration_order.py`, `scripts/audit_role_permissions.py --app-prefix <x> --roles 'role-<x>-%'`.
 5. **Join the enforcement audit.** `scripts/mark_enforced_permissions.py` writes `cp_permissions.is_enforced` from
    what each app's code checks (`scripts/_enforced_permissions.py`, `all_enforced`). Add your app there in the same
-   change that adds its permissions, or the permissions screen shows them as "not audited". Python apps use
+   change that adds its permissions, or every run marks them "checked by nothing". Python apps use
    `python_app(root, prefix)` (reads `perm(R.X, A.Y)`); .NET apps need a reader for their own permission check
    (`dotnet_app` for ZelosHR, `accounting_app` for Accounting's `[RequiresAccountingPermission]`, including the
    legacy ids it accepts). Cover the reader with a test like `scripts/test_accounting_enforced_permissions.py`.

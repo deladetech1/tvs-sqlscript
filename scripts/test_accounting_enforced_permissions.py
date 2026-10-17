@@ -18,8 +18,8 @@ Run:
 
     python3 scripts/test_accounting_enforced_permissions.py
 
-The second check needs tvs-accounting-bk checked out beside tvs-sqlscript and is skipped
-otherwise.
+The real-repo check needs tvs-accounting-bk checked out beside tvs-sqlscript (not the
+monorepo layout mark_enforced_permissions.py uses) and says "skipped" otherwise.
 """
 import pathlib
 import re
@@ -42,6 +42,9 @@ public static class AccountingPermissions
     public const string RuleList = "permission-accounting-rule-list";
     public const string AccountingRuleList = "permission-accounting-accounting-rule-list";
     public const string Commented = "permission-accounting-ghost-get";
+    public const string GlList = "permission-accounting-gl-list";
+    public const string PeriodList = "permission-accounting-period-list";
+    public const string FiscalList = "permission-accounting-fiscal-list";
 
     public static readonly IReadOnlyDictionary<string, string[]> LegacyAliases = new Dictionary<string, string[]>
     {
@@ -68,34 +71,75 @@ CONTROLLER = '''public sealed class Things : ControllerBase
 
     // [RequiresAccountingPermission(AccountingPermissions.Commented)]
     public void D() { }
+
+    /* [RequiresAccountingPermission(AccountingPermissions.Commented)] */
+    [HttpGet("e")]
+    [RequiresAccountingPermission(AccountingPermissions.JournalAdd, Legacy = new string[] { AccountingPermissions.GlList })]
+    public void E() { }
+
+    [HttpGet("f")]
+    [RequiresAccountingPermission(AccountingPermissions.PeriodList, Legacy = [AccountingPermissions.FiscalList])]
+    public void F() { }
+
+    // Mentions of the type are not uses.
+    private static readonly Type Kind = typeof(RequiresAccountingPermissionAttribute);
 }
 '''
 
 
-def synthetic():
+def scan(permissions=PERMISSIONS, controller=CONTROLLER):
     with tempfile.TemporaryDirectory() as tmp:
         auth = pathlib.Path(tmp, "app/src/Shared/Authorization")
         auth.mkdir(parents=True)
-        (auth / "AccountingPermissions.cs").write_text(PERMISSIONS)
+        (auth / "AccountingPermissions.cs").write_text(permissions)
         ctl = pathlib.Path(tmp, "app/src/Entities/things")
         ctl.mkdir(parents=True)
-        (ctl / "ThingsController.cs").write_text(CONTROLLER)
-        got = accounting_app(tmp)
+        (ctl / "ThingsController.cs").write_text(controller)
+        return accounting_app(tmp)
 
+
+def synthetic():
+    got = scan()
     want = {
         ("accounting", "journal", "list"),            # named by an attribute
         ("accounting", "accounting-rule", "list"),    # named by an attribute
         ("accounting", "rule", "list"),               # its LegacyAliases entry
         ("accounting", "bank-account", "list"),       # named, with a Legacy list
         ("accounting", "bank-statement", "list"),     # from that Legacy list
+        ("accounting", "journal", "add"),             # named, Legacy = new string[] { ... }
+        ("accounting", "gl", "list"),                 # from that list
+        ("accounting", "period", "list"),             # named, Legacy = [ ... ]
+        ("accounting", "fiscal", "list"),             # from that list
     }
     assert got == want, f"\n got  {sorted(got)}\n want {sorted(want)}"
     # Not enforced: a constant no attribute names, an alias the endpoint's Legacy replaced,
-    # and an attribute that is only a comment.
-    for absent in [("accounting", "journal", "add"), ("accounting", "orphan", "delete"),
-                   ("accounting", "bank", "list"), ("accounting", "ghost", "get")]:
+    # and an attribute that is only a comment (// or /* */).
+    for absent in [("accounting", "orphan", "delete"), ("accounting", "bank", "list"), ("accounting", "ghost", "get")]:
         assert absent not in got, absent
     print("synthetic: ok")
+
+
+def refuses(label, **kw):
+    try:
+        scan(**kw)
+    except ValueError as e:
+        print(f"refuses {label}: ok ({str(e).split(': ', 1)[-1]})")
+        return
+    raise AssertionError(f"scan accepted {label}; a partial set would be written as 'checked by nothing'")
+
+
+def loud_failures():
+    one = "[RequiresAccountingPermission(AccountingPermissions.JournalList)]\n"
+    refuses("an attribute split over lines",
+            controller="[RequiresAccountingPermission(\n    AccountingPermissions.JournalList)]\n")
+    refuses("an attribute in a combined list",
+            controller="[HttpGet, RequiresAccountingPermission(AccountingPermissions.JournalList)]\n")
+    refuses("an unknown constant", controller="[RequiresAccountingPermission(AccountingPermissions.Nope)]\n")
+    refuses("an argument it cannot read",
+            controller="[RequiresAccountingPermission(AccountingPermissions.JournalList, Other = 1)]\n")
+    refuses("a missing LegacyAliases block",
+            permissions=PERMISSIONS.split("    public static readonly")[0] + "}\n", controller=one)
+    refuses("no attributes at all", controller="public class Empty { }\n")
 
 
 def real_repo():
@@ -109,11 +153,14 @@ def real_repo():
     seeded = {("accounting", m.group(1), m.group(2))
               for m in re.finditer(r"'permission-accounting-(.+?)-([a-z]+)'", seed)}
     assert got, "the scan found nothing: it is broken, not the API"
-    missing = got - seeded
-    assert not missing, f"enforced but not seeded: {sorted(missing)}"
-    print(f"real repo: ok ({len(got)} enforced, all seeded)")
+    # Every seeded permission is checked by some endpoint today. If one stops being checked,
+    # this fails on purpose: say why in the seed, or remove the permission.
+    assert got == seeded, (f"enforced but not seeded: {sorted(got - seeded)}\n"
+                           f"seeded but checked by nothing: {sorted(seeded - got)}")
+    print(f"real repo: ok ({len(got)} enforced = {len(seeded)} seeded)")
 
 
 if __name__ == "__main__":
     synthetic()
+    loud_failures()
     real_repo()
