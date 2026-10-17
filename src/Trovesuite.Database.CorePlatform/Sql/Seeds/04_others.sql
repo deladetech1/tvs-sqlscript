@@ -64,8 +64,20 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-zeloshr-%'
   AND p.id NOT LIKE 'permission-crm-%'
   AND p.id NOT LIKE 'permission-projects-%'
+  AND p.id NOT LIKE 'permission-invoicing-%'
+  AND p.id NOT LIKE 'permission-accounting-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- An app's permissions reach role-cp-admin if its exclusion line above is missing when they are
+-- created (seeds re-run on every deploy and see what shared files created last time). Remove any
+-- grant of another app's permission so the cross-app check in migrations/shared/20260929-11 holds.
+-- Only rows whose permission carries an app_prefix other than the platform's are touched.
+DELETE FROM core_platform.cp_role_permissions rp
+ USING core_platform.cp_permissions p
+ WHERE p.id = rp.permission_id
+   AND rp.role_id = 'role-cp-admin'
+   AND COALESCE(p.app_prefix, '') NOT IN ('', 'cp');
 
 -- =============================================
 -- NAVIGATION PERMISSIONS FOR EVERY CORE PLATFORM ADMIN ROLE
