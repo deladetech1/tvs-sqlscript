@@ -92,9 +92,46 @@ def dotnet_app(root):
             if p:
                 bits = p.split("|"); used.add((bits[0], bits[1], bits[2]))
     return used
+def accounting_app(root):
+    """Permissions an Accounting API endpoint grants access on.
+
+    Each endpoint carries `[RequiresAccountingPermission(AccountingPermissions.X)]`, which also
+    accepts the older ids in `AccountingPermissions.LegacyAliases[X]` -- or, when the attribute sets
+    `Legacy = new[] { ... }`, those instead. A grant of any of them works, so all of them count.
+    Ids are split the way the Accounting seed (02_permissions.sql) sets resource_key and action.
+    """
+    src = pathlib.Path(root) / "app/src"
+    mod_path = src / "Shared/Authorization/AccountingPermissions.cs"
+    mod = mod_path.read_text(encoding="utf-8")
+    ids = dict(re.findall(r'public const string (\w+)\s*=\s*"([^"]+)"', mod))
+    block = re.search(r'LegacyAliases\s*=\s*new Dictionary<string, string\[\]>\s*\{(.*?)\n\s*\};', mod, re.S)
+    aliases = {k: re.findall(r'\w+', v)
+               for k, v in re.findall(r'\[(\w+)\]\s*=\s*\[([^\]]*)\]', block.group(1) if block else "")}
+
+    names = set()
+    for f in src.rglob("*.cs"):
+        if f.resolve() == mod_path.resolve():
+            continue
+        # Comments are not code: a `// [RequiresAccountingPermission(...)]` left behind checks nothing.
+        code = "\n".join(l.split("//", 1)[0] for l in f.read_text(encoding="utf-8", errors="replace").splitlines())
+        for m in re.finditer(r'\[RequiresAccountingPermission\(AccountingPermissions\.(\w+)(.*?)\)\]', code):
+            names.add(m.group(1))
+            legacy = re.search(r'Legacy\s*=\s*new\s*\[\]\s*\{([^}]*)\}', m.group(2))
+            names.update(re.findall(r'AccountingPermissions\.(\w+)', legacy.group(1)) if legacy
+                         else aliases.get(m.group(1), []))
+
+    used = set()
+    for n in names:
+        m = re.fullmatch(r'permission-accounting-(.+)-([a-z]+)', ids.get(n, ""))
+        if m:
+            used.add(("accounting", m.group(1), m.group(2)))
+    return used
+
+
 def all_enforced(base="."):
     b = pathlib.Path(base)
     return (python_app(b / "mystoreguard/tvs-mystoreguard-bk", "msg")
             | python_app(b / "loandrift/tvs-loandrift-bk", "loandrift")
             | python_app(b / "coreplatform/tvs-coreplatform-bk", "")
-            | dotnet_app(b / "zeloshr/tvs-zeloshr-admin-bk"))
+            | dotnet_app(b / "zeloshr/tvs-zeloshr-admin-bk")
+            | accounting_app(b / "accounting/tvs-accounting-bk"))

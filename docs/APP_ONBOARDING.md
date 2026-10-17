@@ -85,6 +85,14 @@ database even without your change.
 3. For a change to an existing app, also reproduce saas-dev: deploy the previous commit twice, then deploy yours.
 4. `python3 scripts/test_migrations_survive_use.py`, `scripts/test_reserved_labels.py`,
    `scripts/test_route_migration_order.py`, `scripts/audit_role_permissions.py --app-prefix <x> --roles 'role-<x>-%'`.
+5. **Join the enforcement audit.** `scripts/mark_enforced_permissions.py` writes `cp_permissions.is_enforced` from
+   what each app's code checks (`scripts/_enforced_permissions.py`, `all_enforced`). Add your app there in the same
+   change that adds its permissions, or the permissions screen shows them as "not audited". Python apps use
+   `python_app(root, prefix)` (reads `perm(R.X, A.Y)`); .NET apps need a reader for their own permission check
+   (`dotnet_app` for ZelosHR, `accounting_app` for Accounting's `[RequiresAccountingPermission]`, including the
+   legacy ids it accepts). Cover the reader with a test like `scripts/test_accounting_enforced_permissions.py`.
+   `check_permission_refs.py` is for Python apps only (in C# an undefined name does not compile), and
+   `audit_role_permissions.py` reads Python controllers and React hooks.
 
 ```bash
 docker network create tvsnet
