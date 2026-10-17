@@ -60,6 +60,6 @@ ALTER TABLE projects.prj_notifications ADD CONSTRAINT prj_notifications_kind_che
     CHECK (kind IN ('assigned', 'mentioned', 'commented', 'moved', 'done', 'approval', 'automation',
                     'due_soon', 'overdue', 'chat_mention', 'form_submitted',
                     'status_update', 'status_due', 'client_approval', 'client_comment', 'project_started',
-                    'doc_comment', 'budget'));
+                    'doc_comment', 'budget', 'doc_suggested', 'doc_suggestion_resolved'));
 
 COMMIT;
