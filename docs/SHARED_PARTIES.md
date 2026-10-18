@@ -1,0 +1,45 @@
+# Shared suppliers and customers (`core_platform.cp_parties`)
+
+Every app keeps the people and companies a business deals with in **one** place:
+`core_platform.cp_parties`, created by `migrations/shared/20261019-29-coreplatform-shared-suppliers.sql`.
+
+## The rules
+
+- **Per business.** Every row has `bus_id`. A pharmacy and a hardware shop of one owner have different
+  suppliers; nothing is shared across businesses. Every lookup filters by `bus_id`.
+- **One record per party, with roles.** `is_supplier`, `is_customer`; a party can be both.
+- **Apps keep only what is theirs.** An app's extra fields go in its own table keyed by `party_id`
+  (`mystoreguard.msg_supplier_profiles`, `expenses.exp_vendor_settings`).
+- **Ids are kept when an app moves over**, so everything that already points at a supplier still does.
+- **Merging.** `core_platform.cp_party_merge(keep, drop, by)` moves every reference listed in
+  `core_platform.cp_party_references` and marks `drop` deleted. **An app that stores a party id adds its
+  column to `cp_party_references`.**
+- **Deleting** marks `deleted_at`; a party is never removed while something points at it.
+
+## Who has moved
+
+| App | Status |
+|---|---|
+| MyStoreGuard | `msg_suppliers` is a view of `cp_parties` with an INSTEAD OF trigger; its code is unchanged. The old table is `msg_suppliers_legacy`. |
+| Expenses | Vendors are `cp_parties` rows (`exp_vendors_legacy` kept). |
+| Invoicing | Not yet: `inv_customers` (roles customer/supplier/both) moves with customers. |
+| Accounting | Not yet; see below. |
+
+Two traps:
+- The EF model still describes `msg_suppliers` as a table. A future EF migration must not alter it
+  (the same as `msg_taxes`).
+- A write through the view under `SET session_replication_role = replica` is silently lost (Postgres
+  skips a view's triggers there). Test seeds must write `cp_parties` directly.
+
+## For the Accounting team
+
+`acc_customers` and `acc_suppliers` have **no `bus_id`**, and neither do the journals: the books are
+per organisation today. The product is per business (the owner's decision), so Accounting's books need
+`bus_id` before the ledger can take postings from the other apps. To adopt the shared parties:
+
+1. Add `bus_id` to Accounting's tables (customers, suppliers, journals and documents).
+2. Point `supplier_id` / `customer_id` at `core_platform.cp_parties(id)`. Keep Accounting's own fields
+   (code, credit limit, payment terms, custom fields) in an `acc_party_settings (party_id, ...)` table.
+3. Add the reference columns to `core_platform.cp_party_references`.
+4. Backfill: match an existing `acc_suppliers` row to a party of the same business by name and email or
+   phone, and create a party for the rest. Do not merge on name alone.
