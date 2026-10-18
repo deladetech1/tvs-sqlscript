@@ -282,6 +282,8 @@ BEGIN
              WHEN r.id LIKE 'role-projects%'  THEN 'projects'
              -- Invoicing's job roles (20261019-01).
              WHEN r.id LIKE 'role-invoicing%' THEN 'invoicing'
+             -- Expenses' job roles (20261019-26).
+             WHEN r.id LIKE 'role-expenses%'  THEN 'expenses'
              -- Accounting's roles, once its permissions carry app_prefix (Accounting 02_permissions.sql).
              WHEN r.id LIKE 'role-accounting%' THEN 'accounting'
              ELSE '-' END;
