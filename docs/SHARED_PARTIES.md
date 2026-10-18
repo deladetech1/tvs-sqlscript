@@ -49,3 +49,23 @@ per organisation today. The product is per business (the owner's decision), so A
 3. Add the reference columns to `core_platform.cp_party_references`.
 4. Backfill: match an existing `acc_suppliers` row to a party of the same business by name and email or
    phone, and create a party for the rest. Do not merge on name alone.
+
+# Shared products (`core_platform.cp_products`)
+
+Created by `migrations/shared/20261019-31-coreplatform-shared-products.sql`. Products follow the same rules as
+parties (per business, ids kept, merge with `cp_product_merge`, references in `cp_product_references`) with one
+difference: **each app lists only the products it has its own row for.** Pricing and stock are each app's, so
+Invoicing does not list a shop product it has never priced, and MyStoreGuard does not list a consulting service.
+
+- `cp_products` is what a product is: name, SKU, barcode, code, description, category, unit, goods or service. A
+  kind sold separately (MyStoreGuard's "256GB") is a product of its own, with `parent_id` and `variant`.
+- MyStoreGuard: `msg_products` = `msg_product_profiles` (stock, tracking, retirement, delete status) +
+  `cp_products`. Its 16 child tables point at the profile with their old delete rules.
+- Invoicing: `inv_items` = `inv_item_settings` (price, currency, tax, import links) + `cp_products`.
+- CRM: `crm_products` = `crm_product_settings` (prices, sync links, status) + `cp_products`.
+- An item brought in from MyStoreGuard (`source_id` = the product, or `product::kind`) attaches to that product
+  (`cp_product_for_source`). It is never copied.
+- Deleting in an app removes that app's row. The product itself goes when no app has a row for it and no document
+  line names it (`cp_product_kept`).
+- A rename in any app renames the product everywhere. That is the point of one record, but Invoicing's old
+  "edited here, kept here" no longer separates its name from the shop's.
