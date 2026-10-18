@@ -14,6 +14,12 @@
 BEGIN;
 
 ALTER TABLE invoicing.inv_settings ADD COLUMN IF NOT EXISTS accounting jsonb NOT NULL DEFAULT '{}';
-ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS account_ref text NOT NULL DEFAULT '';
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS account_ref text NOT NULL DEFAULT '';
+    END IF;
+END $guard$;
 
 COMMIT;

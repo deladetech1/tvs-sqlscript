@@ -22,14 +22,26 @@
 BEGIN;
 
 -- Contacts: customer, supplier or both.
-ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'customer';
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'customer';
+    END IF;
+END $guard$;
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'inv_customers_role_ck') THEN
         ALTER TABLE invoicing.inv_customers ADD CONSTRAINT inv_customers_role_ck CHECK (role IN ('customer', 'supplier', 'both'));
     END IF;
 END $$;
-CREATE INDEX IF NOT EXISTS inv_customers_role_idx ON invoicing.inv_customers (bus_id, role);
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        CREATE INDEX IF NOT EXISTS inv_customers_role_idx ON invoicing.inv_customers (bus_id, role);
+    END IF;
+END $guard$;
 
 -- The purchase order kind, and its statuses: open (sent), accepted (confirmed by the supplier),
 -- declined, received (all of it in), void.

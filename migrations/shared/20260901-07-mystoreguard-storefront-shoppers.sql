@@ -26,9 +26,15 @@
 --    these two are new, and both are optional — the shop asks, the shopper may
 --    decline, and nothing downstream may assume either is present.
 -- =====================================================================================
-ALTER TABLE mystoreguard.msg_customers
-    ADD COLUMN IF NOT EXISTS gender        text,
-    ADD COLUMN IF NOT EXISTS date_of_birth date;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('mystoreguard.msg_customers')) = 'r' THEN
+        ALTER TABLE mystoreguard.msg_customers
+            ADD COLUMN IF NOT EXISTS gender        text,
+            ADD COLUMN IF NOT EXISTS date_of_birth date;
+    END IF;
+END $guard$;
 
 DO $$
 BEGIN

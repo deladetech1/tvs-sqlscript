@@ -48,7 +48,13 @@ ALTER TABLE invoicing.inv_settings
     ADD COLUMN IF NOT EXISTS reminders_enabled  boolean NOT NULL DEFAULT false,
     ADD COLUMN IF NOT EXISTS reminder_days      integer[] NOT NULL DEFAULT '{-3,0,7,14}';
 
-ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS no_reminders boolean NOT NULL DEFAULT false;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS no_reminders boolean NOT NULL DEFAULT false;
+    END IF;
+END $guard$;
 
 CREATE TABLE IF NOT EXISTS invoicing.inv_reminders_sent (
     invoice_id   text NOT NULL REFERENCES invoicing.inv_invoices (id) ON DELETE CASCADE,

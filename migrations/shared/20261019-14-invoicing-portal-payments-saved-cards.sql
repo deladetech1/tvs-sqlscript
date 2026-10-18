@@ -88,7 +88,13 @@ CREATE TABLE IF NOT EXISTS invoicing.inv_payment_methods (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS inv_payment_methods_one_default ON invoicing.inv_payment_methods (customer_id) WHERE is_default;
 
-ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS autopay boolean NOT NULL DEFAULT false;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS autopay boolean NOT NULL DEFAULT false;
+    END IF;
+END $guard$;
 
 ALTER TABLE invoicing.inv_payment_attempts
     ADD COLUMN IF NOT EXISTS save_method boolean NOT NULL DEFAULT false,

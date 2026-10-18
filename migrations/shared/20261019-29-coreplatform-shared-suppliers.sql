@@ -81,6 +81,29 @@ CREATE TABLE IF NOT EXISTS core_platform.cp_party_references (
     column_name text NOT NULL,
     PRIMARY KEY (table_name, column_name)
 );
+-- An extension (an app's own fields, a customer's saved cards or points) moves with the party when
+-- two are merged but does not stop it being deleted; anything else (a sale, an order, a bill) does.
+ALTER TABLE core_platform.cp_party_references ADD COLUMN IF NOT EXISTS is_extension boolean NOT NULL DEFAULT false;
+
+-- in use: does anything other than an extension point at the party?
+CREATE OR REPLACE FUNCTION core_platform.cp_party_in_use(p_id text)
+RETURNS boolean LANGUAGE plpgsql STABLE AS $f$
+DECLARE
+    r record;
+    hit boolean;
+BEGIN
+    FOR r IN SELECT table_name, column_name FROM core_platform.cp_party_references WHERE NOT is_extension LOOP
+        IF to_regclass(r.table_name) IS NOT NULL
+           AND (SELECT relkind FROM pg_class WHERE oid = to_regclass(r.table_name)) = 'r' THEN
+            EXECUTE format('SELECT EXISTS (SELECT 1 FROM %s WHERE %I = $1)', r.table_name, r.column_name) INTO hit USING p_id;
+            IF hit THEN
+                RETURN true;
+            END IF;
+        END IF;
+    END LOOP;
+    RETURN false;
+END
+$f$;
 
 -- merge: everything that points at p_drop points at p_keep, and p_drop is marked deleted
 -- (merged). Both must be the same business's. Answers the rows moved.
@@ -101,12 +124,20 @@ BEGIN
     IF k.tenant_id <> d.tenant_id OR k.bus_id <> d.bus_id THEN
         RAISE EXCEPTION 'only records of one business are merged';
     END IF;
-    FOR r IN SELECT table_name, column_name FROM core_platform.cp_party_references LOOP
+    FOR r IN SELECT table_name, column_name, is_extension FROM core_platform.cp_party_references LOOP
         IF to_regclass(r.table_name) IS NOT NULL
            AND (SELECT relkind FROM pg_class WHERE oid = to_regclass(r.table_name)) = 'r' THEN
-            EXECUTE format('UPDATE %s SET %I = $1 WHERE %I = $2', r.table_name, r.column_name, r.column_name) USING p_keep, p_drop;
-            GET DIAGNOSTICS n = ROW_COUNT;
-            moved := moved + n;
+            BEGIN
+                EXECUTE format('UPDATE %s SET %I = $1 WHERE %I = $2', r.table_name, r.column_name, r.column_name) USING p_keep, p_drop;
+                GET DIAGNOSTICS n = ROW_COUNT;
+                moved := moved + n;
+            EXCEPTION WHEN unique_violation THEN
+                -- An app's own row for each party (its settings, a profile): the kept one's stays.
+                IF NOT r.is_extension THEN
+                    RAISE;
+                END IF;
+                EXECUTE format('DELETE FROM %s WHERE %I = $1', r.table_name, r.column_name) USING p_drop;
+            END;
         END IF;
     END LOOP;
     -- What the kept record lacks, it takes from the other.
@@ -121,7 +152,7 @@ BEGIN
         is_supplier = is_supplier OR d.is_supplier, is_customer = is_customer OR d.is_customer,
         updated_at = now(), updated_by = coalesce(p_by, updated_by)
      WHERE id = p_keep;
-    UPDATE core_platform.cp_parties SET deleted_at = now(), deleted_by = p_by,
+    UPDATE core_platform.cp_parties SET deleted_at = now(), deleted_by = p_by, is_customer = false, is_supplier = false,
            notes = CASE WHEN notes = '' THEN 'Merged into ' || p_keep ELSE notes || E'\nMerged into ' || p_keep END
      WHERE id = p_drop;
     RETURN moved;
@@ -227,8 +258,11 @@ BEGIN
             END IF;
             RETURN NEW;
         ELSE
-            -- Removed in MyStoreGuard: it is no longer the business's supplier (the record
-            -- stays, marked deleted, so whatever points at it keeps its name).
+            -- Removed in MyStoreGuard: refused while an order or a bill names it (as the table's
+            -- keys refused it), else it is no longer the business's supplier.
+            IF core_platform.cp_party_in_use(OLD.id) THEN
+                RAISE foreign_key_violation USING MESSAGE = 'This supplier is used by orders or bills and cannot be deleted';
+            END IF;
             UPDATE core_platform.cp_parties
                SET is_supplier = false,
                    deleted_at = CASE WHEN is_customer THEN deleted_at ELSE coalesce(deleted_at, now()) END,
@@ -250,8 +284,11 @@ BEGIN
     END IF;
     INSERT INTO core_platform.cp_party_references (table_name, column_name) VALUES
         ('mystoreguard.msg_purchase_orders', 'supplier_id'), ('mystoreguard.msg_purchase_batches', 'supplier_id'),
-        ('mystoreguard.msg_purchase_returns', 'supplier_id'), ('mystoreguard.msg_supplier_attachments', 'supplier_id')
+        ('mystoreguard.msg_purchase_returns', 'supplier_id')
     ON CONFLICT DO NOTHING;
+    INSERT INTO core_platform.cp_party_references (table_name, column_name, is_extension) VALUES
+        ('mystoreguard.msg_supplier_attachments', 'supplier_id', true), ('mystoreguard.msg_supplier_profiles', 'party_id', true)
+    ON CONFLICT (table_name, column_name) DO UPDATE SET is_extension = true;
 END $$;
 
 -- ===================================================================== Expenses'
@@ -285,8 +322,10 @@ BEGIN
         ALTER TABLE expenses.exp_bills ADD CONSTRAINT exp_bills_cp_vendor_fk FOREIGN KEY (vendor_id) REFERENCES core_platform.cp_parties (id) ON DELETE RESTRICT;
     END IF;
     INSERT INTO core_platform.cp_party_references (table_name, column_name) VALUES
-        ('expenses.exp_bills', 'vendor_id'), ('expenses.exp_requests', 'vendor_id'), ('expenses.exp_vendor_settings', 'party_id')
+        ('expenses.exp_bills', 'vendor_id'), ('expenses.exp_requests', 'vendor_id')
     ON CONFLICT DO NOTHING;
+    INSERT INTO core_platform.cp_party_references (table_name, column_name, is_extension) VALUES ('expenses.exp_vendor_settings', 'party_id', true)
+    ON CONFLICT (table_name, column_name) DO UPDATE SET is_extension = true;
 END $$;
 
 COMMIT;

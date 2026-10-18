@@ -69,9 +69,27 @@ CREATE TABLE IF NOT EXISTS invoicing.inv_customers (
     created_by          text,
     updated_by          text
 );
-CREATE INDEX IF NOT EXISTS inv_customers_bus_idx ON invoicing.inv_customers (bus_id, lower(name));
-CREATE UNIQUE INDEX IF NOT EXISTS inv_customers_source_uq ON invoicing.inv_customers (bus_id, source_app, source_id) WHERE source_app IS NOT NULL;
-CREATE INDEX IF NOT EXISTS inv_customers_email_idx ON invoicing.inv_customers (bus_id, lower(email)) WHERE email <> '';
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        CREATE INDEX IF NOT EXISTS inv_customers_bus_idx ON invoicing.inv_customers (bus_id, lower(name));
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS inv_customers_source_uq ON invoicing.inv_customers (bus_id, source_app, source_id) WHERE source_app IS NOT NULL;
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        CREATE INDEX IF NOT EXISTS inv_customers_email_idx ON invoicing.inv_customers (bus_id, lower(email)) WHERE email <> '';
+    END IF;
+END $guard$;
 
 CREATE TABLE IF NOT EXISTS invoicing.inv_items (
     id               text PRIMARY KEY DEFAULT gen_random_uuid()::text,

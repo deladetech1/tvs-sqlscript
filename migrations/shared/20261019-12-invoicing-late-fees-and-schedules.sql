@@ -44,7 +44,13 @@ ALTER TABLE invoicing.inv_invoices
     ADD COLUMN IF NOT EXISTS late_fee_for_id text;
 CREATE INDEX IF NOT EXISTS inv_invoices_late_fee_for_idx ON invoicing.inv_invoices (late_fee_for_id) WHERE late_fee_for_id IS NOT NULL;
 
-ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS no_late_fees boolean NOT NULL DEFAULT false;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS no_late_fees boolean NOT NULL DEFAULT false;
+    END IF;
+END $guard$;
 
 CREATE TABLE IF NOT EXISTS invoicing.inv_late_fees (
     id              text PRIMARY KEY DEFAULT gen_random_uuid()::text,

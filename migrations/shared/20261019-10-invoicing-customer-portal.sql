@@ -9,7 +9,19 @@
 
 BEGIN;
 
-ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS portal_token text;
-CREATE UNIQUE INDEX IF NOT EXISTS inv_customers_portal_uq ON invoicing.inv_customers (portal_token) WHERE portal_token IS NOT NULL;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        ALTER TABLE invoicing.inv_customers ADD COLUMN IF NOT EXISTS portal_token text;
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS inv_customers_portal_uq ON invoicing.inv_customers (portal_token) WHERE portal_token IS NOT NULL;
+    END IF;
+END $guard$;
 
 COMMIT;

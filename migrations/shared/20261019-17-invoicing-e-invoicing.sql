@@ -21,9 +21,15 @@ BEGIN;
 
 ALTER TABLE invoicing.inv_items ADD COLUMN IF NOT EXISTS code text NOT NULL DEFAULT '';
 ALTER TABLE invoicing.inv_invoice_lines ADD COLUMN IF NOT EXISTS code text NOT NULL DEFAULT '';
-ALTER TABLE invoicing.inv_customers
-    ADD COLUMN IF NOT EXISTS einvoice_id text NOT NULL DEFAULT '',
-    ADD COLUMN IF NOT EXISTS state_code  text NOT NULL DEFAULT '';
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_customers')) = 'r' THEN
+        ALTER TABLE invoicing.inv_customers
+            ADD COLUMN IF NOT EXISTS einvoice_id text NOT NULL DEFAULT '',
+            ADD COLUMN IF NOT EXISTS state_code  text NOT NULL DEFAULT '';
+    END IF;
+END $guard$;
 ALTER TABLE invoicing.inv_settings ADD COLUMN IF NOT EXISTS einvoicing jsonb NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS invoicing.inv_einvoices (
