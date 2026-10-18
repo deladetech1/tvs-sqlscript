@@ -35,10 +35,16 @@
 -- Idempotent; safe to re-run on every deploy.
 
 
-ALTER TABLE mystoreguard.msg_products
-    ADD COLUMN IF NOT EXISTS retired_at    timestamptz,
-    ADD COLUMN IF NOT EXISTS retired_by    text,
-    ADD COLUMN IF NOT EXISTS retire_reason text;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('mystoreguard.msg_products')) = 'r' THEN
+        ALTER TABLE mystoreguard.msg_products
+            ADD COLUMN IF NOT EXISTS retired_at    timestamptz,
+            ADD COLUMN IF NOT EXISTS retired_by    text,
+            ADD COLUMN IF NOT EXISTS retire_reason text;
+    END IF;
+END $guard$;
 
 COMMENT ON COLUMN mystoreguard.msg_products.retired_at IS
     'When the shop stopped selling this. Null means it still does. Hidden from '
@@ -47,13 +53,25 @@ COMMENT ON COLUMN mystoreguard.msg_products.retired_at IS
 
 -- The listings all ask the same question — "what does this shop still sell" —
 -- and every one of them will now ask it with this predicate.
-CREATE INDEX IF NOT EXISTS ix_msg_products_still_sold
-    ON mystoreguard.msg_products (bus_id, name)
-    WHERE retired_at IS NULL AND delete_status = 'NOT_DELETED';
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('mystoreguard.msg_products')) = 'r' THEN
+        CREATE INDEX IF NOT EXISTS ix_msg_products_still_sold
+            ON mystoreguard.msg_products (bus_id, name)
+            WHERE retired_at IS NULL AND delete_status = 'NOT_DELETED';
+    END IF;
+END $guard$;
 
-CREATE INDEX IF NOT EXISTS ix_msg_products_retired
-    ON mystoreguard.msg_products (bus_id, retired_at DESC)
-    WHERE retired_at IS NOT NULL;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('mystoreguard.msg_products')) = 'r' THEN
+        CREATE INDEX IF NOT EXISTS ix_msg_products_retired
+            ON mystoreguard.msg_products (bus_id, retired_at DESC)
+            WHERE retired_at IS NOT NULL;
+    END IF;
+END $guard$;
 
 
 ALTER TABLE mystoreguard.msg_product_transfer_items

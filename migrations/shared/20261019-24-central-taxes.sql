@@ -176,7 +176,7 @@ BEGIN
         PERFORM pg_temp.repoint_fk('invoicing.inv_tax_exemptions', 'rate_id', 'core_platform.cp_tax_rates', 'CASCADE', 'inv_tax_exemptions_cp_rate_fk');
         PERFORM pg_temp.repoint_fk('invoicing.inv_tax_exemptions', 'group_id', 'core_platform.cp_tax_groups', 'CASCADE', 'inv_tax_exemptions_cp_group_fk');
     END IF;
-    IF to_regclass('invoicing.inv_items') IS NOT NULL THEN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_items')) = 'r' THEN
         PERFORM pg_temp.repoint_fk('invoicing.inv_items', 'tax_rate_id', 'core_platform.cp_tax_rates', 'SET NULL', 'inv_items_cp_rate_fk');
         PERFORM pg_temp.repoint_fk('invoicing.inv_items', 'tax_group_id', 'core_platform.cp_tax_groups', 'SET NULL', 'inv_items_cp_group_fk');
     END IF;

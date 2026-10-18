@@ -49,16 +49,64 @@ BEGIN;
 
 -- ------------------------------------------------------------------ CRM columns
 -- A product's price as MyStoreGuard reports it, and how its tax works.
-ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS list_price     numeric(18,2);
-ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS price_rule     text;
-ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS tax_inclusive  boolean NOT NULL DEFAULT false;
-ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS tax_names      text;
-ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS final_price    numeric(18,2);
-ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS has_price      boolean NOT NULL DEFAULT true;
-ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS priced_at      timestamptz;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS list_price     numeric(18,2);
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS price_rule     text;
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS tax_inclusive  boolean NOT NULL DEFAULT false;
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS tax_names      text;
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS final_price    numeric(18,2);
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS has_price      boolean NOT NULL DEFAULT true;
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products ADD COLUMN IF NOT EXISTS priced_at      timestamptz;
+    END IF;
+END $guard$;
 -- An effective rate (several taxes, a reduction) needs more than three decimals to come
 -- back to the same cedi on a large order.
-ALTER TABLE crm.crm_products   ALTER COLUMN tax_rate TYPE numeric(12,6);
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        ALTER TABLE crm.crm_products   ALTER COLUMN tax_rate TYPE numeric(12,6);
+    END IF;
+END $guard$;
 ALTER TABLE crm.crm_deal_lines  ALTER COLUMN tax_rate TYPE numeric(12,6);
 ALTER TABLE crm.crm_quote_lines ALTER COLUMN tax_rate TYPE numeric(12,6);
 ALTER TABLE crm.crm_deal_lines  ADD COLUMN IF NOT EXISTS tax_inclusive boolean NOT NULL DEFAULT false;

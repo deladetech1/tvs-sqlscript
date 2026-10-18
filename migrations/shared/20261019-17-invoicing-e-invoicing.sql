@@ -19,7 +19,13 @@
 
 BEGIN;
 
-ALTER TABLE invoicing.inv_items ADD COLUMN IF NOT EXISTS code text NOT NULL DEFAULT '';
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_items')) = 'r' THEN
+        ALTER TABLE invoicing.inv_items ADD COLUMN IF NOT EXISTS code text NOT NULL DEFAULT '';
+    END IF;
+END $guard$;
 ALTER TABLE invoicing.inv_invoice_lines ADD COLUMN IF NOT EXISTS code text NOT NULL DEFAULT '';
 -- Only while it is a table (a view of Core Platform's customers since 20261019-30).
 DO $guard$

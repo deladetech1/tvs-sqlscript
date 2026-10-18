@@ -122,8 +122,20 @@ CREATE TABLE IF NOT EXISTS invoicing.inv_items (
     created_by       text,
     updated_by       text
 );
-CREATE INDEX IF NOT EXISTS inv_items_bus_idx ON invoicing.inv_items (bus_id, lower(name));
-CREATE UNIQUE INDEX IF NOT EXISTS inv_items_source_uq ON invoicing.inv_items (bus_id, source_app, source_id) WHERE source_app IS NOT NULL;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_items')) = 'r' THEN
+        CREATE INDEX IF NOT EXISTS inv_items_bus_idx ON invoicing.inv_items (bus_id, lower(name));
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('invoicing.inv_items')) = 'r' THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS inv_items_source_uq ON invoicing.inv_items (bus_id, source_app, source_id) WHERE source_app IS NOT NULL;
+    END IF;
+END $guard$;
 
 -- Each import, for "last imported ... : 12 added, 3 updated".
 CREATE TABLE IF NOT EXISTS invoicing.inv_imports (
