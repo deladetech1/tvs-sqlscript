@@ -49,10 +49,15 @@ BEGIN
            to_char(now() AT TIME ZONE 'UTC', 'HH12:MI AM'), now(), NULL
     FROM core_platform.cp_tenants t
     WHERE coalesce(t.delete_status, 'NOT_DELETED') = 'NOT_DELETED'
+      -- The platform's own tenant (system roles live there) is not a business.
+      AND t.id <> 'system-tenant-id'
       AND NOT EXISTS (
           SELECT 1 FROM core_platform.cp_currencies c
           WHERE c.tenant_id = t.id AND c.delete_status = 'NOT_DELETED')
     ON CONFLICT DO NOTHING;
+
+    -- An earlier version of this file gave the platform's own tenant one.
+    DELETE FROM core_platform.cp_currencies WHERE id = 'cur-default-system-tenant-id' AND tenant_id = 'system-tenant-id';
 END $$;
 
 COMMIT;
