@@ -112,7 +112,14 @@ BEGIN
         category = CASE WHEN category = '' THEN d.category ELSE category END, unit = CASE WHEN unit = '' THEN d.unit ELSE unit END,
         updated_at = now()
      WHERE id = p_keep;
+    PERFORM set_config('cp.merging', p_drop, true);
     DELETE FROM core_platform.cp_products WHERE id = p_drop;
+    PERFORM set_config('cp.merging', '', true);
+    -- The event (20261019-33) says merged, not deleted.
+    IF to_regclass('core_platform.cp_events') IS NOT NULL THEN
+        PERFORM core_platform.cp_event_publish(k.tenant_id, k.bus_id, k.source_app, 'product.merged', p_keep,
+                                               jsonb_build_object('kept', p_keep, 'dropped', p_drop, 'moved', moved));
+    END IF;
     RETURN moved;
 END
 $f$;

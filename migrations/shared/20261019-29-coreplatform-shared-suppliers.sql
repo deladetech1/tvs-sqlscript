@@ -152,9 +152,16 @@ BEGIN
         is_supplier = is_supplier OR d.is_supplier, is_customer = is_customer OR d.is_customer,
         updated_at = now(), updated_by = coalesce(p_by, updated_by)
      WHERE id = p_keep;
+    -- The event (20261019-33) says merged, not deleted.
+    PERFORM set_config('cp.merging', p_drop, true);
     UPDATE core_platform.cp_parties SET deleted_at = now(), deleted_by = p_by, is_customer = false, is_supplier = false,
            notes = CASE WHEN notes = '' THEN 'Merged into ' || p_keep ELSE notes || E'\nMerged into ' || p_keep END
      WHERE id = p_drop;
+    PERFORM set_config('cp.merging', '', true);
+    IF to_regclass('core_platform.cp_events') IS NOT NULL THEN
+        PERFORM core_platform.cp_event_publish(k.tenant_id, k.bus_id, k.source_app, 'party.merged', p_keep,
+                                               jsonb_build_object('kept', p_keep, 'dropped', p_drop, 'moved', moved, 'by', p_by));
+    END IF;
     RETURN moved;
 END
 $f$;
