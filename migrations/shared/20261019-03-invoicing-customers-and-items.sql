@@ -212,6 +212,8 @@ BEGIN
         $body$
         $fn$;
 
+        -- What is built on it (20261019-21's locations view) goes first; 21 builds it again.
+        EXECUTE 'DROP VIEW IF EXISTS invoicing.src_mystoreguard_item_locations';
         EXECUTE 'DROP VIEW IF EXISTS invoicing.src_mystoreguard_products';
         EXECUTE $v$
         CREATE VIEW invoicing.src_mystoreguard_products AS
