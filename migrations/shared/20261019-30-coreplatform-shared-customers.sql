@@ -211,7 +211,9 @@ BEGIN
                (p.archived_at IS NULL) AS is_active, nullif(p.notes, '') AS description, pr.profile_document_id, p.gender, p.date_of_birth
           FROM core_platform.cp_parties p
           LEFT JOIN mystoreguard.msg_customer_profiles pr ON pr.party_id = p.id
-         WHERE p.is_customer
+         -- A borrower Loandrift alone knows is not the shop's (merged with a shop customer, the
+         -- record is the shop's, source_app mystoreguard).
+         WHERE p.is_customer AND p.source_app <> 'loandrift'
         $v$;
         EXECUTE $t$
         CREATE OR REPLACE FUNCTION mystoreguard.msg_customers_write() RETURNS trigger
