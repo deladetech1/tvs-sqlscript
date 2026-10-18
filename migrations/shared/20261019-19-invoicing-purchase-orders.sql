@@ -127,7 +127,7 @@ BEGIN
                (SELECT coalesce(sum(l.qty_ordered * l.unit_cost - l.discount_amount), 0) FROM invoicing.src_mystoreguard_purchase_order_lines l WHERE l.order_id = o.id) AS total_cost,
                o.cdatetime
           FROM mystoreguard.msg_purchase_orders o
-          LEFT JOIN mystoreguard.msg_suppliers s ON s.id = o.supplier_id
+          LEFT JOIN mystoreguard.msg_suppliers s ON s.id = o.supplier_id AND s.bus_id = o.bus_id
         $v$;
     END IF;
 

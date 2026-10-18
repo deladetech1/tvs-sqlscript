@@ -8,7 +8,7 @@
 --   exp_request_approvals every decision on a request
 --   exp_advances          money given before a trip, paid back to the business
 --                         by netting it off the claim (or returned)
---   exp_vendors           suppliers the business pays, with where to pay them
+--   (vendors are Core Platform's suppliers: 20261019-29)
 --   exp_bills             what a vendor is owed: approved, paid through the
 --                         payout gateway or by hand; can repeat
 --   exp_budgets           a limit per business, department, project, category
@@ -120,31 +120,13 @@ CREATE TABLE IF NOT EXISTS expenses.exp_claim_advances (
 );
 
 -- ===================================================================== vendors and bills
-CREATE TABLE IF NOT EXISTS expenses.exp_vendors (
-    id            text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    tenant_id     text NOT NULL,
-    org_id        text,
-    bus_id        text NOT NULL,
-    name          text NOT NULL CHECK (btrim(name) <> ''),
-    email         text NOT NULL DEFAULT '',
-    phone         text NOT NULL DEFAULT '',
-    tax_number    text NOT NULL DEFAULT '',
-    category_id   text REFERENCES expenses.exp_categories (id) ON DELETE SET NULL,
-    -- Where to pay them: {kind, bank_code, bank_name, account_number, account_name}.
-    pay_to        jsonb NOT NULL DEFAULT '{}',
-    notes         text NOT NULL DEFAULT '',
-    archived_at   timestamptz,
-    cdatetime     timestamptz NOT NULL DEFAULT now(),
-    created_by    text
-);
-CREATE UNIQUE INDEX IF NOT EXISTS exp_vendors_name_uq ON expenses.exp_vendors (bus_id, lower(name)) WHERE archived_at IS NULL;
-
 CREATE TABLE IF NOT EXISTS expenses.exp_bills (
     id               text PRIMARY KEY DEFAULT gen_random_uuid()::text,
     tenant_id        text NOT NULL,
     org_id           text,
     bus_id           text NOT NULL,
-    vendor_id        text NOT NULL REFERENCES expenses.exp_vendors (id) ON DELETE RESTRICT,
+    -- A supplier in core_platform.cp_parties (20261019-29 adds the key).
+    vendor_id        text NOT NULL,
     number           text NOT NULL DEFAULT '',
     description      text NOT NULL DEFAULT '',
     category_id      text REFERENCES expenses.exp_categories (id) ON DELETE SET NULL,

@@ -10,8 +10,13 @@
 ALTER TABLE mystoreguard.msg_customers
     ADD COLUMN IF NOT EXISTS profile_document_id text;
 
-ALTER TABLE mystoreguard.msg_suppliers
-    ADD COLUMN IF NOT EXISTS profile_document_id text;
+-- (msg_suppliers is a view of Core Platform's suppliers since 20261019-29.)
+DO $$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('mystoreguard.msg_suppliers')) = 'r' THEN
+        ALTER TABLE mystoreguard.msg_suppliers ADD COLUMN IF NOT EXISTS profile_document_id text;
+    END IF;
+END $$;
 
 -- Customer attachments ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS mystoreguard.msg_customer_attachments (
