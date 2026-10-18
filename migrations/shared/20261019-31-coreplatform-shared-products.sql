@@ -328,6 +328,16 @@ BEGIN
     IF to_regclass('invoicing.inv_item_settings') IS NOT NULL THEN
         CREATE UNIQUE INDEX IF NOT EXISTS inv_item_settings_source_uq ON invoicing.inv_item_settings (bus_id, source_app, source_id) WHERE source_app IS NOT NULL;
     END IF;
+    -- What each app lists is filtered by business; the old tables were indexed so.
+    IF to_regclass('mystoreguard.msg_product_profiles') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS msg_product_profiles_bus_idx ON mystoreguard.msg_product_profiles (tenant_id, bus_id) WHERE delete_status = 'NOT_DELETED';
+    END IF;
+    IF to_regclass('invoicing.inv_item_settings') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS inv_item_settings_bus_idx ON invoicing.inv_item_settings (bus_id);
+    END IF;
+    IF to_regclass('crm.crm_product_settings') IS NOT NULL THEN
+        CREATE INDEX IF NOT EXISTS crm_product_settings_bus_idx ON crm.crm_product_settings (tenant_id, bus_id, delete_status);
+    END IF;
     IF to_regclass('crm.crm_product_settings') IS NOT NULL THEN
         CREATE UNIQUE INDEX IF NOT EXISTS crm_product_settings_source_uq ON crm.crm_product_settings (tenant_id, bus_id, source, source_id) WHERE source_id IS NOT NULL;
     END IF;
