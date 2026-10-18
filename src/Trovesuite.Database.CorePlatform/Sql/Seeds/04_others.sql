@@ -216,7 +216,7 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- backend; frontend tvs-expenses-ft. Registration beyond this row is
 -- migrations/shared/20261019-26-expenses-joins-the-platform.sql.
 ('app-expenses', 'EXPENSES', 'Receipts & Claims', 'Approvals', 'Pay Back by MoMo or Bank', 'Budgets & Policies', 'Reports & Exports', 'Every business expense in one place: snap a receipt, claim it, get it approved and paid back by mobile money or bank, within budget and policy', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
-('app-accounting', 'ACCOUNTING', 'General Ledger', 'Accounts Payable', 'Accounts Receivable', 'Financial Reporting', 'Tax Management', 'Comprehensive accounting system with chart of accounts, AP/AR modules, financial reporting, and tax compliance support', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
+('app-accounting', 'ACCOUNTING', 'General Ledger & Journals', 'Receivables & Payables', 'Bank Reconciliation', 'Multi-Currency', 'Financial Reports', 'Double-entry books for every organisation: chart of accounts, journals with approvals, invoices and bills, bank reconciliation, multi-currency and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
 ON CONFLICT (id) DO UPDATE SET
@@ -279,7 +279,12 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-exp-basic',      'app-expenses',     'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-exp-advance',    'app-expenses',     'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-exp-premium',    'app-expenses',     'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-exp-enterprise', 'app-expenses',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('tier-cfg-exp-enterprise', 'app-expenses',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Accounting (TapantaBooks): the platform default, as Invoicing and Expenses, 2026-10-18 (not yet confirmed).
+('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-premium',    'app-accounting',   'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-enterprise', 'app-accounting',   'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     app_id          = EXCLUDED.app_id,
     subscription_id = EXCLUDED.subscription_id,
