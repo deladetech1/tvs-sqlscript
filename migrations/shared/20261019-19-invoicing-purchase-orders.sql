@@ -106,7 +106,7 @@ BEGIN
                cur.code                                    AS currency
           FROM mystoreguard.msg_purchase_order_items i
           LEFT JOIN mystoreguard.msg_products p ON p.id = i.product_id
-          LEFT JOIN core_platform.cp_currencies cur ON cur.id = i.currency_id
+          LEFT JOIN core_platform.cp_currencies cur ON cur.id = i.currency_id AND cur.tenant_id = i.tenant_id
         $v$;
 
         EXECUTE $v$
