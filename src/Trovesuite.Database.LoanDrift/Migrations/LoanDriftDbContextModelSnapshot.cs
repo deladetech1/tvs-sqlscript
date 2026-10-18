@@ -626,6 +626,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_trial_reminder_sent_at");
 
+                    b.Property<string>("TenantName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_name");
+
                     b.HasKey("Id")
                         .HasName("pk_cp_tenants");
 
@@ -1104,7 +1109,10 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnName("updated_by");
 
                     b.HasKey("TenantId", "OrgId", "BusId", "LocId", "Id")
-                        .HasName("ak_clients_tenant_id_org_id_bus_id_loc_id_id");
+                        .HasName("pk_ld_clients");
+
+                    b.HasAlternateKey("TenantId", "OrgId", "BusId", "Id")
+                        .HasName("ak_clients_tenant_id_org_id_bus_id_id");
 
                     b.HasIndex("BusId", "TenantId")
                         .HasDatabaseName("ix_ld_clients_bus_id_tenant_id");
@@ -1124,13 +1132,13 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_clients_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "Contact")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Contact")
                         .IsUnique()
-                        .HasDatabaseName("ix_ld_clients_tenant_id_org_id_bus_id_loc_id_contact");
+                        .HasDatabaseName("ix_ld_clients_tenant_id_org_id_bus_id_contact");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "Email")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Email")
                         .IsUnique()
-                        .HasDatabaseName("ix_ld_clients_tenant_id_org_id_bus_id_loc_id_email");
+                        .HasDatabaseName("ix_ld_clients_tenant_id_org_id_bus_id_email");
 
                     b.ToTable("ld_clients", "loandrift", t =>
                         {
@@ -1251,8 +1259,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_client_businesses_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_client_businesses_tenant_id_org_id_bus_id_loc_id_client_");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_client_businesses_tenant_id_org_id_bus_id_client_id");
 
                     b.ToTable("ld_client_businesses", "loandrift", t =>
                         {
@@ -1370,8 +1378,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_clients_comments_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_clients_comments_tenant_id_org_id_bus_id_loc_id_client_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_clients_comments_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
                         .HasDatabaseName("ix_ld_clients_comments_tenant_id_org_id_bus_id_loc_id_loan_id");
@@ -1486,8 +1494,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_client_documents_paths_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_client_documents_paths_tenant_id_org_id_bus_id_loc_id_cl");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_client_documents_paths_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
                         .HasDatabaseName("ix_ld_client_documents_paths_tenant_id_org_id_bus_id_loc_id_lo");
@@ -1795,6 +1803,9 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_client_identifications_updated_by_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_client_identifications_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
                         .IsUnique()
@@ -2193,6 +2204,9 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasIndex("OrgId", "TenantId")
                         .HasDatabaseName("ix_ld_credit_scores_org_id_tenant_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_credit_scores_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
                         .HasDatabaseName("ix_ld_credit_scores_tenant_id_org_id_bus_id_loc_id_client_id");
@@ -2601,8 +2615,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_guarantors_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_guarantors_tenant_id_org_id_bus_id_loc_id_client_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_guarantors_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
                         .HasDatabaseName("ix_ld_guarantors_tenant_id_org_id_bus_id_loc_id_loan_id");
@@ -3053,12 +3067,12 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_investments_updated_by_tenant_id");
 
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_investments_tenant_id_org_id_bus_id_client_id");
+
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "AccountNumber")
                         .IsUnique()
                         .HasDatabaseName("ix_ld_investments_tenant_id_org_id_bus_id_loc_id_account_number");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_investments_tenant_id_org_id_bus_id_loc_id_client_id");
 
                     b.ToTable("ld_investments", "loandrift", t =>
                         {
@@ -3295,8 +3309,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("OrgId", "TenantId")
                         .HasDatabaseName("ix_ld_investment_transactions_org_id_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_investment_transactions_tenant_id_org_id_bus_id_loc_id_c");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_investment_transactions_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "InvestmentId")
                         .HasDatabaseName("ix_ld_investment_transactions_tenant_id_org_id_bus_id_loc_id_i");
@@ -3781,8 +3795,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_loan_details_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_loan_details_tenant_id_org_id_bus_id_loc_id_client_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_loan_details_tenant_id_org_id_bus_id_client_id");
 
                     b.ToTable("ld_loan_details", "loandrift", t =>
                         {
@@ -4459,6 +4473,9 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_penalties_updated_by_tenant_id");
 
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_penalties_tenant_id_org_id_bus_id_client_id");
+
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
                         .HasDatabaseName("ix_ld_penalties_tenant_id_org_id_bus_id_loc_id_client_id");
 
@@ -4794,8 +4811,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_penalty_waivers_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_penalty_waivers_tenant_id_org_id_bus_id_loc_id_client_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_penalty_waivers_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
                         .HasDatabaseName("ix_ld_penalty_waivers_tenant_id_org_id_bus_id_loc_id_loan_id");
@@ -4939,8 +4956,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_repayments_updated_by_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_repayments_tenant_id_org_id_bus_id_loc_id_client_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_repayments_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "LoanId")
                         .HasDatabaseName("ix_ld_repayments_tenant_id_org_id_bus_id_loc_id_loan_id");
@@ -5142,12 +5159,12 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("UpdatedBy", "TenantId")
                         .HasDatabaseName("ix_ld_savings_accounts_updated_by_tenant_id");
 
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_savings_accounts_tenant_id_org_id_bus_id_client_id");
+
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "AccountNumber")
                         .IsUnique()
                         .HasDatabaseName("ix_ld_savings_accounts_tenant_id_org_id_bus_id_loc_id_account_");
-
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_savings_accounts_tenant_id_org_id_bus_id_loc_id_client_id");
 
                     b.ToTable("ld_savings_accounts", "loandrift", t =>
                         {
@@ -5410,8 +5427,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                     b.HasIndex("OrgId", "TenantId")
                         .HasDatabaseName("ix_ld_savings_transactions_org_id_tenant_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-                        .HasDatabaseName("ix_ld_savings_transactions_tenant_id_org_id_bus_id_loc_id_clie");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasDatabaseName("ix_ld_savings_transactions_tenant_id_org_id_bus_id_client_id");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "LocId", "SavingsId")
                         .HasDatabaseName("ix_ld_savings_transactions_tenant_id_org_id_bus_id_loc_id_savi");
@@ -5666,10 +5683,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_client_businesses_clients_tenant_id_org_id_bus_id_loc_id");
+                        .HasConstraintName("fk_ld_client_businesses_clients_tenant_id_org_id_bus_id_client");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.ClientComment", b =>
@@ -5722,10 +5740,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_clients_comments_clients_tenant_id_org_id_bus_id_loc_id_");
+                        .HasConstraintName("fk_ld_clients_comments_clients_tenant_id_org_id_bus_id_client_");
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
                         .WithMany()
@@ -5785,7 +5804,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_ld_client_documents_paths_ld_clients_tenant_id_org_id_bus_i");
 
@@ -5881,7 +5901,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_ld_client_identifications_ld_clients_tenant_id_org_id_bus_i");
@@ -5967,10 +5988,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_credit_scores_ld_clients_tenant_id_org_id_bus_id_loc_id_");
+                        .HasConstraintName("fk_ld_credit_scores_ld_clients_tenant_id_org_id_bus_id_client_");
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
                         .WithMany()
@@ -6116,10 +6138,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_guarantors_ld_clients_tenant_id_org_id_bus_id_loc_id_cli");
+                        .HasConstraintName("fk_ld_guarantors_ld_clients_tenant_id_org_id_bus_id_client_id");
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
                         .WithMany()
@@ -6275,10 +6298,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_investments_ld_clients_tenant_id_org_id_bus_id_loc_id_cl");
+                        .HasConstraintName("fk_ld_investments_ld_clients_tenant_id_org_id_bus_id_client_id");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.InvestmentProduct", b =>
@@ -6347,7 +6371,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_ld_investment_transactions_ld_clients_tenant_id_org_id_bus_");
@@ -6539,10 +6564,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_loan_details_ld_clients_tenant_id_org_id_bus_id_loc_id_c");
+                        .HasConstraintName("fk_ld_loan_details_ld_clients_tenant_id_org_id_bus_id_client_id");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.LoanDisbursement", b =>
@@ -6775,10 +6801,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_penalties_ld_clients_tenant_id_org_id_bus_id_loc_id_clie");
+                        .HasConstraintName("fk_ld_penalties_ld_clients_tenant_id_org_id_bus_id_client_id");
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
                         .WithMany()
@@ -6924,10 +6951,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_penalty_waivers_ld_clients_tenant_id_org_id_bus_id_loc_i");
+                        .HasConstraintName("fk_ld_penalty_waivers_ld_clients_tenant_id_org_id_bus_id_clien");
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
                         .WithMany()
@@ -6994,10 +7022,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_repayments_ld_clients_tenant_id_org_id_bus_id_loc_id_cli");
+                        .HasConstraintName("fk_ld_repayments_ld_clients_tenant_id_org_id_bus_id_client_id");
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.LoanDetail", null)
                         .WithMany()
@@ -7069,10 +7098,11 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_ld_savings_accounts_ld_clients_tenant_id_org_id_bus_id_loc_");
+                        .HasConstraintName("fk_ld_savings_accounts_ld_clients_tenant_id_org_id_bus_id_clie");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.LoanDrift.Entities.SavingsProduct", b =>
@@ -7141,7 +7171,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
 
                     b.HasOne("Trovesuite.Database.LoanDrift.Entities.Client", null)
                         .WithMany()
-                        .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
+                        .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+                        .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_ld_savings_transactions_ld_clients_tenant_id_org_id_bus_id_");
