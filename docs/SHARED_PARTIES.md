@@ -20,10 +20,16 @@ Every app keeps the people and companies a business deals with in **one** place:
 
 | App | Status |
 |---|---|
-| MyStoreGuard | `msg_suppliers` is a view of `cp_parties` with an INSTEAD OF trigger; its code is unchanged. The old table is `msg_suppliers_legacy`. |
-| Expenses | Vendors are `cp_parties` rows (`exp_vendors_legacy` kept). |
-| Invoicing | Not yet: `inv_customers` (roles customer/supplier/both) moves with customers. |
+| MyStoreGuard | `msg_suppliers` and `msg_customers` are views of `cp_parties` with INSTEAD OF triggers; its code is unchanged. Its own fields are in `msg_supplier_profiles` and `msg_customer_profiles` (location, picture). The old tables are kept as `*_legacy`. |
+| Expenses | Vendors are `cp_parties` rows (`exp_vendors_legacy` kept). Billable customers are the business's customers. |
+| Invoicing | `inv_customers` is a view (role customer/supplier/both). Its own fields are in `inv_customer_settings`. Its copies of MyStoreGuard customers were merged into them by the import's link (20261019-30); its "import from MyStoreGuard" now merges records entered in both apps. |
+| Loandrift | Not yet. Clients are per location with identity checks and many cascading keys; they will point at a party. |
+| CRM | Not yet. Contacts are people at a customer; they will link to a party rather than become one. |
 | Accounting | Not yet; see below. |
+
+A record any app uses (`cp_party_references` with `is_extension = false`: a sale, an invoice, an order, a bill) is
+never deleted: `core_platform.cp_party_in_use(id)`. MyStoreGuard's delete is refused (as its keys refused it before),
+and Invoicing archives instead. Earlier migrations that alter or index these tables skip them once they are views.
 
 Two traps:
 - The EF model still describes `msg_suppliers` as a table. A future EF migration must not alter it
