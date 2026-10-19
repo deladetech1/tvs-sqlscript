@@ -23,9 +23,12 @@ Accounting API, background service (every 30 s, once per database: pooled + each
 | Where | What |
 |---|---|
 | `migrations/shared/20261019-38-mystoreguard-accounting-events.sql` | the publishing triggers, their state tables, the baseline |
+| `migrations/shared/20261019-39-mystoreguard-stock-accounting-events.sql` | stock: receipts, adjustments, supplier payments and returns (§1b) |
+| `migrations/shared/20261019-40-mystoreguard-cancel-takes-back-store-credit-change.sql` | `msg.sale_voided.store_credit_change_reversed` |
+| `scripts/test_msg_stock_accounting_events.py` | every stock path through MyStoreGuard's real code, Inventory = shelves after each step |
 | Accounting EF migration `20261019143911_AppPostings` | `acc_posting_inbox`, `acc_posting_accounts`, unique `ux_acc_journal_entries_event` |
 | tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `MsgPostingRules`, `PostingRoles`, `PostingAccounts` |
-| tvs-accounting-bk `Entities/postings/` | `GET/PUT /api/v1/posting-accounts`, `GET /api/v1/postings` (+ `/statistics`, `/{id}`, `POST /{id}/retry`) |
+| tvs-accounting-bk `Entities/postings/` | `GET /api/v1/posting-accounts/list`, `PUT /api/v1/posting-accounts/update`; `GET /api/v1/postings/list`, `GET /api/v1/postings/statistics`, `GET /api/v1/postings/get?posting_id=…`, `POST /api/v1/postings/retry` (body `{"posting_id": …}`) |
 | tvs-accounting-ft | Settings → Posting accounts; Integrations → From other apps; dashboard "Needs attention" |
 
 ## 1. MyStoreGuard publishes
@@ -68,7 +71,7 @@ currency code), `date` (the business date, tenant time zone), `document_type`, `
 | Kind | When | Payload (besides the common fields) |
 |---|---|---|
 | `msg.sale_completed` | goods released (again, after a change) | `revision`; `figures` {gross, net, tax, `taxes`[tax_id, name, short_name, amount], promo_discount, finance_charge, settlement_discount, `costs`[currency, amount], cost_missing_lines, `lines`[…]}; `payments`[payment_id, method, amount, penalty, gift_card_id] taken with it; `deposits_applied`; `store_credit_change_issued`; `change_given`; `receivable` (what the customer still owes; negative = in credit) |
-| `msg.sale_voided` | a released sale cancelled, deleted, or its figures changed | `revision` voided, `reason` (CANCELLED, DELETED, CHANGED), `restocked`, the `figures` posted |
+| `msg.sale_voided` | a released sale cancelled, deleted, or its figures changed | `revision` voided, `reason` (CANCELLED, DELETED, CHANGED), `restocked`, the `figures` posted, `store_credit_change_reversed` (change kept as store credit that cancel_sale took back; 20261019-40) |
 | `msg.payment_received` | a payment not part of its sale's event | method, amount, penalty part, `applied` = DEPOSIT (goods not released) or RECEIVABLE |
 | `msg.payment_reversed` | a published payment refunded, deleted, reduced, or a gift card / loyalty tender put back by cancel | as received, with `reason` |
 | `msg.return_processed` | a return reaches COMPLETED | lines, `taxes`, net, tax, restocking_fee, `restock_costs`, `refund` {cash, cash_method, store_credit, trade_in, plan_settled, plan_written_off, owed_to_customer, against_balance} |
@@ -79,9 +82,10 @@ currency code), `date` (the business date, tenant time zone), `document_type`, `
 How figures are worked out:
 
 - `line_total` is gross (tax included, after pricing rules and the promo share). Tax per line is
-  `line_total × taxes_applied[].amount / final_price`, because MyStoreGuard stores tax **per unit** (`tax_amount` and
-  `taxes_applied` come from `verify_price` on the unit price). Net = gross − taxes. Found here: MyStoreGuard's own
-  `total_tax_amount` and reports therefore understate tax for quantities above one.
+  `line_total × taxes_applied[].amount / final_price`, because `taxes_applied[].amount` is the tax on **one unit**
+  (from `verify_price` on the unit price). Net = gross − taxes. The line's own `tax_amount` is per unit × quantity
+  since tvs-mystoreguard-bk 71ae82c (it used to be one unit's, which understated MyStoreGuard's reports); the triggers
+  never read it.
 - `promo_discount` is already inside the line totals; Accounting grosses revenue up by it and debits Sales discounts.
 - Cost is `msg_sales_items.line_cost`: the batches actually deducted, frozen at deduction (`_line_cost`), per cost
   currency. Lines without a cost are counted in `cost_missing_lines` and post no cost.
@@ -98,7 +102,7 @@ How figures are worked out:
 | Part-paid INSTANT sale (layaway), later `create_payment` | payments, release | payment_received DEPOSIT, then sale_completed with deposits_applied — tested |
 | A sale that fails | rolled back | nothing published — tested |
 | `refund_payment` (POS) | payment REFUNDED + deleted_at | payment_reversed — tested |
-| `cancel_sale` | status CANCELLED, stock back, gift card / loyalty put back | sale_voided (restocked), payment_reversed for the gift card / loyalty tender — tested |
+| `cancel_sale` (since 71ae82c: every tender refunded, change kept as store credit taken back) | status CANCELLED, stock back, every payment REFUNDED, gift card / store credit / loyalty put back, an ADJUST store-credit row for the change | sale_voided (restocked, `store_credit_change_reversed`), payment_reversed for every tender — tested |
 | `delete_sale` (hard delete) | items, payments, sale deleted, no restock | sale_voided (restocked false) + payment_reversed — tested |
 | Gift card `create_gift_card` | card + PURCHASE transaction | gift_card_issued SOLD — tested |
 | Gift card redeemed at the till | GIFT_CARD payment | inside sale_completed (method GIFT_CARD) — tested |
@@ -122,13 +126,92 @@ How figures are worked out:
 | Azure func: `capture_penalties` | penalties accrued | not posted (penalties post when paid) |
 
 Not covered (left for later, listed in the report): gift card expiry/cancellation (breakage), affiliate commissions,
-stock received from suppliers and stock adjustments (purchases are a later step), MSG expenses, loyalty points earned
-(no liability is booked for unredeemed points), a return's `exchange_difference_amount` (MyStoreGuard never settles it).
+MSG expenses, loyalty points earned (no liability is booked for unredeemed points), a return's
+`exchange_difference_amount` (MyStoreGuard never settles it). Stock is §1b.
 
 **Starts from now.** The first run records every existing sale, payment, return and gift card as already published
 (the `BASELINE` marker); history belongs in the books' opening balances. Deposits held on unreleased sales at that
 moment should be in the opening balance of Customer deposits (2420), and instalment balances of released sales in
 Customer instalment balances (1120).
+
+## 1b. MyStoreGuard's stock (20261019-39)
+
+A live dev test showed Inventory at −60: sales credited it (cost of goods sold) and nothing debited it. Migration
+`20261019-39-mystoreguard-stock-accounting-events.sql` publishes everything else that changes what stock is worth, with
+the same machinery as §1: deferred constraint triggers at COMMIT, state tables (`msg_acc_batch_state`, and
+`msg_acc_document_state` kinds `SUPPLIER_PAYMENT`, `SUPPLIER_RETURN`), fail open with `msg.posting_error`, a stock-in
+that fails publishes nothing, existing rows baselined (`BASELINE_STOCK`; stock on hand belongs in the opening balance
+of Inventory 1200).
+
+### The model: the books hold what the shelves hold, batch by batch
+
+MyStoreGuard has some twenty paths that move stock, with partly free-text movement reasons, so the triggers do not
+follow paths. Every batch touched in a transaction is **reconciled** at commit:
+
+- **on hand** = `msg_purchase_batches.qty_remaining` (the unallocated pool; 0 once DELETED) + Σ `msg_batch_locations.qty`
+- **receipt** = `qty_received × cost_price` in the batch's currency, while it is neither VOID nor DELETED
+- the receipt is published when it first exists and **restated** (void + new revision) when its quantity, cost or
+  currency changes, or the batch is voided or deleted;
+- whatever change in on-hand value nothing else explains is a `msg.stock_adjusted`:
+  `(q1 − r1 − S − R − X)·c1 − (q0 − r0)·c0` (q on hand, r receipt quantity, c unit cost; S quantity moved by sale-family
+  movements — `SALE*`, `RETURN`, `INVOICE*`, `WRITE_OFF_*` of a customer return, plan cancel — whose own events post the
+  cost; R `RETURN_TO_SUPPLIER`, posted by `msg.supplier_return`; X `EXCHANGE`, posted here to cost of sales).
+  S, R and X come from `msg_product_movements` rows inserted **in the same transaction** (an ordinary row trigger keeps
+  transaction-local settings; a rolled-back savepoint takes them with it).
+
+So transfers and allocations (rows of one batch) post nothing, a cost edit revalues what is on hand and puts the cost
+difference of goods already gone to Stock adjustments, and a path nobody listed still leaves Inventory equal to the
+shelves. Proven by `scripts/test_msg_stock_accounting_events.py`: after every step, Inventory as the events post it
+equals Σ on hand × cost, per currency.
+
+### Events
+
+| Kind | Subject | Payload (besides the common fields) |
+|---|---|---|
+| `msg.stock_received` | batch | `revision`, `quantity`, `unit_cost`, `amount`, `currency` (the delivery's), `credit_to` SUPPLIER / STOCK_ADJUSTMENT, `batch_type`, `supplier_id/_name`, `purchase_order_id`, `po_number`, `product_*`; document PURCHASE_RECEIPT (receipt number) or DELIVERY (batch number) |
+| `msg.stock_receipt_voided` | batch | the published receipt, `reason` CHANGED / VOIDED / DELETED |
+| `msg.stock_adjusted` | batch | `adjustment_kind`, `lines`[kind WRITE_OFF / COUNT / SPLIT / ADJUSTMENT / EXCHANGE, quantity, unit_cost, `amount` signed (negative = stock gone), currency] |
+| `msg.supplier_payment_made` / `_reversed` | purchase payment | `method`, `amount`, `currency` (the PO items' one currency, else the default), PO and supplier; reversed with `reason` REFUNDED / DELETED / CHANGED |
+| `msg.supplier_return` | purchase return | `lines`[batch, quantity, unit_cost, amount = `line_total` at the batch's cost, currency], PO and supplier |
+
+`credit_to` is SUPPLIER for a delivery (batch_type PURCHASE, or a supplier or delivery ref named), else
+STOCK_ADJUSTMENT (a split's output, a stock-take surplus): MyStoreGuard records **no payment on a delivery outside a
+purchase order**, so every delivery is owed to the supplier until Accounting records the payment (or a PO payment
+arrives). PO payments made before the goods arrive debit Supplier balances ahead of the receipt (a supplier advance).
+MyStoreGuard's own "owed" figure is ordered qty × ordered cost; the books' is received value − returns − payments.
+
+### Paths and what covers them
+
+| Path | Batch type / effect | Published |
+|---|---|---|
+| Product create with stock (`create_product`, CSV) | OPENING_STOCK, pool | stock_received — tested |
+| Add stock (`add_batch_to_product`) | OPENING_STOCK, pool | stock_received (USD tested) |
+| Store / warehouse Add stock with a new delivery (`create_adjustment_batch`) | ADJUSTMENT, placed | stock_received — tested |
+| PO receive (`receive_purchase_order`) | PURCHASE, pool (destination allocation is a move) | stock_received (document the receipt, PO number) — tested |
+| Delivery corrected (`adjust_batch_quantity`) | qty_received ± | void + revision — tested |
+| Cost / currency edited (`update_batch`, `update_batch_prices`) | cost_price | void + revision, stock_adjusted for goods already gone — tested |
+| Allocation pool → shelf, transfers store ↔ warehouse, move batch to another product | rows of one batch | nothing — tested (allocation, return to pool) |
+| Write-off (`add-stock` −n, `return_to_inventory=false`), store `reverse_batch` | shelf − | stock_adjusted WRITE_OFF — tested |
+| Stock take shortage resolved / reversed | shelf ∓ | stock_adjusted COUNT — tested |
+| Stock take surplus resolved / reversed | OPENING_STOCK batch / DELETED | stock_received (STOCK_ADJUSTMENT) / void — tested |
+| Split / reverse split | SPLIT_OUT + ADJUSTMENT batch / VOID | stock_adjusted SPLIT + stock_received (STOCK_ADJUSTMENT), reversed — tested |
+| Batch voided (`reverse_batch`) or deleted (`delete_batch`) | VOID / row gone | stock_receipt_voided — tested |
+| Exchange replacement handed out (no new sale) | shelf − | stock_adjusted EXCHANGE (cost of sales) |
+| Supplier payment / refund | `msg_purchase_payments` | supplier_payment_made / _reversed — tested |
+| Purchase return (`create_return`, pool only) | qty_remaining − | supplier_return — tested |
+| Sales, cancels, customer returns, invoices, plan cancels | sale family | their own §1 events only — tested (sale, cancel, return, resale) |
+
+Not covered: a purchase receipt deleted (`delete_purchase_receipt` deletes only the header; the batch and its receipt
+stand), PO line tax/discount (MyStoreGuard records but never charges them), a sale-family movement without a
+`batch_id` (none found; it would count as an adjustment). One journal per batch per transaction; a stock take of 20
+lines makes up to 20 journals.
+
+### Currency
+
+A delivery costed in USD posts in USD and converts at the books' rate on the event's date (`acc_exchange_rates`),
+keeping the foreign amount on the line; MyStoreGuard keeps no rate per delivery (`cp_currencies.exchange_rate` is
+today's, not the delivery's). Cost of sales converts at the sale date's rate, so Inventory in base currency can drift
+from receipt-date value by the rate change; revalue it in Currency revaluation if it matters.
 
 ## 2. Accounting consumes
 
@@ -172,12 +255,18 @@ reversed by hand (they belong to a document); MyStoreGuard reverses them by void
 | Event | Debit | Credit |
 |---|---|---|
 | sale_completed | each payment's method role; CUSTOMER_DEPOSITS (deposits applied); CUSTOMER_RECEIVABLE (receivable, if owed); SALES_DISCOUNT (promo); FINANCE_INCOME / SALES_DISCOUNT (settlement discount); COST_OF_SALES (cost) | SALES_REVENUE (net + promo); each TAX:&lt;tax id&gt;; FINANCE_INCOME (charge); PENALTY_INCOME (penalty parts); STORE_CREDIT_LIABILITY (change to store credit); CASH (change given); CUSTOMER_RECEIVABLE (if in credit); INVENTORY (cost) |
-| sale_voided | the revenue side reversed (SALES_REVENUE, taxes, FINANCE_INCOME); INVENTORY if restocked | CUSTOMER_RECEIVABLE (the whole amount; payments stay where they are and are reversed by their own events); COST_OF_SALES if restocked |
+| sale_voided | the revenue side reversed (SALES_REVENUE, taxes, FINANCE_INCOME); INVENTORY if restocked; STORE_CREDIT_LIABILITY (store credit change taken back) | CUSTOMER_RECEIVABLE (the whole amount, and the change taken back; payments stay where they are and are reversed by their own events); COST_OF_SALES if restocked |
 | payment_received | method role | CUSTOMER_DEPOSITS or CUSTOMER_RECEIVABLE; PENALTY_INCOME (penalty part) |
 | payment_reversed | the reverse | |
 | return_processed | SALES_RETURNS (net); each tax; FINANCE_INCOME (plan written off); INVENTORY (restocked cost) | RESTOCKING_FEES; refund method role (cash); STORE_CREDIT_LIABILITY; OTHER_PAYMENTS (trade-in); CUSTOMER_RECEIVABLE (plan settled + owed + against balance + written off); COST_OF_SALES (restocked cost) |
 | gift_card_issued | CASH (sold) or LOYALTY_REWARDS (reward) | GIFT_CARD_LIABILITY |
 | plan_refund_paid | CUSTOMER_DEPOSITS or CUSTOMER_RECEIVABLE | CASH |
+| stock_received | INVENTORY | SUPPLIER_PAYABLE, or STOCK_ADJUSTMENT (credit_to) — in the delivery's currency |
+| stock_receipt_voided | the reverse | |
+| stock_adjusted (per line, signed) | INVENTORY (gain) / STOCK_WRITE_OFF, STOCK_ADJUSTMENT or COST_OF_SALES (loss) | the other side |
+| supplier_payment_made | SUPPLIER_PAYABLE | method role |
+| supplier_payment_reversed | method role | SUPPLIER_PAYABLE |
+| supplier_return | SUPPLIER_PAYABLE | INVENTORY |
 
 Payment methods → roles: CASH → CASH; BANK_TRANSFER, CHEQUE → BANK; MOBILE_MONEY → MOBILE_MONEY; CARD → CARD;
 GIFT_CARD → GIFT_CARD_LIABILITY; STORE_CREDIT → STORE_CREDIT_LIABILITY; LOYALTY_POINTS → LOYALTY_REWARDS; BITCOIN,
@@ -200,6 +289,8 @@ in that business's chart, found by CODE (ids are generated per business):
 | COST_OF_SALES | 5010 | Cost of Goods Sold | GIFT_CARD_LIABILITY | 2400 | Gift Cards Outstanding |
 | INVENTORY | 1200 | Inventory | STORE_CREDIT_LIABILITY | 2410 | Customer Store Credit |
 | ROUNDING | 6900 | Rounding Differences | TAX:&lt;id&gt; | 2101 VAT, 2102 NHIL, 2103 GETFund, 2104 COVID-19, else 2100 | by the tax's name |
+| STOCK_ADJUSTMENT | 5020 | Stock Adjustments | SUPPLIER_PAYABLE | 2020 | Supplier Balances |
+| STOCK_WRITE_OFF | 5030 | Stock Written Off | | | |
 
 (The owner's "5000 cost of sales" is the Cost of Sales *group* in the starter chart; 5010 is its posting account.
 Codes avoid the demo chart's other meanings: 2200 accrued expenses, 2300 a bank loan, 4020 service revenue.)
@@ -208,7 +299,17 @@ A standard account the chart lacks is **created** under its group (1000, 2000, 4
 "Account 2400 is Accrued Expenses (liability), not gift cards outstanding. Map Gift cards outstanding in Settings →
 Posting accounts", only when the code belongs to a group, a control, an inactive account or one of another type, or
 the group itself is missing. Customer balances use their own account (1120), never the Accounts Receivable control
-(1100), so the invoice sub-ledger stays whole.
+(1100), and supplier balances theirs (2020), never the Accounts Payable control (2010), so the invoice and bill
+sub-ledgers stay whole.
+
+**What a role may point at.** Settings offers, and `PUT /posting-accounts/update` accepts (else a 400 saying why), only
+an account of the role's type (`account_types` on each row: revenue roles REVENUE, liabilities LIABILITY, stock and
+receivables ASSET, cost and stock-loss roles EXPENSE; Rounding EXPENSE or REVENUE). Money roles (`cash_only`: cash,
+bank, mobile money, card, other) take only a cash or bank account: an asset of subtype CASH or BANK, or one registered
+in Banking. A choice that stops fitting (the account re-typed) shows as the row's problem and fails postings readably.
+
+**Dashboard "Cash & bank"** is the ledger balance, as at the business's today, of every such cash or bank account
+(`Ledger/CashAccounts.cs`), not only the accounts registered in Banking; the cash chart and cash flow use the same set.
 
 ### Several currencies
 

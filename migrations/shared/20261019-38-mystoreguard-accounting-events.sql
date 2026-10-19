@@ -123,8 +123,9 @@ $f$;
 
 -- What a sale comes to, line by line: gross (what the customer pays, tax included, after
 -- pricing rules and promo), each tax, net, and the cost of the batches actually deducted.
--- MyStoreGuard stores tax per UNIT (taxes_applied[].amount, against final_price), so a
--- line's tax is line_total * amount / final_price.
+-- taxes_applied[].amount is the tax on ONE unit (against final_price), so a line's tax is
+-- line_total * amount / final_price. (The line's tax_amount is per unit x quantity since
+-- tvs-mystoreguard-bk 71ae82c; it is not read here.)
 CREATE OR REPLACE FUNCTION mystoreguard.msg_acc_sale_figures(p_tenant text, p_org text, p_bus text, p_loc text, p_sale text)
 RETURNS jsonb LANGUAGE sql STABLE AS $f$
 WITH s AS (
