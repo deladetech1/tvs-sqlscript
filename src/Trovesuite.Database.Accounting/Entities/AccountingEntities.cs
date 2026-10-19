@@ -185,6 +185,8 @@ public class AccTaxCode
     public string? InputAccountId { get; set; }
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>The Core Platform tax this code is (core_platform.cp_tax_rates.id, same business); null for an old code not linked yet.</summary>
+    public string? CoreTaxRateId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -342,6 +344,8 @@ public class AccSalesInvoiceLine
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccSalesInvoice? Invoice { get; set; }
@@ -390,6 +394,8 @@ public class AccPurchaseBillLine
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccPurchaseBill? Bill { get; set; }
@@ -432,6 +438,8 @@ public class AccCreditNoteLine
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccCreditNote? CreditNote { get; set; }
@@ -475,6 +483,8 @@ public class AccSupplierCreditLine
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccSupplierCredit? SupplierCredit { get; set; }

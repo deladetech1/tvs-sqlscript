@@ -310,6 +310,15 @@ in that business's chart, found by CODE (ids are generated per business):
 (The owner's "5000 cost of sales" is the Cost of Sales *group* in the starter chart; 5010 is its posting account.
 Codes avoid the demo chart's other meanings: 2200 accrued expenses, 2300 a bank loan, 4020 service revenue.)
 
+**One account per tax (since EF CoreTaxCodes, 2026-10-19).** Taxes are defined only in Core Platform
+(`cp_tax_rates`, 20261019-24), and an Accounting tax code is a Core tax plus Accounting's settings
+(`acc_tax_codes.core_tax_rate_id`). When a tax code is linked to Core tax X and has an output account, the posting
+role `TAX:X` posts to **that code's output account**, ahead of any Settings → Posting accounts mapping: an invoice
+taxed in Accounting and a sale taxed with the same tax in MyStoreGuard or Invoicing land on the same payable account.
+The tax code is the single source: changing `TAX:X` in Settings → Posting accounts writes the code's output account,
+and a separate `acc_posting_accounts` row for the role is removed (the migration removed those of codes it linked).
+A tax with no linked code keeps the mapping-or-standard-by-name rule above.
+
 A standard account the chart lacks is **created** under its group (1000, 2000, 4000, 5000, 6000). A posting FAILS, with
 "Account 2400 is Accrued Expenses (liability), not gift cards outstanding. Map Gift cards outstanding in Settings →
 Posting accounts", only when the code belongs to a group, a control, an inactive account or one of another type, or

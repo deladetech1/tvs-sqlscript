@@ -1204,6 +1204,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3456,6 +3461,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3985,6 +3995,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -4276,6 +4291,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -4316,6 +4336,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("code");
+
+                    b.Property<string>("CoreTaxRateId")
+                        .HasColumnType("text")
+                        .HasColumnName("core_tax_rate_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -4380,6 +4404,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("TenantId", "OrgId", "BusId", "Code")
                         .IsUnique()
                         .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_bus_id_code");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CoreTaxRateId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_bus_id_core_tax_rate_id")
+                        .HasFilter("core_tax_rate_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "OrgId", "BusId", "Kind")
                         .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_bus_id_kind");

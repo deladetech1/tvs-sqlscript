@@ -111,6 +111,7 @@ public sealed class AccTaxCodeConfiguration : IEntityTypeConfiguration<AccTaxCod
         b.Property(x => x.Rate).HasPrecision(8, 6);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Code }).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Kind });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.CoreTaxRateId }).IsUnique().HasFilter("core_tax_rate_id IS NOT NULL");
     }
 }
 
@@ -203,6 +204,7 @@ public sealed class AccSalesInvoiceLineConfiguration : IEntityTypeConfiguration<
         b.HasKey(x => x.Id);
         b.Property(x => x.Quantity).HasPrecision(18, 3);
         b.Property(x => x.UnitPrice).HasPrecision(18, 2);
+        b.Property(x => x.TaxRate).HasPrecision(8, 6);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.InvoiceId });
     }
 }
@@ -233,6 +235,7 @@ public sealed class AccPurchaseBillLineConfiguration : IEntityTypeConfiguration<
         b.HasKey(x => x.Id);
         b.Property(x => x.Quantity).HasPrecision(18, 3);
         b.Property(x => x.UnitPrice).HasPrecision(18, 2);
+        b.Property(x => x.TaxRate).HasPrecision(8, 6);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.BillId });
     }
 }
@@ -259,6 +262,7 @@ public sealed class AccCreditNoteLineConfiguration : IEntityTypeConfiguration<Ac
         b.HasKey(x => x.Id);
         b.Property(x => x.Quantity).HasPrecision(18, 3);
         b.Property(x => x.UnitPrice).HasPrecision(18, 2);
+        b.Property(x => x.TaxRate).HasPrecision(8, 6);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.CreditNoteId });
     }
 }
@@ -285,6 +289,7 @@ public sealed class AccSupplierCreditLineConfiguration : IEntityTypeConfiguratio
         b.HasKey(x => x.Id);
         b.Property(x => x.Quantity).HasPrecision(18, 3);
         b.Property(x => x.UnitPrice).HasPrecision(18, 2);
+        b.Property(x => x.TaxRate).HasPrecision(8, 6);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.SupplierCreditId });
     }
 }
