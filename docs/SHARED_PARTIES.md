@@ -39,11 +39,11 @@ Two traps:
 
 ## For the Accounting team
 
-`acc_customers` and `acc_suppliers` have **no `bus_id`**, and neither do the journals: the books are
-per organisation today. The product is per business (the owner's decision), so Accounting's books need
-`bus_id` before the ledger can take postings from the other apps. To adopt the shared parties:
+The books are per business since EF migration `BooksPerBusiness` (module 6, 2026-10-19): every `acc_*` table
+carries `bus_id NOT NULL`, every key that identified a record in an organisation's books includes it, and
+`migrations/shared/20261019-36` asserts it. What is left to adopt the shared parties:
 
-1. Add `bus_id` to Accounting's tables (customers, suppliers, journals and documents).
+1. ~~Add `bus_id` to Accounting's tables~~ (done: `BooksPerBusiness`).
 2. Point `supplier_id` / `customer_id` at `core_platform.cp_parties(id)`. Keep Accounting's own fields
    (code, credit limit, payment terms, custom fields) in an `acc_party_settings (party_id, ...)` table.
 3. Add the reference columns to `core_platform.cp_party_references`.

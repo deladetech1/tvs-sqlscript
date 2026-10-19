@@ -46,6 +46,15 @@ public class AccountingDbContext : DbContext
     {
         modelBuilder.HasDefaultSchema(SchemaName);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AccountingDbContext).Assembly);
+
+        // The books are per BUSINESS: every row names the business it belongs to, never just the
+        // organisation (a pharmacy and a hardware shop in one organisation keep separate books).
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            if (entity.FindProperty("BusId") is null) continue;
+            entity.AddCheckConstraint($"ck_{entity.GetTableName()}_bus_id", "btrim(bus_id) <> ''");
+        }
+
         base.OnModelCreating(modelBuilder);
     }
 }

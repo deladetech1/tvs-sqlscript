@@ -15,7 +15,7 @@
 --     discovery never catalogues it on its own.
 --
 -- Unsubscribing a business never deletes Accounting's data (tvs-coreplatform-bk
--- APPS_KEPT_ON_UNSUBSCRIBE): the books belong to the organisation.
+-- APPS_KEPT_ON_UNSUBSCRIBE): the books belong to the business (20261019-36).
 --
 -- Idempotent; safe to re-run.
 

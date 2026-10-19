@@ -1,11 +1,12 @@
 namespace Trovesuite.Database.Accounting.Entities;
 
-/// <summary>One row per tenant/org — base currency, prefixes, FX accounts, defaults.</summary>
+/// <summary>One row per business (its books) — base currency, prefixes, FX accounts, defaults.</summary>
 public class AccOrgSettings
 {
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string LegalName { get; set; } = "";
     public string TradingName { get; set; } = "";
     public string Tin { get; set; } = "";
@@ -16,6 +17,8 @@ public class AccOrgSettings
     public string Address { get; set; } = "";
     public string Email { get; set; } = "";
     public string Phone { get; set; } = "";
+    /// <summary>IANA zone the business keeps its day in; empty means the tenant's zone in Core Platform, else UTC.</summary>
+    public string TimeZone { get; set; } = "";
     public decimal ApprovalThreshold { get; set; } = 50000;
     public bool RequireApprovalForManualJournals { get; set; } = true;
     public bool BlockPostingToLockedPeriods { get; set; } = true;
@@ -43,6 +46,7 @@ public class AccAccount
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Type { get; set; } = default!;
@@ -65,6 +69,7 @@ public class AccFiscalPeriod
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
@@ -83,6 +88,7 @@ public class AccJournalEntry
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public DateOnly Date { get; set; }
     public string Memo { get; set; } = default!;
@@ -112,6 +118,7 @@ public class AccJournalLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string JournalId { get; set; } = default!;
     public int LineNo { get; set; }
     public string AccountId { get; set; } = default!;
@@ -131,6 +138,7 @@ public class AccDimension
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Kind { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
@@ -147,6 +155,7 @@ public class AccCurrency
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Symbol { get; set; } = default!;
@@ -162,6 +171,7 @@ public class AccTaxCode
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public decimal Rate { get; set; }
@@ -181,6 +191,7 @@ public class AccAccountingRule
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Event { get; set; } = default!;
     public string SourceId { get; set; } = default!;
@@ -201,6 +212,7 @@ public class AccAccountingRuleLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string RuleId { get; set; } = default!;
     public int LineNo { get; set; }
     public string AccountId { get; set; } = default!;
@@ -217,6 +229,7 @@ public class AccAuditEvent
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public DateTimeOffset OccurredAt { get; set; }
     public string Action { get; set; } = default!;
     public string EntityType { get; set; } = default!;
@@ -233,6 +246,7 @@ public class AccCustomer
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Email { get; set; } = "";
@@ -257,6 +271,7 @@ public class AccSupplier
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Email { get; set; } = "";
@@ -281,6 +296,7 @@ public class AccSalesInvoice
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string CustomerId { get; set; } = default!;
     public DateOnly IssueDate { get; set; }
@@ -310,6 +326,7 @@ public class AccSalesInvoiceLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string InvoiceId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
@@ -326,6 +343,7 @@ public class AccPurchaseBill
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string SupplierId { get; set; } = default!;
     public string SupplierReference { get; set; } = default!;
@@ -356,6 +374,7 @@ public class AccPurchaseBillLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string BillId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
@@ -372,6 +391,7 @@ public class AccCreditNote
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string PartyId { get; set; } = default!;
     public string DocumentId { get; set; } = default!;
@@ -396,6 +416,7 @@ public class AccCreditNoteLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string CreditNoteId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
@@ -412,6 +433,7 @@ public class AccSupplierCredit
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string PartyId { get; set; } = default!;
     public string DocumentId { get; set; } = default!;
@@ -437,6 +459,7 @@ public class AccSupplierCreditLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string SupplierCreditId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
@@ -454,6 +477,7 @@ public class AccPayment
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Direction { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string PartyId { get; set; } = default!;
@@ -482,6 +506,7 @@ public class AccBankAccount
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Bank { get; set; } = default!;
     public string AccountNumber { get; set; } = default!;
@@ -505,6 +530,7 @@ public class AccBankStatementLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string BankAccountId { get; set; } = default!;
     public DateOnly Date { get; set; }
     public string Description { get; set; } = default!;
@@ -529,6 +555,7 @@ public class AccExchangeRate
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string CurrencyCode { get; set; } = default!;
     public DateOnly Date { get; set; }
     public decimal Rate { get; set; }
@@ -544,6 +571,7 @@ public class AccFxRevaluation
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string PeriodId { get; set; } = default!;
     public DateOnly AsAt { get; set; }
     public string RatesJson { get; set; } = "{}";
@@ -563,6 +591,7 @@ public class AccFxRevaluationLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string RevaluationId { get; set; } = default!;
     public string Kind { get; set; } = default!;
     public string Currency { get; set; } = default!;
@@ -582,6 +611,7 @@ public class AccCustomField
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Entity { get; set; } = default!;
     public string Key { get; set; } = default!;
     public string Label { get; set; } = default!;
@@ -605,6 +635,7 @@ public class AccDataSource
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Provider { get; set; } = default!;
     public string Kind { get; set; } = default!;
@@ -630,6 +661,7 @@ public class AccFieldMapping
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string SourceId { get; set; } = default!;
     public string Entity { get; set; } = default!;
     public string SourceField { get; set; } = default!;
@@ -643,6 +675,7 @@ public class AccImportBatch
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string? SourceId { get; set; }
     public string Number { get; set; } = default!;
     public string Entity { get; set; } = "Journals";
@@ -666,6 +699,7 @@ public class AccImportRecord
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string BatchId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Reference { get; set; } = "";
