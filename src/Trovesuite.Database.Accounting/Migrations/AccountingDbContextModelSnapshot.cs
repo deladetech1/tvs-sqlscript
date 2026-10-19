@@ -489,7 +489,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("fair_value");
 
                     b.Property<string>("JournalId")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("journal_id");
 

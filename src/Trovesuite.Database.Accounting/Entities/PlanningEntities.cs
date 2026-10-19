@@ -182,7 +182,8 @@ public class AccAssetRevaluation
     public string? SurplusAccountId { get; set; }
     public string? PnlAccountId { get; set; }
     public int RemainingMonths { get; set; }
-    public string JournalId { get; set; } = default!;
+    /// <summary>Null when the revaluation had nothing to post.</summary>
+    public string? JournalId { get; set; }
     public string? Notes { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public string? CreatedById { get; set; }
