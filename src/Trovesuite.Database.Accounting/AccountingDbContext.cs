@@ -41,6 +41,8 @@ public class AccountingDbContext : DbContext
     public DbSet<AccFieldMapping> FieldMappings => Set<AccFieldMapping>();
     public DbSet<AccImportBatch> ImportBatches => Set<AccImportBatch>();
     public DbSet<AccImportRecord> ImportRecords => Set<AccImportRecord>();
+    public DbSet<AccPostingInbox> PostingInbox => Set<AccPostingInbox>();
+    public DbSet<AccPostingAccount> PostingAccounts => Set<AccPostingAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

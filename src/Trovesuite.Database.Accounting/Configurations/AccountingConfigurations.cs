@@ -58,6 +58,10 @@ public sealed class AccJournalEntryConfiguration : IEntityTypeConfiguration<AccJ
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Date });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Status });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.SourceType });
+        // A journal posted from another app's event names the event (evt:<cp_events.id>): one journal per event.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.SourceDocumentId }).IsUnique()
+            .HasFilter("source_document_id LIKE 'evt:%'")
+            .HasDatabaseName("ux_acc_journal_entries_event");
         b.HasMany(x => x.Lines).WithOne(x => x.Journal!).HasForeignKey(x => x.JournalId).OnDelete(DeleteBehavior.Cascade);
     }
 }
@@ -424,5 +428,39 @@ public sealed class AccImportRecordConfiguration : IEntityTypeConfiguration<AccI
         b.Property(x => x.Amount).HasPrecision(18, 2);
         b.Property(x => x.PayloadJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.BatchId });
+    }
+}
+
+public sealed class AccPostingInboxConfiguration : IEntityTypeConfiguration<AccPostingInbox>
+{
+    public void Configure(EntityTypeBuilder<AccPostingInbox> b)
+    {
+        b.ToAccountingTable("acc_posting_inbox");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Amount).HasPrecision(18, 2);
+        b.Property(x => x.PayloadJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
+        b.Property(x => x.Status).HasDefaultValue("PENDING");
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+        b.ToTable(t => t.HasCheckConstraint("ck_acc_posting_inbox_status", "status IN ('PENDING','POSTED','FAILED','SKIPPED')"));
+        // One row per event: reading the same event twice (a crash between storing and acking) stores nothing new.
+        b.HasIndex(x => x.EventId).IsUnique();
+        // One event, one journal.
+        b.HasIndex(x => x.JournalId).IsUnique().HasFilter("journal_id IS NOT NULL");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Status });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.EventAt });
+        b.HasIndex(x => new { x.Status, x.TenantId, x.BusId });
+    }
+}
+
+public sealed class AccPostingAccountConfiguration : IEntityTypeConfiguration<AccPostingAccount>
+{
+    public void Configure(EntityTypeBuilder<AccPostingAccount> b)
+    {
+        b.ToAccountingTable("acc_posting_accounts");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+        b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Role }).IsUnique();
     }
 }

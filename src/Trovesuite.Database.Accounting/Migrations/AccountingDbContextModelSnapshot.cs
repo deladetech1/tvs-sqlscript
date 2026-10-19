@@ -1906,6 +1906,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_bus_id_number");
 
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SourceDocumentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_acc_journal_entries_event")
+                        .HasFilter("source_document_id LIKE 'evt:%'");
+
                     b.HasIndex("TenantId", "OrgId", "BusId", "SourceType")
                         .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_bus_id_source_type");
 
@@ -2304,6 +2309,216 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.ToTable("acc_payments", "accounting", t =>
                         {
                             t.HasCheckConstraint("ck_acc_payments_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPostingAccount", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("role");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_posting_accounts");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Role")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_posting_accounts_tenant_id_org_id_bus_id_role");
+
+                    b.ToTable("acc_posting_accounts", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_posting_accounts_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPostingInbox", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<DateOnly?>("DocumentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("document_date");
+
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("document_number");
+
+                    b.Property<DateTimeOffset>("EventAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("event_at");
+
+                    b.Property<long>("EventId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_attempt_at");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<DateTimeOffset?>("PostedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("posted_at");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("SourceApp")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_app");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SubjectId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_posting_inbox");
+
+                    b.HasIndex("EventId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_posting_inbox_event_id");
+
+                    b.HasIndex("JournalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_posting_inbox_journal_id")
+                        .HasFilter("journal_id IS NOT NULL");
+
+                    b.HasIndex("Status", "TenantId", "BusId")
+                        .HasDatabaseName("ix_acc_posting_inbox_status_tenant_id_bus_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "EventAt")
+                        .HasDatabaseName("ix_acc_posting_inbox_tenant_id_org_id_bus_id_event_at");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Status")
+                        .HasDatabaseName("ix_acc_posting_inbox_tenant_id_org_id_bus_id_status");
+
+                    b.ToTable("acc_posting_inbox", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_posting_inbox_bus_id", "btrim(bus_id) <> ''");
+
+                            t.HasCheckConstraint("ck_acc_posting_inbox_status", "status IN ('PENDING','POSTED','FAILED','SKIPPED')");
                         });
                 });
 

@@ -719,3 +719,55 @@ public class AccImportRecord
 
     public AccImportBatch? Batch { get; set; }
 }
+
+/// <summary>
+/// One event another Trovesuite app published (core_platform.cp_events) that the books post: a MyStoreGuard sale, a
+/// payment, a return. Kept per business; one row per event (event_id), one journal per row. See docs/POSTINGS.md.
+/// </summary>
+public class AccPostingInbox
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    /// <summary>core_platform.cp_events.id, unique in this database.</summary>
+    public long EventId { get; set; }
+    public string SourceApp { get; set; } = default!;
+    public string Kind { get; set; } = default!;
+    public string SubjectId { get; set; } = default!;
+    public string DocumentNumber { get; set; } = "";
+    public DateOnly? DocumentDate { get; set; }
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = "";
+    public string PayloadJson { get; set; } = "{}";
+    /// <summary>PENDING, POSTED, FAILED or SKIPPED.</summary>
+    public string Status { get; set; } = "PENDING";
+    public string? Reason { get; set; }
+    public string? JournalId { get; set; }
+    public int Attempts { get; set; }
+    public DateTimeOffset EventAt { get; set; }
+    public DateTimeOffset? LastAttemptAt { get; set; }
+    public DateTimeOffset? PostedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
+}
+
+/// <summary>
+/// Which account a posting role (SALES_REVENUE, CASH, TAX:&lt;tax id&gt;, ...) posts to in one business's books. A role
+/// without a row posts to the standard account by code; a row is the business's own choice (Settings → Posting accounts).
+/// </summary>
+public class AccPostingAccount
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string Role { get; set; } = default!;
+    public string AccountId { get; set; } = default!;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
+}
