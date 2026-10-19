@@ -45,6 +45,8 @@ public class AccRecurringTemplate
     public int GeneratedCount { get; set; }
     /// <summary>The invoice or bill it was made from ("Make recurring"), when it was.</summary>
     public string? SourceDocumentId { get; set; }
+    /// <summary>Custom-field values each document gets; values may hold period tokens ({period}, {date}, {seq}...).</summary>
+    public string CustomFieldsJson { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -144,6 +146,15 @@ public class AccFixedAsset
     public decimal? DisposalGainLoss { get; set; }
     public string? DisposalJournalId { get; set; }
     public string? DisposalReason { get; set; }
+    /// <summary>Depreciation charged before the books began, brought forward in its opening journal.</summary>
+    public decimal OpeningAccumulatedDepreciation { get; set; }
+    /// <summary>The day the books began, for an asset acquired before it.</summary>
+    public DateOnly? OpeningDate { get; set; }
+    public string? OpeningJournalId { get; set; }
+    /// <summary>Depreciation recalculated from this month: BasisAmount over BasisMonths (a revaluation or an opening figure).</summary>
+    public DateOnly? BasisMonth { get; set; }
+    public decimal? BasisAmount { get; set; }
+    public int? BasisMonths { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -151,6 +162,32 @@ public class AccFixedAsset
 }
 
 /// <summary>One month's depreciation of one asset, posted in a run's journal. Unique per asset and month.</summary>
+/// <summary>A revaluation of one asset (IAS 16, elimination method) or the transfer of its surplus on disposal.</summary>
+public class AccAssetRevaluation
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string AssetId { get; set; } = default!;
+    /// <summary>REVALUATION or SURPLUS_TRANSFER.</summary>
+    public string Kind { get; set; } = "REVALUATION";
+    public DateOnly Date { get; set; }
+    public decimal CostBefore { get; set; }
+    public decimal AccumulatedEliminated { get; set; }
+    public decimal CarryingBefore { get; set; }
+    public decimal FairValue { get; set; }
+    public decimal SurplusChange { get; set; }
+    public decimal PnlChange { get; set; }
+    public string? SurplusAccountId { get; set; }
+    public string? PnlAccountId { get; set; }
+    public int RemainingMonths { get; set; }
+    public string JournalId { get; set; } = default!;
+    public string? Notes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public string? CreatedById { get; set; }
+}
+
 public class AccAssetDepreciation
 {
     public string Id { get; set; } = default!;

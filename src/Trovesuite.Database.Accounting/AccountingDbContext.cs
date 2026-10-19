@@ -49,6 +49,7 @@ public class AccountingDbContext : DbContext
     public DbSet<AccAssetCategory> AssetCategories => Set<AccAssetCategory>();
     public DbSet<AccFixedAsset> FixedAssets => Set<AccFixedAsset>();
     public DbSet<AccAssetDepreciation> AssetDepreciation => Set<AccAssetDepreciation>();
+    public DbSet<AccAssetRevaluation> AssetRevaluations => Set<AccAssetRevaluation>();
     public DbSet<AccDepreciationRun> DepreciationRuns => Set<AccDepreciationRun>();
     public DbSet<AccBudget> Budgets => Set<AccBudget>();
     public DbSet<AccBudgetLine> BudgetLines => Set<AccBudgetLine>();

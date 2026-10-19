@@ -20,6 +20,7 @@ public sealed class AccRecurringTemplateConfiguration : IEntityTypeConfiguration
         });
         b.HasKey(x => x.Id);
         b.Property(x => x.ExchangeRate).HasPrecision(18, 6);
+        b.Property(x => x.CustomFieldsJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Number }).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Status, x.NextRunDate });
         b.HasMany(x => x.Lines).WithOne(x => x.Template!).HasForeignKey(x => x.TemplateId).OnDelete(DeleteBehavior.Cascade);
@@ -77,9 +78,25 @@ public sealed class AccFixedAssetConfiguration : IEntityTypeConfiguration<AccFix
         b.Property(x => x.ReducingRate).HasPrecision(9, 4);
         b.Property(x => x.DisposalProceeds).HasPrecision(18, 2);
         b.Property(x => x.DisposalGainLoss).HasPrecision(18, 2);
+        b.Property(x => x.OpeningAccumulatedDepreciation).HasPrecision(18, 2).HasDefaultValue(0m);
+        b.Property(x => x.BasisAmount).HasPrecision(18, 2);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Number }).IsUnique();
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.CategoryId });
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Status });
+    }
+}
+
+public sealed class AccAssetRevaluationConfiguration : IEntityTypeConfiguration<AccAssetRevaluation>
+{
+    public void Configure(EntityTypeBuilder<AccAssetRevaluation> b)
+    {
+        b.ToAccountingTable("acc_asset_revaluations");
+        b.ToTable(t => t.HasCheckConstraint("ck_acc_asset_revaluations_kind", "kind IN ('REVALUATION','SURPLUS_TRANSFER')"));
+        b.HasKey(x => x.Id);
+        foreach (var p in new[] { "CostBefore", "AccumulatedEliminated", "CarryingBefore", "FairValue", "SurplusChange", "PnlChange" })
+            b.Property<decimal>(p).HasPrecision(18, 2);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.AssetId, x.Date });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.JournalId });
     }
 }
 
