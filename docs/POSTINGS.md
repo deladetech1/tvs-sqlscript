@@ -4,7 +4,8 @@ Roadmap Phase 1, step 1: **MyStoreGuard's sales post themselves into the busines
 Step 2 (§5): **Loandrift's loans, repayments, write-offs and savings do the same.**
 Steps 3–4 (§6, §7): **Expenses' claims, advances, supplier bills and company-card spending, and Invoicing's invoices
 (the invoice of record), payments, credit notes and refunds.**
-Later steps add ZelosHR payroll and Projects the same way.
+Step 5 (§8): **ZelosHR's payroll runs, the pay sent out, SSNIT and Tier 2 remittances and staff loans.**
+Projects comes later the same way.
 
 Owner decisions this follows (2026-10-19):
 
@@ -35,7 +36,10 @@ Accounting API, background service (every 30 s, once per database: pooled + each
 | `migrations/shared/20261019-43-invoicing-accounting-events.sql` | Invoicing: triggers on documents and payments; `inv_acc_state`; the MyStoreGuard guard; the baseline (§7) |
 | tvs-shared-apps-bk `internal/apps/{expenses,invoicing}/accounting_events_test.go` | every path through the real handlers on Postgres; writes `exp_events.json` / `inv_events.json` for tvs-accounting-bk |
 | Accounting EF migration `20261019143911_AppPostings` | `acc_posting_inbox`, `acc_posting_accounts`, unique `ux_acc_journal_entries_event` |
-| tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `PostingRules` (by kind), `MsgPostingRules`, `LdPostingRules`, `ExpPostingRules`, `InvPostingRules`, `PostingRoles`, `PostingAccounts` |
+| `migrations/shared/20261019-44-zeloshr-payroll-accounting-events.sql` | ZelosHR: triggers on runs, lines, payment batches, filings and staff loans; `zhr_acc_state`; the baseline (§8) |
+| `migrations/shared/20261019-45-accounting-customer-balances-name.sql` | 1120 renamed "Customer Balances" where it still had the old default name |
+| tvs-zeloshr-admin-bk `tests/ZelosHR.Api.Tests/Pay/PayrollAccountingEventsTests.cs` | every payroll path through ZelosHR's real services on Postgres; writes `zhr_events.json` for tvs-accounting-bk |
+| tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `PostingRules` (by kind), `MsgPostingRules`, `LdPostingRules`, `ExpPostingRules`, `InvPostingRules`, `ZhrPostingRules`, `PostingRoles`, `PostingAccounts` |
 | tvs-accounting-bk `Entities/postings/` | `GET /api/v1/posting-accounts/list`, `PUT /api/v1/posting-accounts/update`; `GET /api/v1/postings/list`, `GET /api/v1/postings/statistics`, `GET /api/v1/postings/get?posting_id=…`, `POST /api/v1/postings/retry` (body `{"posting_id": …}`) |
 | tvs-accounting-ft | Settings → Posting accounts; Integrations → From other apps; dashboard "Needs attention" |
 
@@ -140,7 +144,7 @@ MSG expenses, loyalty points earned (no liability is booked for unredeemed point
 **Starts from now.** The first run records every existing sale, payment, return and gift card as already published
 (the `BASELINE` marker); history belongs in the books' opening balances. Deposits held on unreleased sales at that
 moment should be in the opening balance of Customer deposits (2420), and instalment balances of released sales in
-Customer instalment balances (1120).
+Customer balances (1120).
 
 ## 1b. MyStoreGuard's stock (20261019-39)
 
@@ -292,7 +296,7 @@ in that business's chart, found by CODE (ids are generated per business):
 | SALES_DISCOUNT | 4030 | Sales Discounts | MOBILE_MONEY | 1040 | Mobile Money Clearing |
 | LOYALTY_REWARDS | 4035 | Loyalty Rewards Redeemed | CARD | 1060 | Card Settlements Clearing |
 | FINANCE_INCOME | 4120 | Instalment Finance Charges | OTHER_PAYMENTS | 1070 | Other Payments Clearing |
-| PENALTY_INCOME | 4130 | Late Payment Penalties | CUSTOMER_RECEIVABLE | 1120 | Customer Instalment Balances |
+| PENALTY_INCOME | 4130 | Late Payment Penalties | CUSTOMER_RECEIVABLE | 1120 | Customer Balances |
 | RESTOCKING_FEES | 4140 | Restocking Fees | CUSTOMER_DEPOSITS | 2420 | Customer Deposits |
 | COST_OF_SALES | 5010 | Cost of Goods Sold | GIFT_CARD_LIABILITY | 2400 | Gift Cards Outstanding |
 | INVENTORY | 1200 | Inventory | STORE_CREDIT_LIABILITY | 2410 | Customer Store Credit |
@@ -509,8 +513,10 @@ Subject = the Expenses id. Common payload: `version`, `app`, `org_id`, `currency
 
 **Company-paid expenses.** An expense matched to a statement line is spending the business already paid: it posts once,
 as `exp.company_spend` (Dr category / Cr the account's role), and a claim that contains it leaves it out (its
-`company_paid`). Expenses still pays the claimant the claim's whole total; if it does, Owed to employees goes into debit
-by that amount — the books then show money paid to an employee for something the company paid, which is what happened.
+`company_paid`). Expenses pays the claimant only what is owed (tvs-shared-apps-bk 4d0d42e): every payout path pays
+`owed` = reimbursable − paid, where reimbursable leaves out company-paid spending, and a claim is marked paid once its
+reimbursable part is paid; a claim that is wholly company-paid is paid on approval and posts no reimbursement. So Owed to
+employees nets to zero for every paid claim, company-paid lines included.
 
 Not covered: request budgets and commitments (no money moves), billable expenses re-invoiced (Invoicing posts the
 invoice; the expense already posted here), expenses in a claim currency other than the books' base convert at the books'
@@ -656,3 +662,120 @@ Proven by tvs-shared-apps-bk `TestInvoicingAccountingEvents` and tvs-accounting-
 step (issued, part paid, a payment voided, credit note, refund, a correction and a void, paid off, an MSG invoice),
 Invoiced customer balances = Invoicing's outstanding, revenue = invoices less credit notes net of tax, VAT = Invoicing's
 tax, credit left = credit notes' balance, money by method = what Invoicing received, and the trial balance balances.
+
+## 8. ZelosHR payroll (20261019-44)
+
+### What ZelosHR has
+
+A full payroll, in the `zeloshr` schema (there is no separate payroll app or schema: `app-payroll` in `cp_apps` has no
+code or tables behind it). `PayrollService` (tvs-zeloshr-admin-bk; the same code is deployed again in
+tvs-zeloshr-employees-bk on the same database) opens a run per pay group and month, calculates every line from the pay
+in force and Ghana's rule pack (`PayRulePacks.Ghana`: PAYE bands, SSNIT 5.5% employee + 13% employer, remitted as 13.5%
+Tier 1 and 5% Tier 2), or takes a local provider's results (external mode); then submit → approve (never by the preparer)
+→ paid. Lines (`zhr_payroll_lines`) hold earnings (basic, company components, one-offs, overtime, final settlements),
+deductions (`paye`, `ssnit_employee`, company deductions `pc_*`, staff loan instalments `loan_*`, Tier 3 as a
+component) and employer contributions (`ssnit_employer`, company `pc_*`). Pay goes out in batches per channel
+(`zhr_payment_batches`, items paid / failed / sent again); the run is marked paid by hand or when every batch is
+confirmed. Filings (`zhr_payroll_filings`) record the SSNIT and Tier 2 remittances as paid; the PAYE return is a
+*return* (filed, never "paid"). Staff loans and salary advances (`zhr_employee_loans`) are repaid from pay. Expenses
+pays claims back on the payslip as a one-off (§6, method PAYROLL).
+
+### Why database triggers
+
+Two services in two deployments write a run: calculate / upload / approve / mark paid in `PayrollService`, batches in
+`PayrollExtrasService` (whose last confirmation marks the run paid in a second transaction); filings and loans have
+their own services. All of them end in writes to `zhr_payroll_runs`, `zhr_payroll_lines`, `zhr_payment_batches`,
+`zhr_payroll_filings` or `zhr_employee_loans`, so the triggers sit there — the same machinery as §1 and §6:
+deferred constraint triggers, `ENABLE ALWAYS`, `zeloshr.zhr_acc_state` remembers what was published, only differences
+are published, a rolled-back write publishes nothing, a describing error publishes `zhr.posting_error` and the write
+commits. A run is synced once per transaction however many lines a recalculation rewrote. Starts from now: runs,
+payments, remittances and loans existing at the first run are `BASELINE` (net pay, PAYE, SSNIT and loans outstanding
+that day belong in the opening balances of 2170, 2150, 2160/2165 and 1320).
+
+**Which books.** ZelosHR is per organisation; the books are per business. Events go to the organisation's business that
+subscribes to Accounting (then ZelosHR; the oldest first), and a run stays with the books its first event went to.
+
+### Events
+
+Subject = the ZelosHR id. Common payload: `version`, `app`, `org_id`, `currency`, `date`, `document_type`,
+`document_number`, `document_id`, `amount`.
+
+| Kind | When | Extra |
+|---|---|---|
+| `zhr.payroll_approved` / `zhr.payroll_voided` | a run reaches approved (or paid) / is deleted, leaves approval (UNAPPROVED) or its lines change (CHANGED: void + revision) | `period`, `pay_date`, `pay_group`, `country`, `mode`, `employees`; `earnings`, `deductions`, `employer` [kind, code, label, amount] added up across people; `gross`, `net`, `ssnit_tier1`, `ssnit_tier2`; `amount` = gross + employer contributions |
+| `zhr.salaries_paid` / `zhr.salary_payment_reversed` | net pay goes out: batch items confirmed paid, or the run marked paid (the rest) / a paid item fails afterwards | `lines` [channel BANK_TRANSFER / MOBILE_MONEY, amount], `run_paid` |
+| `zhr.remittance_paid` / `zhr.remittance_reversed` | SSNIT (Tier 1) or Tier 2 recorded as paid in Filings / taken back, or its date changed (void + new) | `allocation` TIER1 / TIER2, `payee`, `period`, `reference`; amount = what the period's runs in the books owe that payee |
+| `zhr.staff_loan_granted` / `zhr.staff_loan_voided` | a loan or salary advance recorded / deleted, or cancelled before any instalment reached the books | `employee_name`, `name`, `installment`, `method` BANK |
+| `zhr.posting_error` | a run the trigger could not describe | `error` |
+
+Kinds: earnings BASIC (basic salary, a provider's gross), SETTLEMENT (final settlement), OVERTIME, BONUS (bonus,
+commission, incentive, 13th month by name), REIMBURSEMENT (a one-off on this run that an Expenses claim payout points
+at), ALLOWANCE (anything else); deductions PAYE, SSNIT, LOAN, OTHER; employer SSNIT, OTHER. Tier 2 = 5% of basic per
+person (never more than the SSNIT paid), Tier 1 the rest of employee + employer SSNIT — so the two together are every
+cedi of SSNIT, and each equals ZelosHR's own Filings schedule when rates are the pack's.
+
+Dates: a run in its own month, never after the day it was approved (the pay date, else the period's end, else the
+approval day); payments, remittances and loans the day they happened.
+
+### ZelosHR paths and what covers them
+
+| Path | Published |
+|---|---|
+| Run opened, calculated, recalculated, submitted, sent back, cancelled before approval | nothing — tested |
+| Approve refused (the preparer), an approval that rolls back | nothing — tested |
+| Approve | payroll_approved — tested (basic, allowance, bonus, overtime one-off, Expenses claim, union dues, staff loan, employer insurance) |
+| Provider results uploaded (external mode), then approved | payroll_approved with the provider's gross as BASIC and its deductions as one OTHER lump (not split into PAYE / SSNIT); not exercised by the test |
+| Batches made / sent; an item fails before payment | nothing — tested |
+| Batch confirmed (paid items) | salaries_paid — tested (bank, mobile money) |
+| A paid item fails afterwards / is sent again and confirmed | salary_payment_reversed / salaries_paid — tested |
+| Last batch confirmed → run marked paid; Mark paid by hand | the rest of net pay, salaries_paid — tested (through the last batch) |
+| Filings: SSNIT / Tier 2 recorded paid, date corrected, taken back | remittance_paid / reversed + paid / reversed — tested |
+| Filings: PAYE return filed; a refused record | nothing — tested |
+| Staff loan recorded; cancelled after repayments; cancelled before any | staff_loan_granted / nothing / staff_loan_voided — tested |
+| A run the trigger cannot describe | zhr.posting_error, the write commits — tested |
+
+Not covered: **PAYE paid to GRA** (ZelosHR records only that the return was filed; record the payment in Accounting, Dr
+2150 / Cr bank); a staff loan's payout method (ZelosHR does not record it: posted from the bank); a cancelled loan's
+balance left after some instalments (stays in 1320 until written off or repaid in Accounting); Tier 3 and other
+deductions paid over to their collectors (no record in ZelosHR); ZelosHR has no void of an approved run (only a data fix,
+which publishes `payroll_voided`). Found and fixed on the way: `PayrollSetupRepository.LoanRepaymentsAsync` ran
+`LIKE` on the jsonb `deductions_json` (Postgres 42883), so every calculation and the loan list failed once any run
+had been approved (both ZelosHR backends).
+
+### Posting rules and roles
+
+`ZhrPostingRules`: source **HR** (shown as ZelosHR), reference = `PAY-<period>` / the remittance reference / `LOAN-…`.
+
+| Event | Debit | Credit |
+|---|---|---|
+| payroll_approved | PAYROLL_SALARIES (basic, settlement, provider gross), PAYROLL_OVERTIME, PAYROLL_BONUSES, PAYROLL_ALLOWANCES; PAYROLL_REIMBURSEMENTS (claims paid on the payslip: clears what Expenses credited, §6); PAYROLL_EMPLOYER_SSNIT; PAYROLL_EMPLOYER_BENEFITS | NET_PAY_PAYABLE (net); PAYE_PAYABLE; SSNIT_PAYABLE (Tier 1); PENSION_TIER2_PAYABLE (Tier 2); STAFF_LOANS (instalments); PAYROLL_DEDUCTIONS_PAYABLE (other deductions and the company's other contributions) |
+| salaries_paid | NET_PAY_PAYABLE | BANK (bank transfer), MOBILE_MONEY, CASH |
+| remittance_paid | SSNIT_PAYABLE or PENSION_TIER2_PAYABLE | BANK |
+| staff_loan_granted | STAFF_LOANS | BANK |
+| *_voided, *_reversed | the reverse | |
+
+| Role | Code | Standard account |
+|---|---|---|
+| PAYROLL_SALARIES | 6010 | Salaries & Wages (the starter chart's) |
+| PAYROLL_OVERTIME | 6011 | Overtime |
+| PAYROLL_BONUSES | 6012 | Bonuses & Commissions |
+| PAYROLL_ALLOWANCES | 6013 | Staff Allowances |
+| PAYROLL_EMPLOYER_SSNIT | 6014 | Employer Social Security |
+| PAYROLL_EMPLOYER_BENEFITS | 6015 | Staff Benefits |
+| NET_PAY_PAYABLE | 2170 | Net Salaries Payable (subtype PAYROLL) |
+| PAYE_PAYABLE | 2150 | PAYE Payable (the demo chart's) |
+| SSNIT_PAYABLE | 2160 | SSNIT Payable (the demo chart's; Tier 1) |
+| PENSION_TIER2_PAYABLE | 2165 | Tier 2 Pension Payable |
+| PAYROLL_DEDUCTIONS_PAYABLE | 2180 | Other Payroll Deductions Payable |
+| STAFF_LOANS | 1320 | Staff Loans & Advances |
+
+Clear of MyStoreGuard's, LoanDrift's (6120, 6210–6240), Expenses' (1310, 2030, 2210, 2220, 6250–6290) and Invoicing's
+codes and of the demo chart's other meanings (2100–2120 taxes, 2200 accrued expenses, 1300 prepaid). Settings → Posting
+accounts lists them under **Payroll**; point allowances at 6010 to report one pay line.
+
+Proven by tvs-zeloshr-admin-bk `PayrollAccountingEventsTests` (the real services on a copy of dev-db with 38–44: each
+step publishes exactly its events, once; refusals and rollbacks publish nothing) and tvs-accounting-bk `ZhrPostingsTests`
+/ `ZhrPostingsLiveTests`: after every step, gross pay = salaries + overtime + bonuses + allowances + claims paid; PAYE
+payable = ZelosHR's PAYE return; SSNIT and Tier 2 payables = ZelosHR's own Tier 1 / Tier 2 schedules less what Filings
+says was remitted; Net salaries payable = net pay less what the batches and the run say was paid; Staff loans = lent less
+instalments; the trial balance balances.
