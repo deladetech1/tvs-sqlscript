@@ -1,7 +1,8 @@
 # Postings: other apps into the books
 
 Roadmap Phase 1, step 1: **MyStoreGuard's sales post themselves into the business's Accounting books.**
-Later steps add Loandrift, ZelosHR payroll, Expenses, Invoicing (the invoice of record) and Projects the same way.
+Step 2 (§5): **Loandrift's loans, repayments, write-offs and savings do the same.**
+Later steps add ZelosHR payroll, Expenses, Invoicing (the invoice of record) and Projects the same way.
 
 Owner decisions this follows (2026-10-19):
 
@@ -26,8 +27,10 @@ Accounting API, background service (every 30 s, once per database: pooled + each
 | `migrations/shared/20261019-39-mystoreguard-stock-accounting-events.sql` | stock: receipts, adjustments, supplier payments and returns (§1b) |
 | `migrations/shared/20261019-40-mystoreguard-cancel-takes-back-store-credit-change.sql` | `msg.sale_voided.store_credit_change_reversed` |
 | `scripts/test_msg_stock_accounting_events.py` | every stock path through MyStoreGuard's real code, Inventory = shelves after each step |
+| `migrations/shared/20261019-41-loandrift-accounting-events.sql` | Loandrift: the trigger on its ledger, `ld_acc_entry_state`, the baseline (§5) |
+| `scripts/test_ld_accounting_events.py` | every Loandrift path through its real code; writes the captured events to tvs-accounting-bk's `ld_events.json` |
 | Accounting EF migration `20261019143911_AppPostings` | `acc_posting_inbox`, `acc_posting_accounts`, unique `ux_acc_journal_entries_event` |
-| tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `MsgPostingRules`, `PostingRoles`, `PostingAccounts` |
+| tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `PostingRules` (by kind), `MsgPostingRules`, `LdPostingRules`, `PostingRoles`, `PostingAccounts` |
 | tvs-accounting-bk `Entities/postings/` | `GET /api/v1/posting-accounts/list`, `PUT /api/v1/posting-accounts/update`; `GET /api/v1/postings/list`, `GET /api/v1/postings/statistics`, `GET /api/v1/postings/get?posting_id=…`, `POST /api/v1/postings/retry` (body `{"posting_id": …}`) |
 | tvs-accounting-ft | Settings → Posting accounts; Integrations → From other apps; dashboard "Needs attention" |
 
@@ -324,3 +327,120 @@ Posted MyStoreGuard journals are ordinary posted journals: the income statement 
 and cost of goods sold (5010); the balance sheet stock (1200); the tax summary counts the accounts MyStoreGuard's taxes
 post to as output tax (alongside tax codes' output accounts). Each journal names the MyStoreGuard document number, and
 the "From other apps" page links each event to its journal.
+
+## 5. Loandrift (20261019-41)
+
+### What is published: Loandrift's own ledger
+
+Loandrift already states every money movement as a balanced journal of its own (`loandrift.ld_journal_entries` /
+`_lines`, tvs-loandrift-bk `entities/accounting/acc_base.py`), written in the same transaction as the disbursement,
+repayment, write-off, savings or investment transaction it describes. Its lines carry the split that matters, worked
+out once by Loandrift. Re-deriving it from the loan tables in SQL would be a second copy of the same rules that could
+disagree, so the trigger watches the ledger instead: **one event per Loandrift journal entry**, its lines by Loandrift's
+standard account key (`system_key`), and Accounting maps each key to a posting role.
+
+Same machinery as §1: a constraint trigger on `ld_journal_entries`, `DEFERRABLE INITIALLY DEFERRED` and `ENABLE
+ALWAYS`, reads the entry with all its lines at COMMIT; a Loandrift write that fails rolls back and publishes nothing.
+Loandrift never edits an entry (a correction is a mirror entry), so `loandrift.ld_acc_entry_state` only remembers which
+entries were published (`entry_id`, `kind`, `total`). Fail open: a describing error publishes `ld.posting_error` and the
+write commits. Starts from now: every entry existing at the first run is `BASELINE` (Loandrift's loan book, savings
+and investments on that day belong in the opening balances of 1150, 2430 and 2440).
+
+How Loandrift splits, and so how the books recognise:
+
+- **Interest is recognised when paid.** Loandrift does not accrue interest (`acc_base.write_off_lines`: "Interest is
+  not in the ledger until it is paid"). Loans are priced flat, so the loan part of each payment splits pro rata
+  between principal and interest (`split_loan_portion`), interest rounded to the cent and principal taking the rest.
+- **Penalties are recognised when paid**, and allocated first: `ld_penalties` (charged by the nightly
+  `apply_loan_penalties`) post nothing; a payment clears them oldest first and its penalty part is penalty income.
+  Waivers of unpaid penalties likewise post nothing.
+- **Charges** taken at disbursement (processing fee, insurance, other) are income that day, as a separate entry.
+- **Write-off** takes the principal the ledger still holds for the loan: Dr the allowance (up to what provisioning set
+  aside), Dr Loans written off for the rest, Cr Loans receivable. Interest never recognised is not written off.
+- **Overpayment** is the client's credit (a liability), refunded later; a refinance/top-up settles the old loan
+  through Refinance clearing, which the new loan's disbursement nets to zero.
+
+### Events
+
+Subject = the Loandrift journal entry id. Payload: `version`, `app`, `org_id`, `loc_id`, `location_name`, `currency`
+(the entry's, else the loan's, else the tenant default), `date` (`original_date` when Loandrift moved an entry out of
+its own closed period, else `entry_date`), `document_type` (LOAN, REPAYMENT, WRITE_OFF, SAVINGS, INVESTMENT, ...),
+`document_number` (a repayment's receipt number `RCP-xxxxxxxx`; savings/investment account number; else the loan
+number; else the entry number), `document_id` (the source record), `entry_id`, `entry_number`, `source_type`,
+`reversal`, `reverses_entry_id`/`_number`, `loan_id`, `loan_number`, `client_id`, **`party_id`** (the shared party,
+`ld_clients.party_id`), `customer_name`, `amount` (the entry's total) and `lines`[`account_key`, `account_code`,
+`account_name`, `account_type`, `debit`, `credit`, `description`]. Amounts are strings with two decimals.
+
+| Loandrift source | Kind (reversal) |
+|---|---|
+| LOAN_DISBURSEMENT | `ld.loan_disbursed` (`ld.loan_disbursement_reversed`) |
+| EXPENSE `charges-<loan>` | `ld.loan_charges_collected` (`ld.loan_charges_reversed`) |
+| REPAYMENT | `ld.repayment_received` (`ld.repayment_reversed`) |
+| WRITE_OFF / WRITE_OFF_RECOVERY | `ld.loan_written_off` (`ld.write_off_reversed`) / `ld.write_off_recovered` (`ld.write_off_recovery_reversed`) |
+| PROVISION | `ld.loan_loss_provision` (`_reversed`) |
+| SAVINGS_DEPOSIT / _WITHDRAWAL / _INTEREST | `ld.savings_deposit` / `ld.savings_withdrawal` / `ld.savings_interest` (`_reversed`) |
+| INVESTMENT / INVESTMENT_RETURN | `ld.investment_received` / `ld.investment_paid_out` (`_reversed`) |
+| CLIENT_CREDIT (refund) | `ld.client_credit_refunded` (`ld.client_credit_refund_reversed`) |
+| EXPENSE (Loandrift expenses) | `ld.expense_paid` (`ld.expense_reversed`) |
+| PENALTY / PENALTY_WAIVER | `ld.penalty_charged` / `ld.penalty_waived` (Loandrift posts neither today) |
+| MANUAL, OPENING_BALANCE, YEAR_END_CLOSE, ASSET_ACQUISITION, ASSET_DISPOSAL, DEPRECIATION | **not published**: Loandrift's own bookkeeping; the business keeps these in Accounting, and copying them would count them twice |
+
+### Loandrift paths and what covers them
+
+| Path | Loandrift journal | Covered |
+|---|---|---|
+| `disburse_loan` (cash, bank, MoMo, ...) | LOAN_DISBURSEMENT + charges | yes — tested (MoMo, with a 500 processing fee) |
+| A disbursement that fails after its journal is written | rolled back | nothing published — tested |
+| `create_repayment` (counter, online gateway, auto-repayment from savings via `rp_auto`) | REPAYMENT (penalty, interest, principal, overpaid) | yes — tested (cash, with a penalty outstanding; bank) |
+| `RepaymentActions.reverse` | mirror of the REPAYMENT entry | yes — tested |
+| Restructure / refinance / top-up (`LoanReplacement`) | REPAYMENT by REFINANCE + disbursement with `settled` | yes (refinance clearing) |
+| `WriteOffs.decide` (approve), `reverse`, `recover` | WRITE_OFF, its mirror, WRITE_OFF_RECOVERY | yes — tested (write-off, recovery) |
+| Provisioning run (`AccountingControls`) | PROVISION | yes |
+| Savings `deposit` / `withdraw` / `credit_interest` | SAVINGS_* | yes — tested (deposit by MoMo, withdrawal in cash) |
+| Investments funding / periodic payout / completion | INVESTMENT, INVESTMENT_RETURN | yes |
+| Client credit refund (`RepaymentActions.refund`) | CLIENT_CREDIT | yes |
+| Loandrift expenses (`expenses_service`) | EXPENSE | yes |
+| Penalties charged (nightly func) / waived | none | not posted: recognised when paid (above) |
+| `update_repayment` (edits `paid_amount`) / `permanent_delete_repayment` | **none** — Loandrift's ledger is not corrected either | **not covered** (a Loandrift gap: its own books drift too; fix by routing edits through reverse + re-record) |
+| Manual journals, opening balances, year-end, fixed assets and depreciation in Loandrift | MANUAL, ... | not published by design |
+
+Proven by `scripts/test_ld_accounting_events.py` (Loandrift's real service code on a copy of dev-db with 38–41,
+committing): after every step the events are exactly the expected kinds, once each, each one's lines equal the
+Loandrift journal it names, and the published lines give Loans receivable = Loandrift's outstanding principal
+(computed independently as approved − the principal part of every live repayment), interest and penalties = what
+Loandrift collected, fees = the loan's charges.
+
+### Posting rules and roles
+
+`LdPostingRules`: one journal per event, filed under source **LOANS** (shown as LoanDrift), reference = the
+document number, memo "LoanDrift loan repayment RCP-… · loan LN-… · client · branch". Each line posts to its key's
+role, as Loandrift wrote it; a key the books do not take from Loandrift (e.g. FIXED_ASSETS) fails the posting with what
+to do. Money keys share MyStoreGuard's money roles (one till, one bank, one wallet).
+
+| Loandrift key | Role | Code | Standard account |
+|---|---|---|---|
+| CASH / BANK / MOBILE_MONEY | CASH / BANK / MOBILE_MONEY | 1010 / 1020 / 1040 | (as §3) |
+| LOANS_RECEIVABLE | LOANS_RECEIVABLE | 1150 | Loans Receivable (LOAN_BOOK) |
+| INTEREST_RECEIVABLE | LOAN_INTEREST_RECEIVABLE | 1155 | Loan Interest Receivable |
+| PENALTIES_RECEIVABLE | LOAN_PENALTIES_RECEIVABLE | 1156 | Loan Penalties Receivable |
+| REFINANCE_CLEARING | LOAN_REFINANCE_CLEARING | 1157 | Loan Refinance Clearing |
+| LOAN_LOSS_ALLOWANCE | LOAN_LOSS_ALLOWANCE | 1159 | Allowance for Loan Losses |
+| SAVINGS_LIABILITY | CLIENT_SAVINGS | 2430 | Client Savings Deposits |
+| INVESTMENT_LIABILITY | CLIENT_INVESTMENTS | 2440 | Client Investments |
+| CLIENT_CREDIT | CLIENT_CREDIT | 2450 | Client Credit Balances |
+| INTEREST_PAYABLE | LOAN_INTEREST_PAYABLE | 2460 | Interest Payable to Clients |
+| INTEREST_INCOME | LOAN_INTEREST_INCOME | 4100 | Interest Income – Loans |
+| PROCESSING_FEE_INCOME / INSURANCE_INCOME / OTHER_CHARGES_INCOME | LOAN_FEE_INCOME / LOAN_INSURANCE_INCOME / LOAN_OTHER_CHARGES_INCOME | 4110 / 4111 / 4112 | Loan Fees & Charges / Loan Insurance Income / Other Loan Charges |
+| PENALTY_INCOME | LOAN_PENALTY_INCOME | 4150 | Loan Penalty Income |
+| INVESTMENT_INCOME | LOAN_INVESTMENT_INCOME | 4160 | Investment Income |
+| LOAN_RECOVERY_INCOME | LOAN_RECOVERY_INCOME | 4170 | Recoveries of Written-off Loans |
+| INTEREST_EXPENSE | INTEREST_EXPENSE | 6120 | Interest Expense |
+| LOAN_WRITE_OFF | LOAN_WRITE_OFF | 6210 | Loans Written Off |
+| LOAN_LOSS_PROVISION_EXPENSE | LOAN_LOSS_PROVISION | 6220 | Loan Loss Provision |
+| PENALTY_WAIVER_EXPENSE | LOAN_PENALTY_WAIVER | 6230 | Penalty Waivers |
+| OPERATING_EXPENSE | LENDING_EXPENSES | 6240 | Lending Operating Expenses |
+
+1150, 4100, 4110 and 6120 are the demo chart's own loan accounts; the others are clear of it and of MyStoreGuard's
+codes (4120 is instalment finance charges, 4130 MyStoreGuard's penalties, 2400–2420 customer liabilities, 1300 prepaid
+expenses). Settings → Posting accounts lists them under **Lending**.
+
