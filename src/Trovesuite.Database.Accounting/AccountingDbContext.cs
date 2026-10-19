@@ -43,6 +43,15 @@ public class AccountingDbContext : DbContext
     public DbSet<AccImportRecord> ImportRecords => Set<AccImportRecord>();
     public DbSet<AccPostingInbox> PostingInbox => Set<AccPostingInbox>();
     public DbSet<AccPostingAccount> PostingAccounts => Set<AccPostingAccount>();
+    public DbSet<AccRecurringTemplate> RecurringTemplates => Set<AccRecurringTemplate>();
+    public DbSet<AccRecurringTemplateLine> RecurringTemplateLines => Set<AccRecurringTemplateLine>();
+    public DbSet<AccRecurringRun> RecurringRuns => Set<AccRecurringRun>();
+    public DbSet<AccAssetCategory> AssetCategories => Set<AccAssetCategory>();
+    public DbSet<AccFixedAsset> FixedAssets => Set<AccFixedAsset>();
+    public DbSet<AccAssetDepreciation> AssetDepreciation => Set<AccAssetDepreciation>();
+    public DbSet<AccDepreciationRun> DepreciationRuns => Set<AccDepreciationRun>();
+    public DbSet<AccBudget> Budgets => Set<AccBudget>();
+    public DbSet<AccBudgetLine> BudgetLines => Set<AccBudgetLine>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

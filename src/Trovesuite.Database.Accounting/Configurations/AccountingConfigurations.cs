@@ -19,6 +19,7 @@ public sealed class AccOrgSettingsConfiguration : IEntityTypeConfiguration<AccOr
         b.Property(x => x.FxRateTolerancePct).HasPrecision(8, 4);
         b.Property(x => x.ApprovalThreshold).HasPrecision(18, 2);
         b.Property(x => x.TimeZone).HasDefaultValue("");
+        b.Property(x => x.AutoDepreciation).HasDefaultValue(false);
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId }).IsUnique();
     }
 }

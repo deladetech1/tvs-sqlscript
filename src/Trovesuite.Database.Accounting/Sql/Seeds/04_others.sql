@@ -123,7 +123,26 @@ INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-revaluation-add'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-revaluation-get'),
 ('system-tenant-id', 'role-accounting-admin', 'permission-accounting-revaluation-list'),
-('system-tenant-id', 'role-accounting-admin', 'permission-accounting-tax-code-create')
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-tax-code-create'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-recurring-document-list'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-recurring-document-get'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-recurring-document-add'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-recurring-document-update'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-recurring-document-delete'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-recurring-document-post'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-fixed-asset-list'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-fixed-asset-get'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-fixed-asset-add'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-fixed-asset-update'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-fixed-asset-delete'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-fixed-asset-post'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-fixed-asset-remove'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-budget-list'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-budget-get'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-budget-add'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-budget-update'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-budget-approve'),
+('system-tenant-id', 'role-accounting-admin', 'permission-accounting-budget-delete')
 ON CONFLICT DO NOTHING;
 
 -- Retired ids (WI-19). The API accepted each old id as the id that replaced it; before it stopped, every role

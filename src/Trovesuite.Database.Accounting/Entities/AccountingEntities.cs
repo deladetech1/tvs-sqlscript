@@ -38,6 +38,8 @@ public class AccOrgSettings
     public string? DefaultPurchaseTaxCodeId { get; set; }
     public string? OpeningBalanceJournalId { get; set; }
     public bool SetupComplete { get; set; }
+    /// <summary>Post each month's depreciation automatically once the month has ended.</summary>
+    public bool AutoDepreciation { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
