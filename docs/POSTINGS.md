@@ -5,7 +5,8 @@ Step 2 (§5): **Loandrift's loans, repayments, write-offs and savings do the sam
 Steps 3–4 (§6, §7): **Expenses' claims, advances, supplier bills and company-card spending, and Invoicing's invoices
 (the invoice of record), payments, credit notes and refunds.**
 Step 5 (§8): **ZelosHR's payroll runs, the pay sent out, SSNIT and Tier 2 remittances and staff loans.**
-Projects comes later the same way.
+Step 6 (§9): **Projects: costs and revenue by project.** Projects posts nothing of its own; Expenses' and Invoicing's
+postings carry the project, and Accounting reports profitability per project beside Projects' time at cost.
 
 Owner decisions this follows (2026-10-19):
 
@@ -39,6 +40,8 @@ Accounting API, background service (every 30 s, once per database: pooled + each
 | `migrations/shared/20261019-44-zeloshr-payroll-accounting-events.sql` | ZelosHR: triggers on runs, lines, payment batches, filings and staff loans; `zhr_acc_state`; the baseline (§8) |
 | `migrations/shared/20261019-45-accounting-customer-balances-name.sql` | 1120 renamed "Customer Balances" where it still had the old default name |
 | tvs-zeloshr-admin-bk `tests/ZelosHR.Api.Tests/Pay/PayrollAccountingEventsTests.cs` | every payroll path through ZelosHR's real services on Postgres; writes `zhr_events.json` for tvs-accounting-bk |
+| `migrations/shared/20261019-46-projects-in-the-books.sql` | Expenses' and Invoicing's events carry the project; `accounting.src_prj_projects` / `src_prj_time` for the report (§9) |
+| tvs-shared-apps-bk `internal/apps/{expenses,invoicing}/accounting_projects_test.go` | the project on each event, through the real handlers; writes `exp_prj_events.json` / `inv_prj_events.json` for tvs-accounting-bk |
 | tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `PostingRules` (by kind), `MsgPostingRules`, `LdPostingRules`, `ExpPostingRules`, `InvPostingRules`, `ZhrPostingRules`, `PostingRoles`, `PostingAccounts` |
 | tvs-accounting-bk `Entities/postings/` | `GET /api/v1/posting-accounts/list`, `PUT /api/v1/posting-accounts/update`; `GET /api/v1/postings/list`, `GET /api/v1/postings/statistics`, `GET /api/v1/postings/get?posting_id=…`, `POST /api/v1/postings/retry` (body `{"posting_id": …}`) |
 | tvs-accounting-ft | Settings → Posting accounts; Integrations → From other apps; dashboard "Needs attention" |
@@ -779,3 +782,66 @@ step publishes exactly its events, once; refusals and rollbacks publish nothing)
 payable = ZelosHR's PAYE return; SSNIT and Tier 2 payables = ZelosHR's own Tier 1 / Tier 2 schedules less what Filings
 says was remitted; Net salaries payable = net pay less what the batches and the run say was paid; Staff loans = lent less
 instalments; the trial balance balances.
+
+## 9. Projects (20261019-46): costs and revenue by project
+
+### What of Projects is money, and what posts
+
+| In Projects | Money? | In the books |
+|---|---|---|
+| Time logged (`prj_worklogs`), with bill and cost rates (`prj_rates`: person / role / everyone, project or workspace, most specific first) | billable time is what a client is charged; cost rate × hours is the internal cost of people's time | **not posted.** Projects has no "post to books" step and no approved-timesheet state: a worklog can be edited or deleted at any time, and wages are already posted, once, by ZelosHR's payroll (§8). Posting time × cost rate would count the same salaries twice (Dr project labour / Cr what?). Shown instead, read-only, in Accounting's **Project profitability** report |
+| Billable time and expenses billed to a client | revenue | through **Invoicing**, the invoice of record (§7): a business with both apps puts a project's unbilled time and expenses on an Invoicing invoice (20261019-13); that invoice posts, its revenue tagged with the project |
+| Projects' own invoices (`prj_invoices`, from before Invoicing was built) | revenue | **not posted**: Invoicing is the invoice of record (owner decision, §7). A business keeping books in Accounting bills projects through Invoicing; Projects' own invoice stays for businesses without Invoicing |
+| Project expenses noted in Projects (`prj_expenses`) | a note of spending, with no payer, payment or supplier | **not posted** (nothing says how it was paid). Spending recorded in **Expenses** with the project (claims, bills, company card) posts there (§6), tagged with the project |
+| Budgets (money / hours), fixed fees, rates | plans and prices | not posted (no money moves); the budget is shown beside the report's figures |
+
+MyStoreGuard, LoanDrift and ZelosHR documents carry no project (no project column on sales, loans or payroll; the
+suite links of 20261017-06 are cards, not charges), so only Expenses and Invoicing tag.
+
+### The project on the events
+
+Expenses (redefines 20261019-42's figure functions; the money is unchanged):
+
+- `exp.claim_approved` / `_voided`: `lines` are by category **and project** — each expense's own `project_id`, else its
+  claim's. A line with a project carries `project_id`, `project_key`, `project_name`; one without carries none.
+- `exp.bill_approved` / `_voided`: the bill's `project_id` on its line.
+- `exp.company_spend` / `_reversed`: the matched expense's project (else its claim's).
+- Payouts, advances and returns carry none: they move balance-sheet money, not a project's cost.
+
+Invoicing (redefines 20261019-43's `inv_acc_doc_figures`):
+
+- `inv.invoice_issued` / `inv.credit_note_issued` and their voids carry `projects` [`project_id`, `project_key`,
+  `project_name`, `net`] when any line bills a project (`inv_invoice_lines.source_project_id`): each project's share of
+  the revenue, its lines' `net` over all lines' `net`, of the document's `subtotal` (so a whole-invoice discount is
+  shared out). The rest of the subtotal is untagged. Payments carry none.
+
+**Tags are analysis, not money.** They are never part of what counts as a change (`exp_acc_state.value->'money'`,
+`inv_acc_fingerprint` leaves out `projects`): documents published before 46 stay as posted (untagged) and nothing is
+posted again because of it; a project renamed, or set on a document after it posted, does not re-post it (the next
+money change does). A void reverses exactly what was posted, tags included. The project's name and key come from
+`projects.prj_projects`, read dynamically: a database without Projects still describes (the id alone).
+
+### In Accounting
+
+`ProjectDimensions`: each tagged line posts with `acc_journal_lines.cost_centre_id` = the project's **PROJECT
+dimension** (`acc_dimensions`, kind PROJECT), created on first use: id `dim_prj_` + md5(tenant|business|project) (the
+same project always lands on the same dimension), code = the project's key (`WEB`; `WEB-P1…` when the books already
+use that code for another PROJECT dimension), name = the project's (kept up to date by later postings), description
+"From Projects". Tagged lines: Expenses' category lines (net), Invoicing's revenue lines. Tax, payables, receivables
+and money lines are never tagged.
+
+**Project profitability** (Reports → Project profitability, `GET /api/v1/reports/project-profitability?from_date&to_date`,
+`permission-accounting-report-get`): per PROJECT dimension (from Projects or made by hand), revenue, cost of sales and
+expenses of posted lines analysed under it between the dates, and posted profit. For a business **subscribed to
+Projects** (`cp_business_app_tier`, `app-projects`; fails closed), also the hours logged in the period, billable hours,
+time at cost (minutes × the cost rate Projects applies, `accounting.src_prj_time`; hours with no cost rate are counted
+but not costed, and said so), profit after time, margin and the project's budget. A project with time and nothing
+posted is listed too. Time costed in another currency converts at the books' rate on the end date. Read-only: nothing
+here posts.
+
+Proven by tvs-shared-apps-bk `TestExpensesAccountingEventsCarryTheProject` / `TestInvoicingAccountingEventsCarryTheProject`
+(real handlers on a copy of dev-db with 46) and tvs-accounting-bk `ProjectPostingsTests` (the captured events posted:
+one dimension per project, lines on it, the report with and without Projects) and `ProjectPostingsLiveTests` (a claim,
+a bill, a company payment and an invoice on a project written by the real code, posted by the real worker, the report
+read against Projects' own tables through the views).
+
