@@ -964,10 +964,8 @@ namespace Trovesuite.Database.Accounting.Migrations
 
                     b.Property<string>("CustomFieldsJson")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
-                        .HasColumnName("custom_fields_json")
-                        .HasDefaultValueSql("'{}'::jsonb");
+                        .HasColumnName("custom_fields_json");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -1002,6 +1000,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("source");
 
+                    b.Property<string>("SourceApp")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_app");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text")
@@ -1025,19 +1028,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("updated_by_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_acc_customers");
+                        .HasName("pk_customers");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_acc_customers_tenant_id_org_id_bus_id_code");
+                    b.ToTable((string)null);
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Name")
-                        .HasDatabaseName("ix_acc_customers_tenant_id_org_id_bus_id_name");
-
-                    b.ToTable("acc_customers", "accounting", t =>
-                        {
-                            t.HasCheckConstraint("ck_acc_customers_bus_id", "btrim(bus_id) <> ''");
-                        });
+                    b.ToView("acc_customers", "accounting");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccDataSource", b =>
@@ -2014,7 +2009,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("address");
 
@@ -2047,7 +2041,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("conversion_date");
 
                     b.Property<string>("Country")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("country");
 
@@ -2076,7 +2069,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("default_sales_tax_code_id");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("email");
 
@@ -2113,7 +2105,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("journal_prefix");
 
                     b.Property<string>("LegalName")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("legal_name");
 
@@ -2127,7 +2118,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("org_id");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("phone");
 
@@ -2157,7 +2147,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("tin");
 
                     b.Property<string>("TradingName")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("trading_name");
 
@@ -2772,10 +2761,8 @@ namespace Trovesuite.Database.Accounting.Migrations
 
                     b.Property<string>("CustomFieldsJson")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
-                        .HasColumnName("custom_fields_json")
-                        .HasDefaultValueSql("'{}'::jsonb");
+                        .HasColumnName("custom_fields_json");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -2810,6 +2797,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("source");
 
+                    b.Property<string>("SourceApp")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_app");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2833,19 +2825,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("updated_by_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_acc_suppliers");
+                        .HasName("pk_suppliers");
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_acc_suppliers_tenant_id_org_id_bus_id_code");
+                    b.ToTable((string)null);
 
-                    b.HasIndex("TenantId", "OrgId", "BusId", "Name")
-                        .HasDatabaseName("ix_acc_suppliers_tenant_id_org_id_bus_id_name");
-
-                    b.ToTable("acc_suppliers", "accounting", t =>
-                        {
-                            t.HasCheckConstraint("ck_acc_suppliers_bus_id", "btrim(bus_id) <> ''");
-                        });
+                    b.ToView("acc_suppliers", "accounting");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplierCredit", b =>

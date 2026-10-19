@@ -148,12 +148,13 @@ public sealed class AccCustomerConfiguration : IEntityTypeConfiguration<AccCusto
 {
     public void Configure(EntityTypeBuilder<AccCustomer> b)
     {
-        b.ToAccountingTable("acc_customers");
+        // A view of the business's shared records (core_platform.cp_parties) and Accounting's own fields
+        // (acc_customer_settings), written through INSTEAD OF triggers: migrations/shared/20261019-37.
+        // Mapped as a view so no EF migration ever alters it; the old table is acc_customers_legacy.
+        b.ToView("acc_customers", AccountingDbContext.SchemaName);
         b.HasKey(x => x.Id);
         b.Property(x => x.CreditLimit).HasPrecision(18, 2);
-        b.Property(x => x.CustomFieldsJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Code }).IsUnique();
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Name });
+        b.Property(x => x.CustomFieldsJson).HasColumnType("jsonb");
     }
 }
 
@@ -161,12 +162,13 @@ public sealed class AccSupplierConfiguration : IEntityTypeConfiguration<AccSuppl
 {
     public void Configure(EntityTypeBuilder<AccSupplier> b)
     {
-        b.ToAccountingTable("acc_suppliers");
+        // A view of the business's shared records (core_platform.cp_parties) and Accounting's own fields
+        // (acc_supplier_settings), written through INSTEAD OF triggers: migrations/shared/20261019-37.
+        // Mapped as a view so no EF migration ever alters it; the old table is acc_suppliers_legacy.
+        b.ToView("acc_suppliers", AccountingDbContext.SchemaName);
         b.HasKey(x => x.Id);
         b.Property(x => x.CreditLimit).HasPrecision(18, 2);
-        b.Property(x => x.CustomFieldsJson).HasColumnType("jsonb").HasDefaultValueSql("'{}'::jsonb");
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Code }).IsUnique();
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Name });
+        b.Property(x => x.CustomFieldsJson).HasColumnType("jsonb");
     }
 }
 

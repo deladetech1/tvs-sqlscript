@@ -25,7 +25,7 @@ Every app keeps the people and companies a business deals with in **one** place:
 | Invoicing | `inv_customers` is a view (role customer/supplier/both). Its own fields are in `inv_customer_settings`. Its copies of MyStoreGuard customers were merged into them by the import's link (20261019-30); its "import from MyStoreGuard" now merges records entered in both apps. |
 | Loandrift | Not yet. Clients are per location with identity checks and many cascading keys; they will point at a party. |
 | CRM | Not yet. Contacts are people at a customer; they will link to a party rather than become one. |
-| Accounting | Not yet; see below. |
+| Accounting | `acc_customers` and `acc_suppliers` are views of `cp_parties` with INSTEAD OF triggers (20261019-37); its own fields are in `acc_customer_settings` / `acc_supplier_settings`. The old tables are kept as `*_legacy`. Its lists show the business's customers / suppliers from every app. Delete: refused while its invoices, bills, credit notes or payments name the party, archived when another app uses it. |
 
 A record any app uses (`cp_party_references` with `is_extension = false`: a sale, an invoice, an order, a bill) is
 never deleted: `core_platform.cp_party_in_use(id)`. MyStoreGuard's delete is refused (as its keys refused it before),
@@ -37,18 +37,17 @@ Two traps:
 - A write through the view under `SET session_replication_role = replica` is silently lost (Postgres
   skips a view's triggers there). Test seeds must write `cp_parties` directly.
 
-## For the Accounting team
+## Accounting
 
-The books are per business since EF migration `BooksPerBusiness` (module 6, 2026-10-19): every `acc_*` table
-carries `bus_id NOT NULL`, every key that identified a record in an organisation's books includes it, and
-`migrations/shared/20261019-36` asserts it. What is left to adopt the shared parties:
+Done in `migrations/shared/20261019-37` (books per business since EF `BooksPerBusiness`, the model maps the two as
+views since `IdentityFromCorePlatform`):
 
-1. ~~Add `bus_id` to Accounting's tables~~ (done: `BooksPerBusiness`).
-2. Point `supplier_id` / `customer_id` at `core_platform.cp_parties(id)`. Keep Accounting's own fields
-   (code, credit limit, payment terms, custom fields) in an `acc_party_settings (party_id, ...)` table.
-3. Add the reference columns to `core_platform.cp_party_references`.
-4. Backfill: match an existing `acc_suppliers` row to a party of the same business by name and email or
-   phone, and create a party for the rest. Do not merge on name alone.
+- Old rows were matched to a party of the same business by name AND (email or phone), never name alone; the rest
+  became parties with their ids kept. Documents of a matched row were pointed at the party.
+- `cp_party_references`: `acc_sales_invoices.customer_id`, `acc_purchase_bills.supplier_id`,
+  `acc_credit_notes.party_id`, `acc_supplier_credits.party_id`, `acc_payments.party_id` (uses), and the two settings
+  tables (extensions). Those document columns have `NOT VALID DEFERRABLE` keys to `cp_parties`.
+- A party entered in another app has no Accounting code until Accounting first saves it.
 
 # Shared products (`core_platform.cp_products`)
 

@@ -51,7 +51,8 @@ public class AccountingDbContext : DbContext
         // organisation (a pharmacy and a hardware shop in one organisation keep separate books).
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
-            if (entity.FindProperty("BusId") is null) continue;
+            // Views (acc_customers / acc_suppliers over cp_parties) hold no constraints.
+            if (entity.FindProperty("BusId") is null || entity.GetTableName() is null) continue;
             entity.AddCheckConstraint($"ck_{entity.GetTableName()}_bus_id", "btrim(bus_id) <> ''");
         }
 

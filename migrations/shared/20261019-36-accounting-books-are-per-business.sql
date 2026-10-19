@@ -32,9 +32,11 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Every Accounting table scoped to an organisation names the business too, and never blank.
+    -- Every Accounting table scoped to an organisation names the business too, and never blank. Tables only:
+    -- a view's columns always read as nullable (acc_customers / acc_suppliers are views of cp_parties, 20261019-37).
     SELECT string_agg(c.table_name, ', ' ORDER BY c.table_name) INTO missing
       FROM information_schema.columns c
+      JOIN information_schema.tables t ON t.table_schema = c.table_schema AND t.table_name = c.table_name AND t.table_type = 'BASE TABLE'
      WHERE c.table_schema = 'accounting' AND c.column_name = 'org_id' AND c.table_name LIKE 'acc\_%'
        AND NOT EXISTS (SELECT 1 FROM information_schema.columns b
                         WHERE b.table_schema = c.table_schema AND b.table_name = c.table_name

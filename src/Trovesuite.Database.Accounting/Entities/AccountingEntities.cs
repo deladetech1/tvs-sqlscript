@@ -7,16 +7,19 @@ public class AccOrgSettings
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
     public string BusId { get; set; } = default!;
-    public string LegalName { get; set; } = "";
-    public string TradingName { get; set; } = "";
+    // Who the business is (name, legal name, country, address, email, phone) is Core Platform's
+    // (cp_businesses / cp_organizations), read per request. These columns are no longer written and are
+    // kept, nullable, only so the rows written before still read (migration IdentityFromCorePlatform).
+    public string? LegalName { get; set; }
+    public string? TradingName { get; set; }
     public string Tin { get; set; } = "";
-    public string Country { get; set; } = "GH";
+    public string? Country { get; set; }
     public string BaseCurrency { get; set; } = "GHS";
     public int FiscalYearStartMonth { get; set; } = 1;
     public string FiscalYearStart { get; set; } = "01-01";
-    public string Address { get; set; } = "";
-    public string Email { get; set; } = "";
-    public string Phone { get; set; } = "";
+    public string? Address { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
     /// <summary>IANA zone the business keeps its day in; empty means the tenant's zone in Core Platform, else UTC.</summary>
     public string TimeZone { get; set; } = "";
     public decimal ApprovalThreshold { get; set; } = 50000;
@@ -264,6 +267,8 @@ public class AccCustomer
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
     public string? UpdatedById { get; set; }
+    /// <summary>The app the record was first entered in (cp_parties.source_app); read-only here.</summary>
+    public string SourceApp { get; set; } = "";
 }
 
 public class AccSupplier
@@ -289,6 +294,8 @@ public class AccSupplier
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
     public string? UpdatedById { get; set; }
+    /// <summary>The app the record was first entered in (cp_parties.source_app); read-only here.</summary>
+    public string SourceApp { get; set; } = "";
 }
 
 public class AccSalesInvoice
