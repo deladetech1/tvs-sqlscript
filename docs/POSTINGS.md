@@ -2,7 +2,9 @@
 
 Roadmap Phase 1, step 1: **MyStoreGuard's sales post themselves into the business's Accounting books.**
 Step 2 (§5): **Loandrift's loans, repayments, write-offs and savings do the same.**
-Later steps add ZelosHR payroll, Expenses, Invoicing (the invoice of record) and Projects the same way.
+Steps 3–4 (§6, §7): **Expenses' claims, advances, supplier bills and company-card spending, and Invoicing's invoices
+(the invoice of record), payments, credit notes and refunds.**
+Later steps add ZelosHR payroll and Projects the same way.
 
 Owner decisions this follows (2026-10-19):
 
@@ -29,8 +31,11 @@ Accounting API, background service (every 30 s, once per database: pooled + each
 | `scripts/test_msg_stock_accounting_events.py` | every stock path through MyStoreGuard's real code, Inventory = shelves after each step |
 | `migrations/shared/20261019-41-loandrift-accounting-events.sql` | Loandrift: the trigger on its ledger, `ld_acc_entry_state`, the baseline (§5) |
 | `scripts/test_ld_accounting_events.py` | every Loandrift path through its real code; writes the captured events to tvs-accounting-bk's `ld_events.json` |
+| `migrations/shared/20261019-42-expenses-accounting-events.sql` | Expenses: triggers on claims, expenses, payouts, bills, advances and statement lines; `exp_acc_state`; the baseline (§6) |
+| `migrations/shared/20261019-43-invoicing-accounting-events.sql` | Invoicing: triggers on documents and payments; `inv_acc_state`; the MyStoreGuard guard; the baseline (§7) |
+| tvs-shared-apps-bk `internal/apps/{expenses,invoicing}/accounting_events_test.go` | every path through the real handlers on Postgres; writes `exp_events.json` / `inv_events.json` for tvs-accounting-bk |
 | Accounting EF migration `20261019143911_AppPostings` | `acc_posting_inbox`, `acc_posting_accounts`, unique `ux_acc_journal_entries_event` |
-| tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `PostingRules` (by kind), `MsgPostingRules`, `LdPostingRules`, `PostingRoles`, `PostingAccounts` |
+| tvs-accounting-bk `app/src/Ledger/Postings/` | `PostingsWorker` (hosted service), `PostingRun` (ingest + post), `PostingRules` (by kind), `MsgPostingRules`, `LdPostingRules`, `ExpPostingRules`, `InvPostingRules`, `PostingRoles`, `PostingAccounts` |
 | tvs-accounting-bk `Entities/postings/` | `GET /api/v1/posting-accounts/list`, `PUT /api/v1/posting-accounts/update`; `GET /api/v1/postings/list`, `GET /api/v1/postings/statistics`, `GET /api/v1/postings/get?posting_id=…`, `POST /api/v1/postings/retry` (body `{"posting_id": …}`) |
 | tvs-accounting-ft | Settings → Posting accounts; Integrations → From other apps; dashboard "Needs attention" |
 
@@ -444,3 +449,210 @@ to do. Money keys share MyStoreGuard's money roles (one till, one bank, one wall
 codes (4120 is instalment finance charges, 4130 MyStoreGuard's penalties, 2400–2420 customer liabilities, 1300 prepaid
 expenses). Settings → Posting accounts lists them under **Lending**.
 
+## 6. Expenses (20261019-42)
+
+### Why database triggers, not the Go service
+
+Expenses has no single choke point for money. A claim is approved by its last approver, by finance, or by itself under
+the auto-approve limit; it is paid back through the payout gateway (settled later by the `expenses-payouts` job in the
+function app, or by "Check payments"), by hand, through ZelosHR's payroll (marked paid when a payroll run is approved,
+read back by the same job), or by netting an advance (`netAdvances` writes the payout, settles it and rolls the claim
+forward in one go). Advances and bills are paid the same ways; statement lines are matched, reopened, set aside or made
+into expenses. Publishing from Go would mean `events.Publish` in a dozen places, two of them in jobs, each to be
+remembered by the next path. Every one of them ends in a write to `exp_claims`, `exp_expenses`, `exp_claim_payouts`,
+`exp_bills`, `exp_bill_payouts`, `exp_advances` or `exp_statement_lines`, so the triggers sit there.
+
+Same machinery as §1: constraint triggers `DEFERRABLE INITIALLY DEFERRED`, `ENABLE ALWAYS`, reading each document at
+COMMIT and publishing only the difference from what `expenses.exp_acc_state` says was last published (a void of the
+old figures, then the new revision). A write that fails rolls back and publishes nothing. Fail open: a describing error
+publishes `exp.posting_error` and the write commits. Starts from now: everything existing at the first run is
+baselined (`BASELINE`); claims owed, advances outstanding and bills unpaid that day belong in the opening balances of
+2210, 1310 and 2020.
+
+### Events
+
+Subject = the Expenses id. Common payload: `version`, `app`, `org_id`, `currency`, `date` (business date),
+`document_type`, `document_number`, `document_id`, `amount`. Spending events carry `lines`[`category_id`,
+`category_name`, `category_code`, `category_kind`, `net`, `tax`], `tax`, `total`.
+
+| Kind | When | Extra |
+|---|---|---|
+| `exp.claim_approved` / `exp.claim_voided` | a claim reaches approved (or paid); voided when its money changes (CHANGED), it leaves approved (UNAPPROVED) or is deleted | `claimant_name`, `title`, `company_paid` (left out, see below); in the claim's currency (`amount_base`), tax at the expense's own rate |
+| `exp.claim_reimbursed` / `_reimbursement_reversed` | a claim payout reaches success or manual / is reversed | `method` GATEWAY, MANUAL, PAYROLL, ADVANCE; `reference` |
+| `exp.bill_approved` / `exp.bill_voided` | a bill approved (or paid) / cancelled after approval (CANCELLED) or changed | `supplier_name`, `party_id` (cp_parties), category = the bill's, else the supplier's |
+| `exp.bill_paid` / `exp.bill_payment_reversed` | a bill payout completes / is reversed | `method` |
+| `exp.advance_paid` / `exp.advance_payment_reversed` | an advance's payout completes / is reversed | `method` |
+| `exp.advance_returned` / `exp.advance_return_reversed` | `returned` goes up (the difference) | `method` CASH |
+| `exp.company_spend` / `exp.company_spend_reversed` | a statement line of money out matched to an expense (or made into one) / unmatched, set aside | `account_kind` (BANK, CARD, MOBILE_MONEY, CASH), `account_name`, `expense_id`, in the expense's currency |
+| `exp.posting_error` | the trigger could not describe a document | `error` |
+
+### Expenses paths and what covers them
+
+| Path | Writes | Published |
+|---|---|---|
+| Expense created, edited, deleted; claim drafted, submitted, sent back, cancelled | expenses, claim status | nothing — tested |
+| Claim rejected | status rejected | nothing (it never posted) — tested |
+| Claim approved (last step, finance, auto-approve) | status approved | claim_approved — tested (meals with VAT, mileage, per diem) |
+| Expenses of an approved claim changed (not possible in the app today) | expenses | void CHANGED + new revision |
+| Pay back by hand / through the gateway (job or check-payments) | claim payout success/manual | claim_reimbursed — tested (MANUAL; GATEWAY once however often checked) |
+| Gateway payout failed | payout failed | nothing — tested |
+| Pay back by payroll (ZelosHR one-off, marked paid by the job) | payout success | claim_reimbursed PAYROLL |
+| Advance netted off a claim (`apply-advances`) | payout method advance + claim paid | claim_reimbursed ADVANCE — tested |
+| Advance paid out / reversed | advance paid | advance_paid — tested |
+| Advance handed back | `returned` | advance_returned — tested |
+| Bill opened / approved / paid / cancelled after approval | bill, payouts | nothing / bill_approved / bill_paid / bill_voided — tested |
+| Repeating bill made by the job | new open bill | nothing until approved |
+| Statement line made into an expense, or matched to one | line matched | company_spend — tested (company card) |
+| Statement line reopened or set aside | line open/ignored | company_spend_reversed — tested |
+| Statement line matched to a claim payout, bill payout or advance | reconciliation only | nothing (the payout already posted) |
+| A refused request (paying twice, ...) | rolled back | nothing — tested |
+
+**Company-paid expenses.** An expense matched to a statement line is spending the business already paid: it posts once,
+as `exp.company_spend` (Dr category / Cr the account's role), and a claim that contains it leaves it out (its
+`company_paid`). Expenses still pays the claimant the claim's whole total; if it does, Owed to employees goes into debit
+by that amount — the books then show money paid to an employee for something the company paid, which is what happened.
+
+Not covered: request budgets and commitments (no money moves), billable expenses re-invoiced (Invoicing posts the
+invoice; the expense already posted here), expenses in a claim currency other than the books' base convert at the books'
+rate (§3), a statement line's own amount (the expense's amount is posted, which is the line's).
+
+### Posting rules and roles
+
+`ExpPostingRules`: source **EXPENSES** (shown as Expenses), reference = the claim / bill / advance number.
+
+| Event | Debit | Credit |
+|---|---|---|
+| claim_approved | each category's role (net); EXPENSE_INPUT_TAX (tax) | EMPLOYEE_REIMBURSEMENTS (total) |
+| claim_reimbursed | EMPLOYEE_REIMBURSEMENTS | the payout's role |
+| bill_approved | each category's role (net); EXPENSE_INPUT_TAX | SUPPLIER_PAYABLE (shared with MyStoreGuard: one supplier, one balance) |
+| bill_paid | SUPPLIER_PAYABLE | the payout's role |
+| advance_paid | EMPLOYEE_ADVANCES | the payout's role |
+| advance_returned | CASH | EMPLOYEE_ADVANCES |
+| company_spend | each category's role (net); EXPENSE_INPUT_TAX | the account's role: CARD → COMPANY_CARD, BANK → BANK, MOBILE_MONEY → MOBILE_MONEY, CASH → CASH |
+| *_voided, *_reversed | the reverse | |
+
+Payout roles: GATEWAY → CARD (1060, the gateway's balance, as for card and online payments), MANUAL → BANK, PAYROLL →
+PAYROLL_REIMBURSEMENTS (cleared when ZelosHR's payroll posts, so the bank is not counted twice), ADVANCE →
+EMPLOYEE_ADVANCES.
+
+| Role | Code | Standard account |
+|---|---|---|
+| EMPLOYEE_REIMBURSEMENTS | 2210 | Employee Reimbursements Payable |
+| EMPLOYEE_ADVANCES | 1310 | Employee Advances |
+| PAYROLL_REIMBURSEMENTS | 2220 | Reimbursements via Payroll |
+| COMPANY_CARD | 2030 | Company Card Payable (may be pointed at a liability or, for a debit card, the bank asset) |
+| EXPENSE_INPUT_TAX | 1400 | VAT Input Recoverable (the starter chart's) |
+| OTHER_EXPENSES | 6290 | General Expenses (uncategorised) |
+| `EXPENSE_CATEGORY:<id>` | see below | one per category |
+
+**Categories → accounts.** Each category is a role of its own, `EXPENSE_CATEGORY:<category id>`. Its standard account
+is the category's own **code** in Expenses (Settings → Categories → Code: the code Expenses' Xero/Sage exports already
+use) when that is a chart code starting 5–9; else by the category's name, word by word: transport, fuel, taxi,
+vehicle, parking, mileage → 6040 Transport & Logistics; travel, flight, airfare, hotel, accommodation, lodging, per
+diem → 6250 Travel & Accommodation; meals, food, entertainment → 6260 Meals & Entertainment; software, subscriptions →
+6270; training, course, conference → 6280 Training & Development; office, supplies, stationery → 6090; phone,
+internet, airtime, data → 6110; utilities → 6030; marketing, advertising → 6050; professional, legal, consulting,
+audit → 6080; repairs, maintenance → 6100; rent, lease → 6020; bank charges → 6060; anything else → 6290 General
+Expenses. Missing accounts are created under 6000 (or 5000). **Posting never waits for a mapping**: to change one, go
+to Accounting → Settings → Posting accounts → Expenses, where every category that has posted is listed by name, and
+point it at any expense account; postings from then on go there (earlier ones stay where they are).
+
+1310, 2030, 2210, 2220 and 6250–6290 are clear of the demo chart, MyStoreGuard's codes and LoanDrift's 6210–6240;
+6020–6110 are the demo chart's own expense accounts with the same meaning.
+
+Proven by tvs-shared-apps-bk `TestExpensesAccountingEvents` (the real handlers on dev-db's schema) and tvs-accounting-bk
+`InvExpPostingsTests`: after every step, Owed to employees = approved claims less paid back, advances = paid out less
+netted and handed back, Supplier balances = approved bills less paid, the company card, input tax and each category's
+expense equal what Expenses' own tables say, and the trial balance balances.
+
+## 7. Invoicing (20261019-43): the invoice of record
+
+Owner decision: customers get their invoices from Invoicing, and each one posts here as a receivable. Accounting's own
+invoice screen stays for accountants' manual entries.
+
+### Why database triggers, not the Go service
+
+Invoicing writes documents and payments from the editor (issue, correct, void), payments by hand, the customer's online
+payment (settled on return, on opening the link, by "Check online payments", or by the payments job), the portal's
+pay-several-at-once, autopay on a saved card (a job), credit notes (applied by hand, auto-applied when made for an
+invoice, refunded), refunds (a credit note issued and paid back in one step), late fees and recurring invoices (jobs),
+and bank reconciliation recording a payment from a statement line. Every one ends in a write to `inv_invoices` or
+`inv_payments`; `recalcInvoice` is not on every path. Triggers on those two tables see them all, jobs included.
+
+Same machinery as §1 and §6 (`invoicing.inv_acc_state`, deferred, `ENABLE ALWAYS`, fail open with `inv.posting_error`,
+baseline: open balances that day belong in the opening balances of 1110 and 2470).
+
+### The MyStoreGuard guard (no sale twice)
+
+Invoicing brings MyStoreGuard's invoices in **linked** (`source_app = 'mystoreguard'`, `source_id` = MSG's invoice,
+20261019-22). MyStoreGuard already posts that sale and every payment on it (§1) — including payments taken in
+Invoicing, which reach MyStoreGuard through `inv_msg_payment_queue` and are posted by MSG's own `create_payment` with
+its own `msg.*` event; the shop's own payments show in Invoicing as channel `mystoreguard`. So **a document with
+`source_app` and `source_id` set publishes nothing from Invoicing, and neither does any payment on it**
+(`invoicing.inv_acc_linked`). Tested: an MSG invoice brought in, paid 100 in Invoicing (queued for MSG) and 50 at the
+shop, publishes no `inv.*` event; the end-to-end run shows MSG's 50 posted once by MyStoreGuard (Customer deposits) and
+nothing from Invoicing. Any app that links documents into Invoicing in future is covered by the same rule.
+
+### Events
+
+Subject = the Invoicing id. Common payload: `version`, `app`, `org_id`, `currency` (the document's), `date`,
+`document_type`, `document_number`, `document_id`, `customer_id`, `customer_name`, `amount`.
+
+| Kind | When | Extra |
+|---|---|---|
+| `inv.invoice_issued` / `inv.invoice_voided` | an invoice issued (status open/paid); voided (VOIDED), corrected while unpaid (CHANGED: void + revision n+1) or deleted | `revision`, `subtotal` (= total − charged tax), `taxes`[tax_id, name, short_name, amount] (charged: standard, zero-rated), `tax`, `withheld`, `receivable` (= total − withheld), `total`, `late_fee_for_id` |
+| `inv.credit_note_issued` / `inv.credit_note_voided` | the same for a credit note (open/applied) | `credit_for_id`, `credit_for_number` |
+| `inv.payment_received` / `inv.payment_reversed` | a payment received (any method but credit) / voided or deleted | `method` (CASH, BANK_TRANSFER, MOBILE_MONEY, CARD, CHEQUE, ONLINE, OTHER), `against`, `receipt_number`, `invoice_number`, `channel` |
+| `inv.credit_applied` / `inv.credit_application_reversed` | credit from a credit note used on an invoice (method credit_note) | `credit_note_number` |
+| `inv.refund_paid` / `inv.refund_reversed` | money paid back (kind refund: a credit note refunded) | `method`, `against` |
+| `inv.posting_error` | the trigger could not describe a document | `error` |
+
+### Invoicing paths and what covers them
+
+| Path | Published |
+|---|---|
+| Draft created / edited / deleted; quotes; purchase orders | nothing — tested (draft, quote) |
+| Issue (editor, recurring job, late-fee job) | invoice_issued — tested |
+| Correct an issued, unpaid invoice (money changed) | invoice_voided CHANGED + invoice_issued revision 2 — tested; words only (notes) — nothing, tested |
+| Void (only without payments) | invoice_voided VOIDED — tested |
+| Payment by hand, online (return / link / check / job), portal multi-pay, autopay, bank reconciliation | payment_received — tested (MoMo, cash, bank; online once however often verified) |
+| A refused payment (more than owed, ...) | nothing — tested |
+| Payment voided | payment_reversed — tested |
+| Credit note issued for an invoice (auto-applied) / applied by hand | credit_note_issued + credit_applied — tested |
+| Credit note refunded; refund on an invoice (credit note issued and paid back) | credit_note_issued + refund_paid — tested |
+| MyStoreGuard invoices brought in linked, paid here or at the shop | nothing (MyStoreGuard posts them) — tested |
+| A document the trigger cannot describe | inv.posting_error, the write commits — tested |
+
+Not covered: **write-offs** — Invoicing has no write-off action today (an uncollectable balance can only be cleared with
+a credit note, which reverses revenue); when one is added it should publish `inv.invoice_written_off` posting Dr Bad
+debts / Cr Invoiced customer balances. Exchange differences between an invoice and its payment in a foreign currency
+(each converts at the books' rate on its own date, §3). Purchase orders (no money moves; supplier bills live in
+Expenses).
+
+### Posting rules and roles
+
+`InvPostingRules`: source **INVOICING** (shown as Invoicing), reference = the invoice / credit note / receipt number.
+
+| Event | Debit | Credit |
+|---|---|---|
+| invoice_issued | INVOICE_RECEIVABLE (receivable); WITHHOLDING_TAX_RECEIVABLE (withheld) | INVOICE_REVENUE (subtotal); each TAX:&lt;tax id&gt; (TAX_PAYABLE when a tax has no id) |
+| credit_note_issued | INVOICE_REVENUE; each tax | INVOICE_CUSTOMER_CREDIT; WITHHOLDING_TAX_RECEIVABLE |
+| payment_received | the method's role (as §3: CASH, BANK, MOBILE_MONEY, CARD for card and online, OTHER_PAYMENTS) | INVOICE_RECEIVABLE |
+| credit_applied | INVOICE_CUSTOMER_CREDIT | INVOICE_RECEIVABLE |
+| refund_paid | INVOICE_CUSTOMER_CREDIT (a credit note's) or INVOICE_RECEIVABLE (an invoice's) | the method's role |
+| *_voided, *_reversed | the reverse | |
+
+| Role | Code | Standard account |
+|---|---|---|
+| INVOICE_RECEIVABLE | 1110 | Invoiced Customer Balances — its own, never the Accounts Receivable control (1100), which stays Accounting's own invoices' |
+| INVOICE_REVENUE | 4040 | Invoiced Sales Revenue (point it at 4010 Sales Revenue to report one sales line) |
+| INVOICE_CUSTOMER_CREDIT | 2470 | Customer Credit Notes |
+| WITHHOLDING_TAX_RECEIVABLE | 1410 | Withholding Tax Receivable |
+| TAX:&lt;id&gt; | 2101 VAT, 2102 NHIL, … else 2100 | by the tax's name, as MyStoreGuard's (listed together in Settings → Posting accounts → Taxes) |
+
+1110, 1410, 2470 and 4040 are clear of the demo chart, MyStoreGuard's and LoanDrift's codes.
+
+Proven by tvs-shared-apps-bk `TestInvoicingAccountingEvents` and tvs-accounting-bk `InvExpPostingsTests`: after every
+step (issued, part paid, a payment voided, credit note, refund, a correction and a void, paid off, an MSG invoice),
+Invoiced customer balances = Invoicing's outstanding, revenue = invoices less credit notes net of tax, VAT = Invoicing's
+tax, credit left = credit notes' balance, money by method = what Invoicing received, and the trial balance balances.
