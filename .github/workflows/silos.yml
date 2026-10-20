@@ -298,6 +298,7 @@ jobs:
       label: ${{ matrix.kind }} · ${{ matrix.host }}
       module: ${{ needs.select.outputs.module }}
       command: ${{ needs.select.outputs.command }}
+      target_env: ${{ needs.select.outputs.environment }}
       target_class: silo
       silo_host: ${{ matrix.host }}
       source: keyvault
