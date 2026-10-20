@@ -67,6 +67,10 @@ on:
           # ctl_tenant_routes rather than deploying anything.
           - itech.dev.trovesuite.com
           - accesspoint.dev.trovesuite.com
+          # PROD, SILO_BYOD: BGCLT's own database (bgclt-prod-sql/bgclt). Its
+          # route rows (six hosts, one database) exist only from the cutover on;
+          # until then choosing this fails the check below, which is the point.
+          - bgclt.trovesuite.com
       module:
         type: choice
         required: true
@@ -160,13 +164,23 @@ jobs:
           # Terraform writes to migrator-db-url-<silo>, so the key is what this
           # needs and the name is derived from it below.
           #
-          # SILO_BYOD IS THE OPPOSITE, which is why db_secret_uri is selected
-          # too. Nothing of ours built that database: there is no Terraform, no
-          # per-app role and no migrator-db-url-<silo> to compose. The single
-          # credential the client gave us IS the route's db_secret_uri, and for
-          # that tier it is the only thing that can run a migration.
+          # SILO_BYOD can be either, which is why db_secret_uri is selected
+          # too. Nothing of ours built that database, so there is no Terraform
+          # writing migrator-db-url-<silo> for it. Two shapes:
+          #   * one credential the client gave us, on the row as db_secret_uri
+          #     -- that is the only thing that can run a migration;
+          #   * per-app logins (db-url-<app>-<silo>, as BGCLT has) with the row
+          #     naming only its silo_key and db_secret_uri NULL, so the apps do
+          #     NOT connect as the owner -- then we put the client's migrator
+          #     credential in our vault as migrator-db-url-<silo> by hand and
+          #     migrate with that, exactly as for our own silos.
+          #
+          # db_server_fqdn is selected only to run each DATABASE once: a silo
+          # with several hosts (BGCLT has six) is one database, and running the
+          # same migrations into it in parallel jobs would race.
           export ROWS="$(psql "$CP_URL" -At -F'|' -c "
-            SELECT host, tier, db_name, silo_key, coalesce(db_secret_uri, '')
+            SELECT host, tier, db_name, silo_key, coalesce(db_secret_uri, ''),
+                   coalesce(db_server_fqdn, '')
               FROM control_plane.ctl_tenant_routes
              WHERE status = 'ACTIVE'
                AND tier IN ('SILO_SHARED','SILO_DEDICATED','SILO_BYOD')
@@ -183,31 +197,27 @@ jobs:
           for line in os.environ["ROWS"].strip().splitlines():
               if not line.strip():
                   continue
-              host, tier, db, silo_key, db_secret_uri = line.split("|")
+              host, tier, db, silo_key, db_secret_uri, server = line.split("|")
               if not silo_key:
                   print(f"::error::{host} is {tier} but names no silo_key, so its "
                         f"migrator credential cannot be found. Refusing.", file=sys.stderr)
                   sys.exit(1)
 
               if tier == "SILO_BYOD":
-                  # THEIR credential, named on the row. There is no
-                  # migrator-db-url-<silo> for a database we did not build, and
-                  # composing that name would point at a secret that does not
-                  # exist -- so this refuses rather than letting the run fail
-                  # later with a vault 404 that reads like a permissions problem.
+                  # THEIR credential. With db_secret_uri on the row, that one
+                  # login is everything we have, so it has to be allowed to run
+                  # migrations: a client who hands us a login that cannot create
+                  # tables has handed us a database we cannot use, and that is a
+                  # conversation to have at onboarding.
                   #
-                  # It is also the one credential we have for them, so it has to
-                  # be allowed to run migrations: a client who hands us a login
-                  # that cannot create tables has handed us a database we cannot
-                  # use, and that is a conversation to have at onboarding.
-                  if not db_secret_uri:
-                      print(f"::error::{host} is SILO_BYOD but names no "
-                            f"db_secret_uri. That column is the only credential "
-                            f"we have for a database we did not build, so there "
-                            f"is nothing to migrate with. Refusing.",
-                            file=sys.stderr)
-                      sys.exit(1)
-                  secret_uri = db_secret_uri
+                  # With only a silo_key (per-app logins, db_secret_uri NULL) the
+                  # apps compose db-url-<app>-<silo>, and migrations use
+                  # migrator-db-url-<silo> -- the client's owner credential,
+                  # copied into our vault at onboarding (no Terraform writes it
+                  # for a database we did not build). The silo_key check above
+                  # has already refused a row with neither.
+                  secret_uri = (db_secret_uri
+                                or f"{VAULT}/secrets/migrator-db-url-{silo_key}")
                   # NOT `kind`: that name holds the FILTER the dispatch asked
                   # for, and assigning it here overwrote it with whichever row
                   # happened to be last -- so every choice of kind returned the
@@ -225,6 +235,7 @@ jobs:
                   "host": host, "tier": tier, "db": db, "silo_key": silo_key,
                   "secret_uri": secret_uri,
                   "kind": silo_kind,
+                  "server": server,
               }
 
           picked = list(live.values())
@@ -241,6 +252,18 @@ jobs:
                   print(f"::error::'{target}' exists but is not kind='{kind}' "
                         f"(it is {live[target]['kind']}).", file=sys.stderr)
                   raise SystemExit(1)
+
+          # ONE job per database: the first host (rows are ordered) stands for
+          # the rest. Hosts sharing a database share its credential by
+          # construction, so which one is chosen does not change what runs.
+          once, seen = [], set()
+          for s in picked:
+              k = (s["server"], s["db"])
+              if k in seen:
+                  continue
+              seen.add(k)
+              once.append(s)
+          picked = once
 
           print("matrix=" + json.dumps({"include": picked}))
           print(f"count={len(picked)}")
