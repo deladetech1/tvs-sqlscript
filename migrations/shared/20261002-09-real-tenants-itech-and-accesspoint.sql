@@ -55,6 +55,11 @@ BEGIN
         RAISE NOTICE
             'itech/accesspoint routes: skipped here; 20261004-02 owns them now that '
             'route_kind exists';
+    ELSIF current_database() NOT IN ('dev-db', 'silo-itech-dev', 'silo-accesspoint-dev') THEN
+        -- Dev test fixtures naming dev databases: never written anywhere else, not even
+        -- for the minutes before 20261006-04 would remove them (see 20261004-02).
+        RAISE NOTICE 'itech/accesspoint routes: % is not a dev database, not seeding them',
+                     current_database();
     ELSE
     INSERT INTO control_plane.ctl_tenant_routes
         (host, tenant_id, tier, cell_key,
