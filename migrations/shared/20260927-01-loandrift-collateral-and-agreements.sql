@@ -93,11 +93,24 @@ CREATE TABLE IF NOT EXISTS loandrift.ld_collaterals (
     CONSTRAINT ck_ld_collaterals_lien CHECK (lien_status IN ('NONE', 'PENDING', 'REGISTERED', 'DISCHARGED')),
     CONSTRAINT ck_ld_collaterals_release CHECK (release_status IN ('NOT_RELEASED', 'REQUESTED', 'RELEASED')),
     CONSTRAINT ck_ld_collaterals_recovery CHECK (recovery_status IN ('NONE', 'INITIATED', 'IN_PROGRESS', 'RECOVERED', 'SOLD', 'WRITTEN_OFF')),
-    CONSTRAINT fk_ld_collaterals_client FOREIGN KEY (tenant_id, org_id, bus_id, loc_id, client_id)
-        REFERENCES loandrift.ld_clients(tenant_id, org_id, bus_id, loc_id, id) ON DELETE CASCADE,
+    -- The client is the business's, whichever branch the collateral is at.
+    CONSTRAINT fk_ld_collaterals_client FOREIGN KEY (tenant_id, org_id, bus_id, client_id)
+        REFERENCES loandrift.ld_clients(tenant_id, org_id, bus_id, id) ON DELETE CASCADE,
     CONSTRAINT fk_ld_collaterals_loan FOREIGN KEY (tenant_id, org_id, bus_id, loc_id, loan_id)
         REFERENCES loandrift.ld_loan_details(tenant_id, org_id, bus_id, loc_id, id) ON DELETE SET NULL (loan_id)
 );
+
+-- A client belongs to the business, not a branch (EF ClientsBelongToTheBusiness drops the old
+-- key, which named the client's branch); put the key back on (business, client).
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_ld_collaterals_client')
+       AND EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'loandrift.ld_clients'::regclass AND contype IN ('u', 'p')
+                    AND pg_get_constraintdef(oid) = 'UNIQUE (tenant_id, org_id, bus_id, id)') THEN
+        ALTER TABLE loandrift.ld_collaterals ADD CONSTRAINT fk_ld_collaterals_client FOREIGN KEY (tenant_id, org_id, bus_id, client_id)
+            REFERENCES loandrift.ld_clients(tenant_id, org_id, bus_id, id) ON DELETE CASCADE;
+    END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS ix_ld_collaterals_scope
     ON loandrift.ld_collaterals (tenant_id, org_id, bus_id, loc_id, status) WHERE delete_status = 'NOT_DELETED';

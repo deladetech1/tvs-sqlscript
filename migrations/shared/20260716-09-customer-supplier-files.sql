@@ -7,11 +7,22 @@
 -- Idempotent; safe to re-run on every deploy.
 
 -- Profile pictures ----------------------------------------------------------
-ALTER TABLE mystoreguard.msg_customers
-    ADD COLUMN IF NOT EXISTS profile_document_id text;
+-- Only while it is a table (a view of Core Platform's customers since 20261019-30).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('mystoreguard.msg_customers')) = 'r' THEN
+        ALTER TABLE mystoreguard.msg_customers
+            ADD COLUMN IF NOT EXISTS profile_document_id text;
+    END IF;
+END $guard$;
 
-ALTER TABLE mystoreguard.msg_suppliers
-    ADD COLUMN IF NOT EXISTS profile_document_id text;
+-- (msg_suppliers is a view of Core Platform's suppliers since 20261019-29.)
+DO $$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('mystoreguard.msg_suppliers')) = 'r' THEN
+        ALTER TABLE mystoreguard.msg_suppliers ADD COLUMN IF NOT EXISTS profile_document_id text;
+    END IF;
+END $$;
 
 -- Customer attachments ------------------------------------------------------
 CREATE TABLE IF NOT EXISTS mystoreguard.msg_customer_attachments (

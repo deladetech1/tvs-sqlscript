@@ -29,6 +29,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("id");
 
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasColumnType("text")
@@ -109,17 +114,20 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_accounts");
 
-                    b.HasIndex("TenantId", "OrgId", "Code")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Code")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_accounts_tenant_id_org_id_code");
+                        .HasDatabaseName("ix_acc_accounts_tenant_id_org_id_bus_id_code");
 
-                    b.HasIndex("TenantId", "OrgId", "ParentId")
-                        .HasDatabaseName("ix_acc_accounts_tenant_id_org_id_parent_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "ParentId")
+                        .HasDatabaseName("ix_acc_accounts_tenant_id_org_id_bus_id_parent_id");
 
-                    b.HasIndex("TenantId", "OrgId", "Type")
-                        .HasDatabaseName("ix_acc_accounts_tenant_id_org_id_type");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Type")
+                        .HasDatabaseName("ix_acc_accounts_tenant_id_org_id_bus_id_type");
 
-                    b.ToTable("acc_accounts", "accounting");
+                    b.ToTable("acc_accounts", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_accounts_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAccountingRule", b =>
@@ -127,6 +135,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -191,11 +204,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_accounting_rules");
 
-                    b.HasIndex("TenantId", "OrgId", "SourceId", "Event")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SourceId", "Event")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_accounting_rules_tenant_id_org_id_source_id_event");
+                        .HasDatabaseName("ix_acc_accounting_rules_tenant_id_org_id_bus_id_source_id_event");
 
-                    b.ToTable("acc_accounting_rules", "accounting");
+                    b.ToTable("acc_accounting_rules", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_accounting_rules_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAccountingRuleLine", b =>
@@ -213,6 +229,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("amount_basis");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -248,10 +269,285 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("RuleId")
                         .HasDatabaseName("ix_acc_accounting_rule_lines_rule_id");
 
-                    b.HasIndex("TenantId", "OrgId", "RuleId")
-                        .HasDatabaseName("ix_acc_accounting_rule_lines_tenant_id_org_id_rule_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "RuleId")
+                        .HasDatabaseName("ix_acc_accounting_rule_lines_tenant_id_org_id_bus_id_rule_id");
 
-                    b.ToTable("acc_accounting_rule_lines", "accounting");
+                    b.ToTable("acc_accounting_rule_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_accounting_rule_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAssetCategory", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccumulatedAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("accumulated_account_id");
+
+                    b.Property<string>("AssetAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("asset_account_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("code");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("DisposalAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("disposal_account_id");
+
+                    b.Property<string>("ExpenseAccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("expense_account_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("method");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal?>("ReducingRate")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)")
+                        .HasColumnName("reducing_rate");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.Property<int>("UsefulLifeMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("useful_life_months");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_asset_categories");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_asset_categories_tenant_id_org_id_bus_id_code");
+
+                    b.ToTable("acc_asset_categories", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_asset_categories_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAssetDepreciation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("AssetId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("asset_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("JournalId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<DateOnly>("PeriodMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("period_month");
+
+                    b.Property<string>("RunId")
+                        .HasColumnType("text")
+                        .HasColumnName("run_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_asset_depreciation");
+
+                    b.HasIndex("AssetId", "PeriodMonth")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_asset_depreciation_asset_id_period_month");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "PeriodMonth")
+                        .HasDatabaseName("ix_acc_asset_depreciation_tenant_id_org_id_bus_id_period_month");
+
+                    b.ToTable("acc_asset_depreciation", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_asset_depreciation_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAssetRevaluation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("AccumulatedEliminated")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("accumulated_eliminated");
+
+                    b.Property<string>("AssetId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("asset_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<decimal>("CarryingBefore")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("carrying_before");
+
+                    b.Property<decimal>("CostBefore")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("cost_before");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<decimal>("FairValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("fair_value");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PnlAccountId")
+                        .HasColumnType("text")
+                        .HasColumnName("pnl_account_id");
+
+                    b.Property<decimal>("PnlChange")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("pnl_change");
+
+                    b.Property<int>("RemainingMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("remaining_months");
+
+                    b.Property<string>("SurplusAccountId")
+                        .HasColumnType("text")
+                        .HasColumnName("surplus_account_id");
+
+                    b.Property<decimal>("SurplusChange")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("surplus_change");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_asset_revaluations");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "JournalId")
+                        .HasDatabaseName("ix_acc_asset_revaluations_tenant_id_org_id_bus_id_journal_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "AssetId", "Date")
+                        .HasDatabaseName("ix_acc_asset_revaluations_tenant_id_org_id_bus_id_asset_id_date");
+
+                    b.ToTable("acc_asset_revaluations", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_asset_revaluations_bus_id", "btrim(bus_id) <> ''");
+
+                            t.HasCheckConstraint("ck_acc_asset_revaluations_kind", "kind IN ('REVALUATION','SURPLUS_TRANSFER')");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAuditEvent", b =>
@@ -272,6 +568,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("ActorName")
                         .HasColumnType("text")
                         .HasColumnName("actor_name");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("ChangesJson")
                         .HasColumnType("jsonb")
@@ -313,16 +614,19 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_audit_events");
 
-                    b.HasIndex("TenantId", "OrgId", "Action")
-                        .HasDatabaseName("ix_acc_audit_events_tenant_id_org_id_action");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Action")
+                        .HasDatabaseName("ix_acc_audit_events_tenant_id_org_id_bus_id_action");
 
-                    b.HasIndex("TenantId", "OrgId", "OccurredAt")
-                        .HasDatabaseName("ix_acc_audit_events_tenant_id_org_id_occurred_at");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "OccurredAt")
+                        .HasDatabaseName("ix_acc_audit_events_tenant_id_org_id_bus_id_occurred_at");
 
-                    b.HasIndex("TenantId", "OrgId", "EntityType", "EntityId")
-                        .HasDatabaseName("ix_acc_audit_events_tenant_id_org_id_entity_type_entity_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "EntityType", "EntityId")
+                        .HasDatabaseName("ix_acc_audit_events_tenant_id_org_id_bus_id_entity_type_entity");
 
-                    b.ToTable("acc_audit_events", "accounting");
+                    b.ToTable("acc_audit_events", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_audit_events_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBankAccount", b =>
@@ -340,6 +644,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("bank");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -366,6 +675,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<string>("LastImport")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("last_import");
 
                     b.Property<DateTimeOffset?>("LastReconciledAt")
                         .HasColumnType("timestamp with time zone")
@@ -406,11 +719,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_bank_accounts");
 
-                    b.HasIndex("TenantId", "OrgId", "GlAccountId")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "GlAccountId")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_bank_accounts_tenant_id_org_id_gl_account_id");
+                        .HasDatabaseName("ix_acc_bank_accounts_tenant_id_org_id_bus_id_gl_account_id");
 
-                    b.ToTable("acc_bank_accounts", "accounting");
+                    b.ToTable("acc_bank_accounts", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_bank_accounts_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBankStatementLine", b =>
@@ -429,6 +745,21 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("bank_account_id");
 
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date")
                         .HasColumnName("date");
@@ -437,6 +768,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<string>("ExcludeReason")
+                        .HasColumnType("text")
+                        .HasColumnName("exclude_reason");
 
                     b.Property<string>("ImportId")
                         .HasColumnType("text")
@@ -451,9 +786,20 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("org_id");
 
+                    b.Property<DateTimeOffset?>("ReconciledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reconciled_at");
+
                     b.Property<string>("Reference")
                         .HasColumnType("text")
                         .HasColumnName("reference");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("FEED")
+                        .HasColumnName("source");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -469,16 +815,243 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tenant_id");
 
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
                     b.HasKey("Id")
                         .HasName("pk_acc_bank_statement_lines");
 
-                    b.HasIndex("TenantId", "OrgId", "MatchedJournalId")
-                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_matched_journal_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "MatchedJournalId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_acc_bank_statement_lines_matched_journal_id")
+                        .HasFilter("matched_journal_id IS NOT NULL");
 
-                    b.HasIndex("TenantId", "OrgId", "BankAccountId", "Date")
-                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_bank_account_id_d");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "BankAccountId", "Date")
+                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_bus_id_bank_accou");
 
-                    b.ToTable("acc_bank_statement_lines", "accounting");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "BankAccountId", "ImportId")
+                        .HasDatabaseName("ix_acc_bank_statement_lines_tenant_id_org_id_bus_id_bank_accou1");
+
+                    b.ToTable("acc_bank_statement_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_bank_statement_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBudget", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<string>("ApprovedById")
+                        .HasColumnType("text")
+                        .HasColumnName("approved_by_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("FiscalYearId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fiscal_year_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_budgets");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "FiscalYearId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_acc_budgets_approved")
+                        .HasFilter("status = 'APPROVED'");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "FiscalYearId", "Version")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_budgets_tenant_id_org_id_bus_id_fiscal_year_id_version");
+
+                    b.ToTable("acc_budgets", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_budgets_bus_id", "btrim(bus_id) <> ''");
+
+                            t.HasCheckConstraint("ck_acc_budgets_status", "status IN ('DRAFT','APPROVED','SUPERSEDED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBudgetLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("BudgetId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("budget_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("DimensionId")
+                        .HasColumnType("text")
+                        .HasColumnName("dimension_id");
+
+                    b.Property<decimal>("M01")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m01");
+
+                    b.Property<decimal>("M02")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m02");
+
+                    b.Property<decimal>("M03")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m03");
+
+                    b.Property<decimal>("M04")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m04");
+
+                    b.Property<decimal>("M05")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m05");
+
+                    b.Property<decimal>("M06")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m06");
+
+                    b.Property<decimal>("M07")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m07");
+
+                    b.Property<decimal>("M08")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m08");
+
+                    b.Property<decimal>("M09")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m09");
+
+                    b.Property<decimal>("M10")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m10");
+
+                    b.Property<decimal>("M11")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m11");
+
+                    b.Property<decimal>("M12")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("m12");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_budget_lines");
+
+                    b.HasIndex("BudgetId", "AccountId", "DimensionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_budget_lines_budget_id_account_id_dimension_id");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("BudgetId", "AccountId", "DimensionId"), false);
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "BudgetId")
+                        .HasDatabaseName("ix_acc_budget_lines_tenant_id_org_id_bus_id_budget_id");
+
+                    b.ToTable("acc_budget_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_budget_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNote", b =>
@@ -495,6 +1068,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("BranchId")
                         .HasColumnType("text")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -568,14 +1146,17 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_credit_notes");
 
-                    b.HasIndex("TenantId", "OrgId", "DocumentId")
-                        .HasDatabaseName("ix_acc_credit_notes_tenant_id_org_id_document_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "DocumentId")
+                        .HasDatabaseName("ix_acc_credit_notes_tenant_id_org_id_bus_id_document_id");
 
-                    b.HasIndex("TenantId", "OrgId", "Number")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_credit_notes_tenant_id_org_id_number");
+                        .HasDatabaseName("ix_acc_credit_notes_tenant_id_org_id_bus_id_number");
 
-                    b.ToTable("acc_credit_notes", "accounting");
+                    b.ToTable("acc_credit_notes", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_credit_notes_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNoteLine", b =>
@@ -588,6 +1169,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("account_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("CreditNoteId")
                         .IsRequired()
@@ -618,6 +1204,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -634,10 +1225,13 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("CreditNoteId")
                         .HasDatabaseName("ix_acc_credit_note_lines_credit_note_id");
 
-                    b.HasIndex("TenantId", "OrgId", "CreditNoteId")
-                        .HasDatabaseName("ix_acc_credit_note_lines_tenant_id_org_id_credit_note_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CreditNoteId")
+                        .HasDatabaseName("ix_acc_credit_note_lines_tenant_id_org_id_bus_id_credit_note_id");
 
-                    b.ToTable("acc_credit_note_lines", "accounting");
+                    b.ToTable("acc_credit_note_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_credit_note_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCurrency", b =>
@@ -645,6 +1239,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -694,11 +1293,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_currencies");
 
-                    b.HasIndex("TenantId", "OrgId", "Code")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Code")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_currencies_tenant_id_org_id_code");
+                        .HasDatabaseName("ix_acc_currencies_tenant_id_org_id_bus_id_code");
 
-                    b.ToTable("acc_currencies", "accounting");
+                    b.ToTable("acc_currencies", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_currencies_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCustomField", b =>
@@ -706,6 +1308,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -792,11 +1399,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_custom_fields");
 
-                    b.HasIndex("TenantId", "OrgId", "Entity", "Key")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Entity", "Key")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_custom_fields_tenant_id_org_id_entity_key");
+                        .HasDatabaseName("ix_acc_custom_fields_tenant_id_org_id_bus_id_entity_key");
 
-                    b.ToTable("acc_custom_fields", "accounting");
+                    b.ToTable("acc_custom_fields", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_custom_fields_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCustomer", b =>
@@ -804,6 +1414,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("City")
                         .IsRequired()
@@ -835,10 +1450,8 @@ namespace Trovesuite.Database.Accounting.Migrations
 
                     b.Property<string>("CustomFieldsJson")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
-                        .HasColumnName("custom_fields_json")
-                        .HasDefaultValueSql("'{}'::jsonb");
+                        .HasColumnName("custom_fields_json");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -873,6 +1486,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("source");
 
+                    b.Property<string>("SourceApp")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_app");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text")
@@ -896,16 +1514,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("updated_by_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_acc_customers");
+                        .HasName("pk_customers");
 
-                    b.HasIndex("TenantId", "OrgId", "Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_acc_customers_tenant_id_org_id_code");
+                    b.ToTable((string)null);
 
-                    b.HasIndex("TenantId", "OrgId", "Name")
-                        .HasDatabaseName("ix_acc_customers_tenant_id_org_id_name");
-
-                    b.ToTable("acc_customers", "accounting");
+                    b.ToView("acc_customers", "accounting");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccDataSource", b =>
@@ -913,6 +1526,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("ConnectionJson")
                         .IsRequired()
@@ -1012,10 +1630,82 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_data_sources");
 
-                    b.HasIndex("TenantId", "OrgId", "Name")
-                        .HasDatabaseName("ix_acc_data_sources_tenant_id_org_id_name");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Name")
+                        .HasDatabaseName("ix_acc_data_sources_tenant_id_org_id_bus_id_name");
 
-                    b.ToTable("acc_data_sources", "accounting");
+                    b.ToTable("acc_data_sources", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_data_sources_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccDepreciationRun", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AssetCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("asset_count");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("CaughtUp")
+                        .HasColumnType("text")
+                        .HasColumnName("caught_up");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("JournalId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<DateOnly>("PeriodMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("period_month");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("trigger");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_depreciation_runs");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "PeriodMonth")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_depreciation_runs_tenant_id_org_id_bus_id_period_month");
+
+                    b.ToTable("acc_depreciation_runs", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_depreciation_runs_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccDimension", b =>
@@ -1023,6 +1713,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -1076,14 +1771,17 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_dimensions");
 
-                    b.HasIndex("TenantId", "OrgId", "Kind")
-                        .HasDatabaseName("ix_acc_dimensions_tenant_id_org_id_kind");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Kind")
+                        .HasDatabaseName("ix_acc_dimensions_tenant_id_org_id_bus_id_kind");
 
-                    b.HasIndex("TenantId", "OrgId", "Kind", "Code")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Kind", "Code")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_dimensions_tenant_id_org_id_kind_code");
+                        .HasDatabaseName("ix_acc_dimensions_tenant_id_org_id_bus_id_kind_code");
 
-                    b.ToTable("acc_dimensions", "accounting");
+                    b.ToTable("acc_dimensions", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_dimensions_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccExchangeRate", b =>
@@ -1091,6 +1789,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -1140,11 +1843,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_exchange_rates");
 
-                    b.HasIndex("TenantId", "OrgId", "CurrencyCode", "Date", "Source")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CurrencyCode", "Date", "Source")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_exchange_rates_tenant_id_org_id_currency_code_date_sour");
+                        .HasDatabaseName("ix_acc_exchange_rates_tenant_id_org_id_bus_id_currency_code_da");
 
-                    b.ToTable("acc_exchange_rates", "accounting");
+                    b.ToTable("acc_exchange_rates", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_exchange_rates_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFieldMapping", b =>
@@ -1152,6 +1858,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Entity")
                         .IsRequired()
@@ -1195,11 +1906,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_field_mappings");
 
-                    b.HasIndex("TenantId", "OrgId", "SourceId", "Entity", "TargetField")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SourceId", "Entity", "TargetField")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_field_mappings_tenant_id_org_id_source_id_entity_target");
+                        .HasDatabaseName("ix_acc_field_mappings_tenant_id_org_id_bus_id_source_id_entity");
 
-                    b.ToTable("acc_field_mappings", "accounting");
+                    b.ToTable("acc_field_mappings", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_field_mappings_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFiscalPeriod", b =>
@@ -1207,6 +1921,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -1267,14 +1986,211 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_fiscal_periods");
 
-                    b.HasIndex("TenantId", "OrgId", "Status")
-                        .HasDatabaseName("ix_acc_fiscal_periods_tenant_id_org_id_status");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Status")
+                        .HasDatabaseName("ix_acc_fiscal_periods_tenant_id_org_id_bus_id_status");
 
-                    b.HasIndex("TenantId", "OrgId", "StartDate", "EndDate")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "StartDate", "EndDate")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_fiscal_periods_tenant_id_org_id_start_date_end_date");
+                        .HasDatabaseName("ix_acc_fiscal_periods_tenant_id_org_id_bus_id_start_date_end_d");
 
-                    b.ToTable("acc_fiscal_periods", "accounting");
+                    b.ToTable("acc_fiscal_periods", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_fiscal_periods_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFixedAsset", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateOnly>("AcquisitionDate")
+                        .HasColumnType("date")
+                        .HasColumnName("acquisition_date");
+
+                    b.Property<string>("AcquisitionJournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("acquisition_journal_id");
+
+                    b.Property<decimal?>("BasisAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("basis_amount");
+
+                    b.Property<DateOnly?>("BasisMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("basis_month");
+
+                    b.Property<int?>("BasisMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("basis_months");
+
+                    b.Property<string>("BillId")
+                        .HasColumnType("text")
+                        .HasColumnName("bill_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("CategoryId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("category_id");
+
+                    b.Property<decimal>("Cost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("cost");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DisposalAccountId")
+                        .HasColumnType("text")
+                        .HasColumnName("disposal_account_id");
+
+                    b.Property<DateOnly?>("DisposalDate")
+                        .HasColumnType("date")
+                        .HasColumnName("disposal_date");
+
+                    b.Property<decimal?>("DisposalGainLoss")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("disposal_gain_loss");
+
+                    b.Property<string>("DisposalJournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("disposal_journal_id");
+
+                    b.Property<decimal?>("DisposalProceeds")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("disposal_proceeds");
+
+                    b.Property<string>("DisposalReason")
+                        .HasColumnType("text")
+                        .HasColumnName("disposal_reason");
+
+                    b.Property<string>("FundingAccountId")
+                        .HasColumnType("text")
+                        .HasColumnName("funding_account_id");
+
+                    b.Property<DateOnly>("InServiceDate")
+                        .HasColumnType("date")
+                        .HasColumnName("in_service_date");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("text")
+                        .HasColumnName("location");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("method");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<decimal>("OpeningAccumulatedDepreciation")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("opening_accumulated_depreciation");
+
+                    b.Property<DateOnly?>("OpeningDate")
+                        .HasColumnType("date")
+                        .HasColumnName("opening_date");
+
+                    b.Property<string>("OpeningJournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("opening_journal_id");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal?>("ReducingRate")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("numeric(9,4)")
+                        .HasColumnName("reducing_rate");
+
+                    b.Property<decimal>("ResidualValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("residual_value");
+
+                    b.Property<string>("SerialNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("serial_number");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SupplierId")
+                        .HasColumnType("text")
+                        .HasColumnName("supplier_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.Property<int>("UsefulLifeMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("useful_life_months");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_fixed_assets");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CategoryId")
+                        .HasDatabaseName("ix_acc_fixed_assets_tenant_id_org_id_bus_id_category_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_fixed_assets_tenant_id_org_id_bus_id_number");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Status")
+                        .HasDatabaseName("ix_acc_fixed_assets_tenant_id_org_id_bus_id_status");
+
+                    b.ToTable("acc_fixed_assets", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_fixed_assets_bus_id", "btrim(bus_id) <> ''");
+
+                            t.HasCheckConstraint("ck_acc_fixed_assets_method", "method IN ('STRAIGHT_LINE','REDUCING_BALANCE')");
+
+                            t.HasCheckConstraint("ck_acc_fixed_assets_status", "status IN ('ACTIVE','DISPOSED','WRITTEN_OFF')");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFxRevaluation", b =>
@@ -1286,6 +2202,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<DateOnly>("AsAt")
                         .HasColumnType("date")
                         .HasColumnName("as_at");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -1343,11 +2264,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_fx_revaluations");
 
-                    b.HasIndex("TenantId", "OrgId", "PeriodId")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "PeriodId")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_fx_revaluations_tenant_id_org_id_period_id");
+                        .HasDatabaseName("ix_acc_fx_revaluations_tenant_id_org_id_bus_id_period_id");
 
-                    b.ToTable("acc_fx_revaluations", "accounting");
+                    b.ToTable("acc_fx_revaluations", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_fx_revaluations_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccFxRevaluationLine", b =>
@@ -1365,6 +2289,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("amount_fc");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<decimal>("CarryingBase")
                         .HasPrecision(18, 2)
@@ -1422,10 +2351,13 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("RevaluationId")
                         .HasDatabaseName("ix_acc_fx_revaluation_lines_revaluation_id");
 
-                    b.HasIndex("TenantId", "OrgId", "RevaluationId")
-                        .HasDatabaseName("ix_acc_fx_revaluation_lines_tenant_id_org_id_revaluation_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "RevaluationId")
+                        .HasDatabaseName("ix_acc_fx_revaluation_lines_tenant_id_org_id_bus_id_revaluatio");
 
-                    b.ToTable("acc_fx_revaluation_lines", "accounting");
+                    b.ToTable("acc_fx_revaluation_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_fx_revaluation_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccImportBatch", b =>
@@ -1433,6 +2365,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -1442,10 +2379,28 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("created_by_id");
 
+                    b.Property<string>("Entity")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("entity");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("text")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("name");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
 
                     b.Property<string>("OrgId")
                         .IsRequired()
@@ -1489,10 +2444,17 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_import_batches");
 
-                    b.HasIndex("TenantId", "OrgId", "Status")
-                        .HasDatabaseName("ix_acc_import_batches_tenant_id_org_id_status");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_import_batches_tenant_id_org_id_bus_id_number");
 
-                    b.ToTable("acc_import_batches", "accounting");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Status")
+                        .HasDatabaseName("ix_acc_import_batches_tenant_id_org_id_bus_id_status");
+
+                    b.ToTable("acc_import_batches", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_import_batches_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccImportRecord", b =>
@@ -1510,6 +2472,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("batch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Error")
                         .HasColumnType("text")
@@ -1530,6 +2497,10 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("payload_json")
                         .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<bool>("Posted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("posted");
 
                     b.Property<string>("Reference")
                         .IsRequired()
@@ -1557,10 +2528,13 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("BatchId")
                         .HasDatabaseName("ix_acc_import_records_batch_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BatchId")
-                        .HasDatabaseName("ix_acc_import_records_tenant_id_org_id_batch_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "BatchId")
+                        .HasDatabaseName("ix_acc_import_records_tenant_id_org_id_bus_id_batch_id");
 
-                    b.ToTable("acc_import_records", "accounting");
+                    b.ToTable("acc_import_records", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_import_records_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccJournalEntry", b =>
@@ -1576,6 +2550,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("BranchId")
                         .HasColumnType("text")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -1669,20 +2648,28 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_journal_entries");
 
-                    b.HasIndex("TenantId", "OrgId", "Date")
-                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_date");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Date")
+                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_bus_id_date");
 
-                    b.HasIndex("TenantId", "OrgId", "Number")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_number");
+                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_bus_id_number");
 
-                    b.HasIndex("TenantId", "OrgId", "SourceType")
-                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_source_type");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SourceDocumentId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_acc_journal_entries_event")
+                        .HasFilter("source_document_id LIKE 'evt:%'");
 
-                    b.HasIndex("TenantId", "OrgId", "Status")
-                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_status");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SourceType")
+                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_bus_id_source_type");
 
-                    b.ToTable("acc_journal_entries", "accounting");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Status")
+                        .HasDatabaseName("ix_acc_journal_entries_tenant_id_org_id_bus_id_status");
+
+                    b.ToTable("acc_journal_entries", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_journal_entries_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccJournalLine", b =>
@@ -1704,6 +2691,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("BranchId")
                         .HasColumnType("text")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("CostCentreId")
                         .HasColumnType("text")
@@ -1752,13 +2744,16 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("JournalId")
                         .HasDatabaseName("ix_acc_journal_lines_journal_id");
 
-                    b.HasIndex("TenantId", "OrgId", "AccountId")
-                        .HasDatabaseName("ix_acc_journal_lines_tenant_id_org_id_account_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "AccountId")
+                        .HasDatabaseName("ix_acc_journal_lines_tenant_id_org_id_bus_id_account_id");
 
-                    b.HasIndex("TenantId", "OrgId", "JournalId")
-                        .HasDatabaseName("ix_acc_journal_lines_tenant_id_org_id_journal_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "JournalId")
+                        .HasDatabaseName("ix_acc_journal_lines_tenant_id_org_id_bus_id_journal_id");
 
-                    b.ToTable("acc_journal_lines", "accounting");
+                    b.ToTable("acc_journal_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_journal_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccOrgSettings", b =>
@@ -1768,7 +2763,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("address");
 
@@ -1776,6 +2770,12 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("approval_threshold");
+
+                    b.Property<bool>("AutoDepreciation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("auto_depreciation");
 
                     b.Property<string>("BaseCurrency")
                         .IsRequired()
@@ -1791,12 +2791,16 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("block_posting_to_locked_periods");
 
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
                     b.Property<DateOnly?>("ConversionDate")
                         .HasColumnType("date")
                         .HasColumnName("conversion_date");
 
                     b.Property<string>("Country")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("country");
 
@@ -1825,7 +2829,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("default_sales_tax_code_id");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("email");
 
@@ -1862,7 +2865,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("journal_prefix");
 
                     b.Property<string>("LegalName")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("legal_name");
 
@@ -1876,7 +2878,6 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("org_id");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("phone");
 
@@ -1893,13 +2894,19 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tenant_id");
 
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("")
+                        .HasColumnName("time_zone");
+
                     b.Property<string>("Tin")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("tin");
 
                     b.Property<string>("TradingName")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("trading_name");
 
@@ -1914,11 +2921,14 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_org_settings");
 
-                    b.HasIndex("TenantId", "OrgId")
+                    b.HasIndex("TenantId", "OrgId", "BusId")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_org_settings_tenant_id_org_id");
+                        .HasDatabaseName("ix_acc_org_settings_tenant_id_org_id_bus_id");
 
-                    b.ToTable("acc_org_settings", "accounting");
+                    b.ToTable("acc_org_settings", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_org_settings_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPayment", b =>
@@ -1941,6 +2951,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("base_amount");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2025,20 +3040,241 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("updated_by_id");
 
+                    b.Property<string>("VoidReason")
+                        .HasColumnType("text")
+                        .HasColumnName("void_reason");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("voided_at");
+
                     b.HasKey("Id")
                         .HasName("pk_acc_payments");
 
-                    b.HasIndex("TenantId", "OrgId", "DocumentId")
-                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_document_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "DocumentId")
+                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_bus_id_document_id");
 
-                    b.HasIndex("TenantId", "OrgId", "PartyId")
-                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_party_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "PartyId")
+                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_bus_id_party_id");
 
-                    b.HasIndex("TenantId", "OrgId", "Direction", "Number")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Direction", "Number")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_direction_number");
+                        .HasDatabaseName("ix_acc_payments_tenant_id_org_id_bus_id_direction_number");
 
-                    b.ToTable("acc_payments", "accounting");
+                    b.ToTable("acc_payments", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_payments_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPostingAccount", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("role");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_posting_accounts");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Role")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_posting_accounts_tenant_id_org_id_bus_id_role");
+
+                    b.ToTable("acc_posting_accounts", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_posting_accounts_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPostingInbox", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<DateOnly?>("DocumentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("document_date");
+
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("document_number");
+
+                    b.Property<DateTimeOffset>("EventAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("event_at");
+
+                    b.Property<long>("EventId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("JournalId")
+                        .HasColumnType("text")
+                        .HasColumnName("journal_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_attempt_at");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("payload_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<DateTimeOffset?>("PostedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("posted_at");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("SourceApp")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_app");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("PENDING")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SubjectId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_posting_inbox");
+
+                    b.HasIndex("EventId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_posting_inbox_event_id");
+
+                    b.HasIndex("JournalId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_posting_inbox_journal_id")
+                        .HasFilter("journal_id IS NOT NULL");
+
+                    b.HasIndex("Status", "TenantId", "BusId")
+                        .HasDatabaseName("ix_acc_posting_inbox_status_tenant_id_bus_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "EventAt")
+                        .HasDatabaseName("ix_acc_posting_inbox_tenant_id_org_id_bus_id_event_at");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Status")
+                        .HasDatabaseName("ix_acc_posting_inbox_tenant_id_org_id_bus_id_status");
+
+                    b.ToTable("acc_posting_inbox", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_posting_inbox_bus_id", "btrim(bus_id) <> ''");
+
+                            t.HasCheckConstraint("ck_acc_posting_inbox_status", "status IN ('PENDING','POSTED','FAILED','SKIPPED')");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPurchaseBill", b =>
@@ -2060,6 +3296,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("BranchId")
                         .HasColumnType("text")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2156,20 +3397,23 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_purchase_bills");
 
-                    b.HasIndex("TenantId", "OrgId", "IssueDate")
-                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_issue_date");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "IssueDate")
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_bus_id_issue_date");
 
-                    b.HasIndex("TenantId", "OrgId", "Number")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_number");
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_bus_id_number");
 
-                    b.HasIndex("TenantId", "OrgId", "State")
-                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_state");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "State")
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_bus_id_state");
 
-                    b.HasIndex("TenantId", "OrgId", "SupplierId")
-                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_supplier_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SupplierId")
+                        .HasDatabaseName("ix_acc_purchase_bills_tenant_id_org_id_bus_id_supplier_id");
 
-                    b.ToTable("acc_purchase_bills", "accounting");
+                    b.ToTable("acc_purchase_bills", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_purchase_bills_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPurchaseBillLine", b =>
@@ -2187,6 +3431,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("bill_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -2212,6 +3461,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2228,10 +3482,338 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("BillId")
                         .HasDatabaseName("ix_acc_purchase_bill_lines_bill_id");
 
-                    b.HasIndex("TenantId", "OrgId", "BillId")
-                        .HasDatabaseName("ix_acc_purchase_bill_lines_tenant_id_org_id_bill_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "BillId")
+                        .HasDatabaseName("ix_acc_purchase_bill_lines_tenant_id_org_id_bus_id_bill_id");
 
-                    b.ToTable("acc_purchase_bill_lines", "accounting");
+                    b.ToTable("acc_purchase_bill_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_purchase_bill_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccRecurringRun", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("DocumentId")
+                        .HasColumnType("text")
+                        .HasColumnName("document_id");
+
+                    b.Property<string>("DocumentNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("document_number");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<DateOnly>("OccurrenceDate")
+                        .HasColumnType("date")
+                        .HasColumnName("occurrence_date");
+
+                    b.Property<int>("OccurrenceNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("occurrence_no");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TemplateId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("template_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_recurring_runs");
+
+                    b.HasIndex("TemplateId", "OccurrenceDate")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_recurring_runs_template_id_occurrence_date");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "TemplateId")
+                        .HasDatabaseName("ix_acc_recurring_runs_tenant_id_org_id_bus_id_template_id");
+
+                    b.ToTable("acc_recurring_runs", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_recurring_runs_bus_id", "btrim(bus_id) <> ''");
+
+                            t.HasCheckConstraint("ck_acc_recurring_runs_status", "status IN ('GENERATED','SKIPPED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccRecurringTemplate", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AutoApprove")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_approve");
+
+                    b.Property<string>("BranchId")
+                        .HasColumnType("text")
+                        .HasColumnName("branch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by_id");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("currency");
+
+                    b.Property<string>("CustomFieldsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("custom_fields_json")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
+                    b.Property<int?>("DayOfMonth")
+                        .HasColumnType("integer")
+                        .HasColumnName("day_of_month");
+
+                    b.Property<string>("DayRule")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("day_rule");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("exchange_rate");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("frequency");
+
+                    b.Property<int>("GeneratedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("generated_count");
+
+                    b.Property<DateOnly?>("HeldDate")
+                        .HasColumnType("date")
+                        .HasColumnName("held_date");
+
+                    b.Property<string>("HeldReason")
+                        .HasColumnType("text")
+                        .HasColumnName("held_reason");
+
+                    b.Property<int>("IntervalCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("interval_count");
+
+                    b.Property<string>("IntervalUnit")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("interval_unit");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<DateOnly?>("LastRunDate")
+                        .HasColumnType("date")
+                        .HasColumnName("last_run_date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<DateOnly?>("NextRunDate")
+                        .HasColumnType("date")
+                        .HasColumnName("next_run_date");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<int?>("Occurrences")
+                        .HasColumnType("integer")
+                        .HasColumnName("occurrences");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<string>("PartyId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("party_id");
+
+                    b.Property<int>("PaymentTermsDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("payment_terms_days");
+
+                    b.Property<string>("SourceDocumentId")
+                        .HasColumnType("text")
+                        .HasColumnName("source_document_id");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SupplierReference")
+                        .HasColumnType("text")
+                        .HasColumnName("supplier_reference");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedById")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_recurring_templates");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_recurring_templates_tenant_id_org_id_bus_id_number");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Status", "NextRunDate")
+                        .HasDatabaseName("ix_acc_recurring_templates_tenant_id_org_id_bus_id_status_next");
+
+                    b.ToTable("acc_recurring_templates", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_recurring_templates_bus_id", "btrim(bus_id) <> ''");
+
+                            t.HasCheckConstraint("ck_acc_recurring_templates_kind", "kind IN ('INVOICE','BILL')");
+
+                            t.HasCheckConstraint("ck_acc_recurring_templates_status", "status IN ('ACTIVE','PAUSED','ENDED','COMPLETED')");
+                        });
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccRecurringTemplateLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int>("LineNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_no");
+
+                    b.Property<string>("OrgId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("org_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("TaxCodeId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tax_code_id");
+
+                    b.Property<string>("TemplateId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("template_id");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("unit_price");
+
+                    b.HasKey("Id")
+                        .HasName("pk_acc_recurring_template_lines");
+
+                    b.HasIndex("TemplateId")
+                        .HasDatabaseName("ix_acc_recurring_template_lines_template_id");
+
+                    b.HasIndex("TenantId", "OrgId", "BusId", "TemplateId")
+                        .HasDatabaseName("ix_acc_recurring_template_lines_tenant_id_org_id_bus_id_templa");
+
+                    b.ToTable("acc_recurring_template_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_recurring_template_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSalesInvoice", b =>
@@ -2253,6 +3835,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("BranchId")
                         .HasColumnType("text")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2344,20 +3931,23 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_sales_invoices");
 
-                    b.HasIndex("TenantId", "OrgId", "CustomerId")
-                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_customer_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CustomerId")
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_bus_id_customer_id");
 
-                    b.HasIndex("TenantId", "OrgId", "IssueDate")
-                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_issue_date");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "IssueDate")
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_bus_id_issue_date");
 
-                    b.HasIndex("TenantId", "OrgId", "Number")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_number");
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_bus_id_number");
 
-                    b.HasIndex("TenantId", "OrgId", "State")
-                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_state");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "State")
+                        .HasDatabaseName("ix_acc_sales_invoices_tenant_id_org_id_bus_id_state");
 
-                    b.ToTable("acc_sales_invoices", "accounting");
+                    b.ToTable("acc_sales_invoices", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_sales_invoices_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSalesInvoiceLine", b =>
@@ -2370,6 +3960,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("account_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -2400,6 +3995,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2416,10 +4016,13 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("InvoiceId")
                         .HasDatabaseName("ix_acc_sales_invoice_lines_invoice_id");
 
-                    b.HasIndex("TenantId", "OrgId", "InvoiceId")
-                        .HasDatabaseName("ix_acc_sales_invoice_lines_tenant_id_org_id_invoice_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "InvoiceId")
+                        .HasDatabaseName("ix_acc_sales_invoice_lines_tenant_id_org_id_bus_id_invoice_id");
 
-                    b.ToTable("acc_sales_invoice_lines", "accounting");
+                    b.ToTable("acc_sales_invoice_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_sales_invoice_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplier", b =>
@@ -2427,6 +4030,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("City")
                         .IsRequired()
@@ -2458,10 +4066,8 @@ namespace Trovesuite.Database.Accounting.Migrations
 
                     b.Property<string>("CustomFieldsJson")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
-                        .HasColumnName("custom_fields_json")
-                        .HasDefaultValueSql("'{}'::jsonb");
+                        .HasColumnName("custom_fields_json");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -2496,6 +4102,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("source");
 
+                    b.Property<string>("SourceApp")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source_app");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2519,16 +4130,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnName("updated_by_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_acc_suppliers");
+                        .HasName("pk_suppliers");
 
-                    b.HasIndex("TenantId", "OrgId", "Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_acc_suppliers_tenant_id_org_id_code");
+                    b.ToTable((string)null);
 
-                    b.HasIndex("TenantId", "OrgId", "Name")
-                        .HasDatabaseName("ix_acc_suppliers_tenant_id_org_id_name");
-
-                    b.ToTable("acc_suppliers", "accounting");
+                    b.ToView("acc_suppliers", "accounting");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplierCredit", b =>
@@ -2545,6 +4151,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Property<string>("BranchId")
                         .HasColumnType("text")
                         .HasColumnName("branch_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2622,14 +4233,17 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_supplier_credits");
 
-                    b.HasIndex("TenantId", "OrgId", "DocumentId")
-                        .HasDatabaseName("ix_acc_supplier_credits_tenant_id_org_id_document_id");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "DocumentId")
+                        .HasDatabaseName("ix_acc_supplier_credits_tenant_id_org_id_bus_id_document_id");
 
-                    b.HasIndex("TenantId", "OrgId", "Number")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Number")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_supplier_credits_tenant_id_org_id_number");
+                        .HasDatabaseName("ix_acc_supplier_credits_tenant_id_org_id_bus_id_number");
 
-                    b.ToTable("acc_supplier_credits", "accounting");
+                    b.ToTable("acc_supplier_credits", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_supplier_credits_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSupplierCreditLine", b =>
@@ -2642,6 +4256,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("account_id");
+
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -2672,6 +4291,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tax_code_id");
 
+                    b.Property<decimal?>("TaxRate")
+                        .HasPrecision(8, 6)
+                        .HasColumnType("numeric(8,6)")
+                        .HasColumnName("tax_rate");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2688,10 +4312,13 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasIndex("SupplierCreditId")
                         .HasDatabaseName("ix_acc_supplier_credit_lines_supplier_credit_id");
 
-                    b.HasIndex("TenantId", "OrgId", "SupplierCreditId")
-                        .HasDatabaseName("ix_acc_supplier_credit_lines_tenant_id_org_id_supplier_credit_");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "SupplierCreditId")
+                        .HasDatabaseName("ix_acc_supplier_credit_lines_tenant_id_org_id_bus_id_supplier_");
 
-                    b.ToTable("acc_supplier_credit_lines", "accounting");
+                    b.ToTable("acc_supplier_credit_lines", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_supplier_credit_lines_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccTaxCode", b =>
@@ -2700,10 +4327,19 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasColumnType("text")
                         .HasColumnName("id");
 
+                    b.Property<string>("BusId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bus_id");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("code");
+
+                    b.Property<string>("CoreTaxRateId")
+                        .HasColumnType("text")
+                        .HasColumnName("core_tax_rate_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -2765,14 +4401,22 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.HasKey("Id")
                         .HasName("pk_acc_tax_codes");
 
-                    b.HasIndex("TenantId", "OrgId", "Code")
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Code")
                         .IsUnique()
-                        .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_code");
+                        .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_bus_id_code");
 
-                    b.HasIndex("TenantId", "OrgId", "Kind")
-                        .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_kind");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "CoreTaxRateId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_bus_id_core_tax_rate_id")
+                        .HasFilter("core_tax_rate_id IS NOT NULL");
 
-                    b.ToTable("acc_tax_codes", "accounting");
+                    b.HasIndex("TenantId", "OrgId", "BusId", "Kind")
+                        .HasDatabaseName("ix_acc_tax_codes_tenant_id_org_id_bus_id_kind");
+
+                    b.ToTable("acc_tax_codes", "accounting", t =>
+                        {
+                            t.HasCheckConstraint("ck_acc_tax_codes_bus_id", "btrim(bus_id) <> ''");
+                        });
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccAccountingRuleLine", b =>
@@ -2785,6 +4429,18 @@ namespace Trovesuite.Database.Accounting.Migrations
                         .HasConstraintName("fk_acc_accounting_rule_lines_acc_accounting_rules_rule_id");
 
                     b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBudgetLine", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccBudget", "Budget")
+                        .WithMany("Lines")
+                        .HasForeignKey("BudgetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_budget_lines_acc_budgets_budget_id");
+
+                    b.Navigation("Budget");
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNoteLine", b =>
@@ -2847,6 +4503,18 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Navigation("Bill");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccRecurringTemplateLine", b =>
+                {
+                    b.HasOne("Trovesuite.Database.Accounting.Entities.AccRecurringTemplate", "Template")
+                        .WithMany("Lines")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_acc_recurring_template_lines_acc_recurring_templates_templa");
+
+                    b.Navigation("Template");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccSalesInvoiceLine", b =>
                 {
                     b.HasOne("Trovesuite.Database.Accounting.Entities.AccSalesInvoice", "Invoice")
@@ -2876,6 +4544,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                     b.Navigation("Lines");
                 });
 
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccBudget", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccCreditNote", b =>
                 {
                     b.Navigation("Lines");
@@ -2897,6 +4570,11 @@ namespace Trovesuite.Database.Accounting.Migrations
                 });
 
             modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccPurchaseBill", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Trovesuite.Database.Accounting.Entities.AccRecurringTemplate", b =>
                 {
                     b.Navigation("Lines");
                 });

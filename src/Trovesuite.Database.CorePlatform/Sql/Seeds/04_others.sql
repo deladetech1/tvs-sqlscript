@@ -64,8 +64,20 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-zeloshr-%'
   AND p.id NOT LIKE 'permission-crm-%'
   AND p.id NOT LIKE 'permission-projects-%'
+  AND p.id NOT LIKE 'permission-invoicing-%'
+  AND p.id NOT LIKE 'permission-accounting-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
+
+-- An app's permissions reach role-cp-admin if its exclusion line above is missing when they are
+-- created (seeds re-run on every deploy and see what shared files created last time). Remove any
+-- grant of another app's permission so the cross-app check in migrations/shared/20260929-11 holds.
+-- Only rows whose permission carries an app_prefix other than the platform's are touched.
+DELETE FROM core_platform.cp_role_permissions rp
+ USING core_platform.cp_permissions p
+ WHERE p.id = rp.permission_id
+   AND rp.role_id = 'role-cp-admin'
+   AND COALESCE(p.app_prefix, '') NOT IN ('', 'cp');
 
 -- =============================================
 -- NAVIGATION PERMISSIONS FOR EVERY CORE PLATFORM ADMIN ROLE
@@ -196,7 +208,15 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- Projects: the project manager, hosted by the shared apps backend like the CRM; frontend
 -- tvs-projects-ft. Registration beyond this row is migrations/shared/20261016-01-projects-joins-the-platform.sql.
 ('app-projects', 'PROJECTS', 'Boards & Backlogs', 'Sprints & Planning', 'Docs & Wikis', 'Time & Budgets', 'Reports & Automations', 'Plan and track every project in one place: boards, backlogs and sprints, docs, time and budgets, connected to the rest of the suite', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
-('app-accounting', 'ACCOUNTING', 'General Ledger', 'Accounts Payable', 'Accounts Receivable', 'Financial Reporting', 'Tax Management', 'Comprehensive accounting system with chart of accounts, AP/AR modules, financial reporting, and tax compliance support', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
+-- Invoicing: invoices, quotes and payments for any business in any country, hosted by the
+-- shared apps backend; frontend tvs-invoicing-ft. Registration beyond this row is
+-- migrations/shared/20261019-01-invoicing-joins-the-platform.sql.
+('app-invoicing', 'INVOICING', 'Invoices & Quotes', 'Online Payments', 'Taxes for Any Country', 'Recurring Billing', 'Reports & Reminders', 'Bill any customer anywhere: invoices and quotes in their currency and language, your own taxes, paid online, with reminders, recurring billing and reports', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Expenses: claims, approvals, paying people back and budgets, hosted by the shared apps
+-- backend; frontend tvs-expenses-ft. Registration beyond this row is
+-- migrations/shared/20261019-26-expenses-joins-the-platform.sql.
+('app-expenses', 'EXPENSES', 'Receipts & Claims', 'Approvals', 'Pay Back by MoMo or Bank', 'Budgets & Policies', 'Reports & Exports', 'Every business expense in one place: snap a receipt, claim it, get it approved and paid back by mobile money or bank, within budget and policy', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+('app-accounting', 'ACCOUNTING', 'General Ledger & Journals', 'Receivables & Payables', 'Bank Reconciliation', 'Multi-Currency', 'Financial Reports', 'Double-entry books for every organisation: chart of accounts, journals with approvals, invoices and bills, bank reconciliation, multi-currency and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
 ON CONFLICT (id) DO UPDATE SET
@@ -249,7 +269,22 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-prj-basic',      'app-projects',     'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-prj-advance',    'app-projects',     'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-prj-premium',    'app-projects',     'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-prj-enterprise', 'app-projects',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('tier-cfg-prj-enterprise', 'app-projects',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Invoicing: priced as the CRM and Projects, 2026-10-19 (not yet confirmed).
+('tier-cfg-inv-basic',      'app-invoicing',    'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-advance',    'app-invoicing',    'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-premium',    'app-invoicing',    'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-enterprise', 'app-invoicing',    'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Expenses: priced as Invoicing, 2026-10-19 (placeholder, not yet confirmed).
+('tier-cfg-exp-basic',      'app-expenses',     'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-exp-advance',    'app-expenses',     'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-exp-premium',    'app-expenses',     'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-exp-enterprise', 'app-expenses',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Accounting (TapantaBooks): the platform default, as Invoicing and Expenses, 2026-10-18 (not yet confirmed).
+('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-premium',    'app-accounting',   'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-enterprise', 'app-accounting',   'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     app_id          = EXCLUDED.app_id,
     subscription_id = EXCLUDED.subscription_id,

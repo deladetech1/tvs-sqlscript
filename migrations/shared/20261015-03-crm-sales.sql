@@ -161,8 +161,20 @@ CREATE TABLE IF NOT EXISTS crm.crm_products (
     CONSTRAINT ck_crm_products_price CHECK (unit_price >= 0),
     CONSTRAINT ck_crm_products_tax CHECK (tax_rate >= 0 AND tax_rate <= 100)
 );
-CREATE INDEX IF NOT EXISTS ix_crm_products_scope ON crm.crm_products (tenant_id, bus_id, delete_status);
-CREATE UNIQUE INDEX IF NOT EXISTS ux_crm_products_source ON crm.crm_products (tenant_id, bus_id, source, source_id) WHERE source_id IS NOT NULL;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        CREATE INDEX IF NOT EXISTS ix_crm_products_scope ON crm.crm_products (tenant_id, bus_id, delete_status);
+    END IF;
+END $guard$;
+-- Only while it is a table (a view of Core Platform's products since 20261019-31).
+DO $guard$
+BEGIN
+    IF (SELECT relkind FROM pg_class WHERE oid = to_regclass('crm.crm_products')) = 'r' THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_crm_products_source ON crm.crm_products (tenant_id, bus_id, source, source_id) WHERE source_id IS NOT NULL;
+    END IF;
+END $guard$;
 
 -- ============================================================================ deals
 CREATE TABLE IF NOT EXISTS crm.crm_deals (

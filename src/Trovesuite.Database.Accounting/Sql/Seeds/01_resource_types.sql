@@ -26,7 +26,10 @@ INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description
 ('rt-accounting-data-source', 'Data Sources', 'Integration data sources and field mappings', 'rt-subscribed-app-accounting'),
 ('rt-accounting-import', 'Imports', 'Import batches', 'rt-subscribed-app-accounting'),
 ('rt-accounting-user', 'Accounting Users', 'Tenant users visible in Accounting', 'rt-subscribed-app-accounting'),
-('rt-accounting-opening-balance', 'Opening Balances', 'Conversion opening balances', 'rt-subscribed-app-accounting')
+('rt-accounting-opening-balance', 'Opening Balances', 'Conversion opening balances', 'rt-subscribed-app-accounting'),
+('rt-accounting-recurring-document', 'Recurring Documents', 'Recurring invoices and bills', 'rt-subscribed-app-accounting'),
+('rt-accounting-fixed-asset', 'Fixed Assets', 'Fixed asset register, depreciation and disposals', 'rt-subscribed-app-accounting'),
+('rt-accounting-budget', 'Budgets', 'Budgets per fiscal year and budget against actual', 'rt-subscribed-app-accounting')
 ON CONFLICT (id) DO UPDATE SET
     resource_type_name = EXCLUDED.resource_type_name,
     description        = EXCLUDED.description,

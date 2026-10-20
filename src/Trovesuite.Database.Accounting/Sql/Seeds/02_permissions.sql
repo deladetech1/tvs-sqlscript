@@ -26,21 +26,17 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-accounting-currency-update', 'Accounting Currency Update', 'rt-accounting-currency', 'Update organisation currencies', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-tax-code-list', 'Accounting Tax Code List', 'rt-accounting-tax-code', 'List tax codes', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-tax-code-get', 'Accounting Tax Code Get', 'rt-accounting-tax-code', 'Read a tax code', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-tax-code-add', 'Accounting Tax Code Add', 'rt-accounting-tax-code', 'Create tax codes', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-tax-code-update', 'Accounting Tax Code Update', 'rt-accounting-tax-code', 'Update tax codes', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-rule-list', 'Accounting Rule List', 'rt-accounting-rule', 'List accounting rules', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-rule-add', 'Accounting Rule Add', 'rt-accounting-rule', 'Create accounting rules', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-rule-update', 'Accounting Rule Update', 'rt-accounting-rule', 'Update accounting rules', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-rule-delete', 'Accounting Rule Delete', 'rt-accounting-rule', 'Delete unused accounting rules', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-audit-get', 'Accounting Audit Get', 'rt-accounting-audit', 'Read the accounting audit trail', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-customer-list', 'Accounting Customer List', 'rt-accounting-customer', 'List customers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-customer-get', 'Accounting Customer Get', 'rt-accounting-customer', 'Read a customer', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-customer-add', 'Accounting Customer Add', 'rt-accounting-customer', 'Create customers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-customer-update', 'Accounting Customer Update', 'rt-accounting-customer', 'Update customers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-customer-delete', 'Accounting Customer Delete', 'rt-accounting-customer', 'Delete customers (refused while the books use one; archived when another app does)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-supplier-list', 'Accounting Supplier List', 'rt-accounting-supplier', 'List suppliers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-supplier-get', 'Accounting Supplier Get', 'rt-accounting-supplier', 'Read a supplier', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-supplier-add', 'Accounting Supplier Add', 'rt-accounting-supplier', 'Create suppliers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-supplier-update', 'Accounting Supplier Update', 'rt-accounting-supplier', 'Update suppliers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-supplier-delete', 'Accounting Supplier Delete', 'rt-accounting-supplier', 'Delete suppliers (refused while the books use one; archived when another app does)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-invoice-list', 'Accounting Invoice List', 'rt-accounting-invoice', 'List invoices', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-invoice-get', 'Accounting Invoice Get', 'rt-accounting-invoice', 'Read an invoice', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-invoice-add', 'Accounting Invoice Add', 'rt-accounting-invoice', 'Create invoices', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
@@ -71,10 +67,6 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-accounting-supplier-credit-get', 'Accounting Supplier Credit Get', 'rt-accounting-supplier-credit', 'Read a supplier credit', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-supplier-credit-add', 'Accounting Supplier Credit Add', 'rt-accounting-supplier-credit', 'Record supplier credits', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-supplier-credit-void', 'Accounting Supplier Credit Void', 'rt-accounting-supplier-credit', 'Void supplier credits', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-bank-list', 'Accounting Bank List', 'rt-accounting-bank', 'List bank accounts and statement lines', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-bank-get', 'Accounting Bank Get', 'rt-accounting-bank', 'Read bank accounts and reconciliation', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-bank-add', 'Accounting Bank Add', 'rt-accounting-bank', 'Add bank accounts and transfers', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-bank-update', 'Accounting Bank Update', 'rt-accounting-bank', 'Update bank accounts and reconciliation', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-exchange-rate-list', 'Accounting Exchange Rate List', 'rt-accounting-exchange-rate', 'List exchange rates and revaluations', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-exchange-rate-add', 'Accounting Exchange Rate Add', 'rt-accounting-exchange-rate', 'Add exchange rates and run revaluations', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-exchange-rate-delete', 'Accounting Exchange Rate Delete', 'rt-accounting-exchange-rate', 'Delete manual exchange rates', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
@@ -83,7 +75,6 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-accounting-custom-field-update', 'Accounting Custom Field Update', 'rt-accounting-custom-field', 'Update custom fields and values', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-custom-field-delete', 'Accounting Custom Field Delete', 'rt-accounting-custom-field', 'Delete unused custom fields', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-data-source-list', 'Accounting Data Source List', 'rt-accounting-data-source', 'List data sources and field mappings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-data-source-add', 'Accounting Data Source Add', 'rt-accounting-data-source', 'Add data sources and mappings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-data-source-update', 'Accounting Data Source Update', 'rt-accounting-data-source', 'Connect, sync and edit data sources', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-data-source-delete', 'Accounting Data Source Delete', 'rt-accounting-data-source', 'Delete data sources and mappings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-import-list', 'Accounting Import List', 'rt-accounting-import', 'List import batches', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
@@ -93,8 +84,102 @@ INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id,
 ('permission-accounting-import-delete', 'Accounting Import Delete', 'rt-accounting-import', 'Discard unposted import batches', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-user-list', 'Accounting User List', 'rt-accounting-user', 'List tenant users for Accounting', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('permission-accounting-opening-balance-get', 'Accounting Opening Balance Get', 'rt-accounting-opening-balance', 'Read opening balances', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('permission-accounting-opening-balance-update', 'Accounting Opening Balance Update', 'rt-accounting-opening-balance', 'Update opening balances', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('permission-accounting-opening-balance-update', 'Accounting Opening Balance Update', 'rt-accounting-opening-balance', 'Update opening balances', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-list', 'Accounting Bank Statement List', 'rt-accounting-bank', 'List bank statement lines and bank activity', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-import', 'Accounting Bank Statement Import', 'rt-accounting-bank', 'Import, preview and undo bank statement files', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-exclude', 'Accounting Bank Statement Exclude', 'rt-accounting-bank', 'Exclude or restore bank statement lines', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-statement-delete', 'Accounting Bank Statement Delete', 'rt-accounting-bank', 'Delete bank statement lines from a file', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-import-post', 'Accounting Import Post', 'rt-accounting-import', 'Post import batches', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-data-source-sync', 'Accounting Data Source Sync', 'rt-accounting-data-source', 'Run a manual sync of a data source', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-field-mapping-update', 'Accounting Field Mapping Update', 'rt-accounting-data-source', 'Update field mappings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-field-mapping-delete', 'Accounting Field Mapping Delete', 'rt-accounting-data-source', 'Delete field mappings', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-accounting-rule-create', 'Accounting Accounting Rule Create', 'rt-accounting-rule', 'Create accounting rule (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-accounting-rule-delete', 'Accounting Accounting Rule Delete', 'rt-accounting-rule', 'Delete accounting rule (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-accounting-rule-list', 'Accounting Accounting Rule List', 'rt-accounting-rule', 'List accounting rules (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-accounting-rule-update', 'Accounting Accounting Rule Update', 'rt-accounting-rule', 'Update accounting rule (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-audit-log-list', 'Accounting Audit Log List', 'rt-accounting-audit', 'List audit logs (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-account-create', 'Accounting Bank Account Create', 'rt-accounting-bank', 'Create bank account (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-account-get', 'Accounting Bank Account Get', 'rt-accounting-bank', 'Read bank account (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-account-list', 'Accounting Bank Account List', 'rt-accounting-bank', 'List bank accounts (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-account-transfer', 'Accounting Bank Account Transfer', 'rt-accounting-bank', 'Transfer between bank account (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-bank-account-update', 'Accounting Bank Account Update', 'rt-accounting-bank', 'Update bank account (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-data-source-create', 'Accounting Data Source Create', 'rt-accounting-data-source', 'Create data source (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-field-mapping-add', 'Accounting Field Mapping Add', 'rt-accounting-data-source', 'Create field mapping (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-field-mapping-list', 'Accounting Field Mapping List', 'rt-accounting-data-source', 'List field mappings (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fiscal-period-add', 'Accounting Fiscal Period Add', 'rt-accounting-fiscal-period', 'Create fiscal period (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fiscal-period-get', 'Accounting Fiscal Period Get', 'rt-accounting-fiscal-period', 'Read fiscal period (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fiscal-year-close', 'Accounting Fiscal Year Close', 'rt-accounting-fiscal-period', 'Close fiscal year (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fiscal-year-reopen', 'Accounting Fiscal Year Reopen', 'rt-accounting-fiscal-period', 'Reopen fiscal year (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-reconciliation-complete', 'Accounting Reconciliation Complete', 'rt-accounting-bank', 'Complete reconciliation (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-reconciliation-get', 'Accounting Reconciliation Get', 'rt-accounting-bank', 'Read reconciliation (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-reconciliation-reopen', 'Accounting Reconciliation Reopen', 'rt-accounting-bank', 'Reopen reconciliation (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-reconciliation-update', 'Accounting Reconciliation Update', 'rt-accounting-bank', 'Update reconciliation (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-revaluation-add', 'Accounting Revaluation Add', 'rt-accounting-exchange-rate', 'Create revaluation (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-revaluation-get', 'Accounting Revaluation Get', 'rt-accounting-exchange-rate', 'Read revaluation (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-revaluation-list', 'Accounting Revaluation List', 'rt-accounting-exchange-rate', 'List revaluations (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-tax-code-create', 'Accounting Tax Code Create', 'rt-accounting-tax-code', 'Create tax code (contract id)', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-recurring-document-list', 'Accounting Recurring Document List', 'rt-accounting-recurring-document', 'List recurring invoices and bills', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-recurring-document-get', 'Accounting Recurring Document Get', 'rt-accounting-recurring-document', 'Read a recurring invoice or bill and its history', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-recurring-document-add', 'Accounting Recurring Document Add', 'rt-accounting-recurring-document', 'Create recurring invoices and bills', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-recurring-document-update', 'Accounting Recurring Document Update', 'rt-accounting-recurring-document', 'Edit, pause, resume or end recurring invoices and bills', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-recurring-document-delete', 'Accounting Recurring Document Delete', 'rt-accounting-recurring-document', 'Delete recurring documents that have generated nothing', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-recurring-document-post', 'Accounting Recurring Document Post', 'rt-accounting-recurring-document', 'Issue the recurring documents now due', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fixed-asset-list', 'Accounting Fixed Asset List', 'rt-accounting-fixed-asset', 'List fixed assets, categories and depreciation runs', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fixed-asset-get', 'Accounting Fixed Asset Get', 'rt-accounting-fixed-asset', 'Read a fixed asset, the register and the roll-forward', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fixed-asset-add', 'Accounting Fixed Asset Add', 'rt-accounting-fixed-asset', 'Register fixed assets and add asset categories', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fixed-asset-update', 'Accounting Fixed Asset Update', 'rt-accounting-fixed-asset', 'Edit fixed assets and asset categories', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fixed-asset-delete', 'Accounting Fixed Asset Delete', 'rt-accounting-fixed-asset', 'Remove fixed assets nothing has depreciated', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fixed-asset-post', 'Accounting Fixed Asset Post', 'rt-accounting-fixed-asset', 'Run depreciation and set automatic depreciation', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-fixed-asset-remove', 'Accounting Fixed Asset Remove', 'rt-accounting-fixed-asset', 'Sell or write off fixed assets', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-budget-list', 'Accounting Budget List', 'rt-accounting-budget', 'List budgets', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-budget-get', 'Accounting Budget Get', 'rt-accounting-budget', 'Read a budget and budget against actual', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-budget-add', 'Accounting Budget Add', 'rt-accounting-budget', 'Create budgets and new versions', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-budget-update', 'Accounting Budget Update', 'rt-accounting-budget', 'Edit draft budgets', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-budget-approve', 'Accounting Budget Approve', 'rt-accounting-budget', 'Approve a budget version', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('permission-accounting-budget-delete', 'Accounting Budget Delete', 'rt-accounting-budget', 'Delete draft budgets', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET
     permission_name  = EXCLUDED.permission_name,
     resource_type_id = EXCLUDED.resource_type_id,
     description      = EXCLUDED.description;
+
+-- Catalogue metadata (app_prefix, resource_key, action) that Core Platform's Admin and Viewer Admin
+-- reconciliation reads. Accounting arrived after migrations/shared/20260928-05 backfilled other modules,
+-- so it is derived here from the id: permission-accounting-RESOURCE-VERB. Every accounting verb is one
+-- word, and the cp_actions foreign key fails the deploy if a new verb is missing from 00_actions.sql.
+UPDATE core_platform.cp_permissions SET
+    app_prefix   = 'accounting',
+    resource_key = substring(id FROM '^permission-accounting-(.+)-[a-z]+$'),
+    action       = substring(id FROM '-([a-z]+)$')
+WHERE id LIKE 'permission-accounting-%'
+  AND (app_prefix <> 'accounting'
+       OR resource_key IS DISTINCT FROM substring(id FROM '^permission-accounting-(.+)-[a-z]+$')
+       OR action IS DISTINCT FROM substring(id FROM '-([a-z]+)$'));
+
+-- Grants keep a copy of that metadata (migrations/shared/20260929-01) and copy it only when written, so
+-- refresh the copies on accounting grants. On a fresh database this seed runs before that migration adds
+-- the columns, and the migration's own backfill covers it then.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_schema = 'core_platform' AND table_name = 'cp_role_permissions'
+                 AND column_name = 'app_prefix') THEN
+        UPDATE core_platform.cp_role_permissions rp
+           SET app_prefix = p.app_prefix, resource_key = p.resource_key, action = p.action
+          FROM core_platform.cp_permissions p
+         WHERE p.id = rp.permission_id
+           AND p.id LIKE 'permission-accounting-%'
+           AND (rp.app_prefix IS DISTINCT FROM p.app_prefix
+                OR rp.resource_key IS DISTINCT FROM p.resource_key
+                OR rp.action IS DISTINCT FROM p.action);
+    END IF;
+END $$;
+
+-- While accounting permissions had no app_prefix they read as platform permissions, so other apps'
+-- system roles (role-cp-admin in particular) were given them. No role may hold another app's permission
+-- (the cross-app check in migrations/shared/20260929-11), so those grants are removed. Accounting's own
+-- roles, the subscribed-app roles and tenant custom roles (rid_*) keep theirs.
+DELETE FROM core_platform.cp_role_permissions rp
+ WHERE rp.permission_id LIKE 'permission-accounting-%'
+   AND rp.role_id NOT LIKE 'role-accounting%'
+   AND rp.role_id NOT LIKE 'role-subscribed-app-%'
+   AND rp.role_id NOT LIKE 'rid_%';

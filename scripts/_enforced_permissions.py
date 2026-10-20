@@ -92,9 +92,72 @@ def dotnet_app(root):
             if p:
                 bits = p.split("|"); used.add((bits[0], bits[1], bits[2]))
     return used
+def accounting_app(root):
+    """Permissions an Accounting API endpoint grants access on.
+
+    Each endpoint carries `[RequiresAccountingPermission(AccountingPermissions.X)]`, which also
+    accepts the ids in the attribute's own `Legacy = ...` list (and, while the API had them, the older
+    ids in `AccountingPermissions.LegacyAliases[X]`). A grant of any of them works, so all of them count.
+    Ids are split the way the Accounting seed (02_permissions.sql) sets resource_key and action.
+
+    Anything this cannot read raises instead of being skipped: a partial set would be written to
+    is_enforced as "checked by nothing" for every permission it missed.
+    """
+    src = pathlib.Path(root) / "app/src"
+    auth = src / "Shared/Authorization"
+    mod_path = auth / "AccountingPermissions.cs"
+    mod = mod_path.read_text(encoding="utf-8")
+    ids = dict(re.findall(r'public const string (\w+)\s*=\s*"([^"]+)"', mod))
+    # The API retired its LegacyAliases (WI-19); if they come back they are read, and an unreadable block raises.
+    aliases = {}
+    if "LegacyAliases" in mod:
+        block = re.search(r'LegacyAliases\s*=\s*new Dictionary<string, string\[\]>\s*\{(.*?)\n\s*\};', mod, re.S)
+        if not block:
+            raise ValueError(f"{mod_path}: LegacyAliases present but unreadable")
+        aliases = {k: re.findall(r'\w+', v) for k, v in re.findall(r'\[(\w+)\]\s*=\s*\[([^\]]*)\]', block.group(1))}
+
+    def code_of(text):
+        # Comments are not code: a commented-out attribute checks nothing.
+        text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+        return "\n".join(l.split("//", 1)[0] for l in text.splitlines())
+
+    attribute = re.compile(r'\[RequiresAccountingPermission\(AccountingPermissions\.(\w+)(.*?)\)\]')
+    legacy_arg = re.compile(r'Legacy\s*=\s*(?:new\s*(?:string\s*)?\[\]\s*\{([^}]*)\}|\[([^\]]*)\])')
+    names, seen = set(), 0
+    for f in src.rglob("*.cs"):
+        if f.parent.resolve() == auth.resolve():
+            continue
+        code = code_of(f.read_text(encoding="utf-8", errors="replace"))
+        found = list(attribute.finditer(code))
+        # Every use must be one this reads: a split, aliased or list-form attribute would be missed.
+        uses = len(re.findall(r'\bRequiresAccountingPermission(?:Attribute)?\s*\(', code))
+        if uses != len(found):
+            raise ValueError(f"{f}: {uses} RequiresAccountingPermission use(s), {len(found)} readable")
+        for m in found:
+            seen += 1
+            names.add(m.group(1))
+            rest = m.group(2).strip()
+            legacy = legacy_arg.search(rest)
+            if rest and not legacy:
+                raise ValueError(f"{f}: unreadable arguments {rest!r}")
+            names.update(re.findall(r'AccountingPermissions\.(\w+)', legacy.group(1) or legacy.group(2) or "")
+                         if legacy else aliases.get(m.group(1), []))
+    if not seen:
+        raise ValueError(f"{src}: no RequiresAccountingPermission attributes found")
+
+    used = set()
+    for n in names:
+        m = re.fullmatch(r'permission-accounting-(.+)-([a-z]+)', ids.get(n, ""))
+        if not m:
+            raise ValueError(f"{mod_path}: AccountingPermissions.{n} is not a permission-accounting-<resource>-<action> id")
+        used.add(("accounting", m.group(1), m.group(2)))
+    return used
+
+
 def all_enforced(base="."):
     b = pathlib.Path(base)
     return (python_app(b / "mystoreguard/tvs-mystoreguard-bk", "msg")
             | python_app(b / "loandrift/tvs-loandrift-bk", "loandrift")
             | python_app(b / "coreplatform/tvs-coreplatform-bk", "")
-            | dotnet_app(b / "zeloshr/tvs-zeloshr-admin-bk"))
+            | dotnet_app(b / "zeloshr/tvs-zeloshr-admin-bk")
+            | accounting_app(b / "accounting/tvs-accounting-bk"))

@@ -41,11 +41,33 @@ public class AccountingDbContext : DbContext
     public DbSet<AccFieldMapping> FieldMappings => Set<AccFieldMapping>();
     public DbSet<AccImportBatch> ImportBatches => Set<AccImportBatch>();
     public DbSet<AccImportRecord> ImportRecords => Set<AccImportRecord>();
+    public DbSet<AccPostingInbox> PostingInbox => Set<AccPostingInbox>();
+    public DbSet<AccPostingAccount> PostingAccounts => Set<AccPostingAccount>();
+    public DbSet<AccRecurringTemplate> RecurringTemplates => Set<AccRecurringTemplate>();
+    public DbSet<AccRecurringTemplateLine> RecurringTemplateLines => Set<AccRecurringTemplateLine>();
+    public DbSet<AccRecurringRun> RecurringRuns => Set<AccRecurringRun>();
+    public DbSet<AccAssetCategory> AssetCategories => Set<AccAssetCategory>();
+    public DbSet<AccFixedAsset> FixedAssets => Set<AccFixedAsset>();
+    public DbSet<AccAssetDepreciation> AssetDepreciation => Set<AccAssetDepreciation>();
+    public DbSet<AccAssetRevaluation> AssetRevaluations => Set<AccAssetRevaluation>();
+    public DbSet<AccDepreciationRun> DepreciationRuns => Set<AccDepreciationRun>();
+    public DbSet<AccBudget> Budgets => Set<AccBudget>();
+    public DbSet<AccBudgetLine> BudgetLines => Set<AccBudgetLine>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AccountingDbContext).Assembly);
+
+        // The books are per BUSINESS: every row names the business it belongs to, never just the
+        // organisation (a pharmacy and a hardware shop in one organisation keep separate books).
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            // Views (acc_customers / acc_suppliers over cp_parties) hold no constraints.
+            if (entity.FindProperty("BusId") is null || entity.GetTableName() is null) continue;
+            entity.AddCheckConstraint($"ck_{entity.GetTableName()}_bus_id", "btrim(bus_id) <> ''");
+        }
+
         base.OnModelCreating(modelBuilder);
     }
 }

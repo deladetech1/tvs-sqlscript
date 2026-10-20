@@ -66,8 +66,13 @@ Identical to `script_db_setup.sh`:
 | 2     | `loandrift`      | `loandrift`      | Status-CHECK self-heal; `ld_loan_details_view`                                          |
 | 3     | `mystoreguard`   | `mystoreguard`   | `COALESCE`-based partial unique index on `msg_product_prices`; PO items column patches  |
 | 4     | `human_resource` | `human_resource` | ZelosHR `zeloshr` tables + EF RBAC seeds into `core_platform`                             |
+| 5     | `attendance`     | `attendance`     | Attendance tables (its permissions now belong to ZelosHR, 20260929-09)                  |
+| 6     | `accounting`     | `accounting`     | Accounting ledger tables + RBAC seeds into `core_platform`                                |
 
-After all four modules complete, the Runner additionally applies:
+Apps added after these (CRM, Projects, Invoicing) have no module: they join through a
+`migrations/shared/*-joins-the-platform.sql` file. See [docs/APP_ONBOARDING.md](docs/APP_ONBOARDING.md).
+
+After all six modules complete, the Runner additionally applies:
 
 5. `migrations/shared/*.sql` — runs on every deploy.
 6. `migrations/enterprise/<slug>/*.sql` — runs **only** when the

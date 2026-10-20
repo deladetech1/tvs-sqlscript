@@ -1,21 +1,27 @@
 namespace Trovesuite.Database.Accounting.Entities;
 
-/// <summary>One row per tenant/org — base currency, prefixes, FX accounts, defaults.</summary>
+/// <summary>One row per business (its books) — base currency, prefixes, FX accounts, defaults.</summary>
 public class AccOrgSettings
 {
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
-    public string LegalName { get; set; } = "";
-    public string TradingName { get; set; } = "";
+    public string BusId { get; set; } = default!;
+    // Who the business is (name, legal name, country, address, email, phone) is Core Platform's
+    // (cp_businesses / cp_organizations), read per request. These columns are no longer written and are
+    // kept, nullable, only so the rows written before still read (migration IdentityFromCorePlatform).
+    public string? LegalName { get; set; }
+    public string? TradingName { get; set; }
     public string Tin { get; set; } = "";
-    public string Country { get; set; } = "GH";
+    public string? Country { get; set; }
     public string BaseCurrency { get; set; } = "GHS";
     public int FiscalYearStartMonth { get; set; } = 1;
     public string FiscalYearStart { get; set; } = "01-01";
-    public string Address { get; set; } = "";
-    public string Email { get; set; } = "";
-    public string Phone { get; set; } = "";
+    public string? Address { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    /// <summary>IANA zone the business keeps its day in; empty means the tenant's zone in Core Platform, else UTC.</summary>
+    public string TimeZone { get; set; } = "";
     public decimal ApprovalThreshold { get; set; } = 50000;
     public bool RequireApprovalForManualJournals { get; set; } = true;
     public bool BlockPostingToLockedPeriods { get; set; } = true;
@@ -32,6 +38,8 @@ public class AccOrgSettings
     public string? DefaultPurchaseTaxCodeId { get; set; }
     public string? OpeningBalanceJournalId { get; set; }
     public bool SetupComplete { get; set; }
+    /// <summary>Post each month's depreciation automatically once the month has ended.</summary>
+    public bool AutoDepreciation { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -43,6 +51,7 @@ public class AccAccount
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Type { get; set; } = default!;
@@ -65,6 +74,7 @@ public class AccFiscalPeriod
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public DateOnly StartDate { get; set; }
     public DateOnly EndDate { get; set; }
@@ -83,6 +93,7 @@ public class AccJournalEntry
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public DateOnly Date { get; set; }
     public string Memo { get; set; } = default!;
@@ -112,6 +123,7 @@ public class AccJournalLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string JournalId { get; set; } = default!;
     public int LineNo { get; set; }
     public string AccountId { get; set; } = default!;
@@ -131,6 +143,7 @@ public class AccDimension
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Kind { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
@@ -147,6 +160,7 @@ public class AccCurrency
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Symbol { get; set; } = default!;
@@ -162,6 +176,7 @@ public class AccTaxCode
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public decimal Rate { get; set; }
@@ -170,6 +185,8 @@ public class AccTaxCode
     public string? InputAccountId { get; set; }
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
+    /// <summary>The Core Platform tax this code is (core_platform.cp_tax_rates.id, same business); null for an old code not linked yet.</summary>
+    public string? CoreTaxRateId { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -181,6 +198,7 @@ public class AccAccountingRule
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Event { get; set; } = default!;
     public string SourceId { get; set; } = default!;
@@ -201,6 +219,7 @@ public class AccAccountingRuleLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string RuleId { get; set; } = default!;
     public int LineNo { get; set; }
     public string AccountId { get; set; } = default!;
@@ -217,6 +236,7 @@ public class AccAuditEvent
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public DateTimeOffset OccurredAt { get; set; }
     public string Action { get; set; } = default!;
     public string EntityType { get; set; } = default!;
@@ -233,6 +253,7 @@ public class AccCustomer
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Email { get; set; } = "";
@@ -250,6 +271,8 @@ public class AccCustomer
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
     public string? UpdatedById { get; set; }
+    /// <summary>The app the record was first entered in (cp_parties.source_app); read-only here.</summary>
+    public string SourceApp { get; set; } = "";
 }
 
 public class AccSupplier
@@ -257,6 +280,7 @@ public class AccSupplier
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Email { get; set; } = "";
@@ -274,6 +298,8 @@ public class AccSupplier
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
     public string? UpdatedById { get; set; }
+    /// <summary>The app the record was first entered in (cp_parties.source_app); read-only here.</summary>
+    public string SourceApp { get; set; } = "";
 }
 
 public class AccSalesInvoice
@@ -281,6 +307,7 @@ public class AccSalesInvoice
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string CustomerId { get; set; } = default!;
     public DateOnly IssueDate { get; set; }
@@ -310,12 +337,15 @@ public class AccSalesInvoiceLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string InvoiceId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccSalesInvoice? Invoice { get; set; }
@@ -326,6 +356,7 @@ public class AccPurchaseBill
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string SupplierId { get; set; } = default!;
     public string SupplierReference { get; set; } = default!;
@@ -356,12 +387,15 @@ public class AccPurchaseBillLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string BillId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccPurchaseBill? Bill { get; set; }
@@ -372,6 +406,7 @@ public class AccCreditNote
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string PartyId { get; set; } = default!;
     public string DocumentId { get; set; } = default!;
@@ -396,12 +431,15 @@ public class AccCreditNoteLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string CreditNoteId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccCreditNote? CreditNote { get; set; }
@@ -412,6 +450,7 @@ public class AccSupplierCredit
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string PartyId { get; set; } = default!;
     public string DocumentId { get; set; } = default!;
@@ -437,12 +476,15 @@ public class AccSupplierCreditLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string SupplierCreditId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Description { get; set; } = default!;
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string TaxCodeId { get; set; } = default!;
+    /// <summary>The tax code's rate (a fraction) on the document's date, kept on the line; null on rows from before.</summary>
+    public decimal? TaxRate { get; set; }
     public string AccountId { get; set; } = default!;
 
     public AccSupplierCredit? SupplierCredit { get; set; }
@@ -454,6 +496,7 @@ public class AccPayment
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Direction { get; set; } = default!;
     public string Number { get; set; } = default!;
     public string PartyId { get; set; } = default!;
@@ -469,6 +512,8 @@ public class AccPayment
     public string? Reference { get; set; }
     public string? JournalId { get; set; }
     public string State { get; set; } = "POSTED";
+    public string? VoidReason { get; set; }
+    public DateTimeOffset? VoidedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -480,6 +525,7 @@ public class AccBankAccount
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Bank { get; set; } = default!;
     public string AccountNumber { get; set; } = default!;
@@ -490,6 +536,8 @@ public class AccBankAccount
     public DateTimeOffset? LastReconciledAt { get; set; }
     public bool IsActive { get; set; } = true;
     public string? Description { get; set; }
+    /// <summary>Latest statement import, kept so it can be undone (jsonb).</summary>
+    public string? LastImport { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedById { get; set; }
@@ -501,6 +549,7 @@ public class AccBankStatementLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string BankAccountId { get; set; } = default!;
     public DateOnly Date { get; set; }
     public string Description { get; set; } = default!;
@@ -510,6 +559,14 @@ public class AccBankStatementLine
     public string? SuggestedJournalId { get; set; }
     public string? Reference { get; set; }
     public string? ImportId { get; set; }
+    /// <summary><c>FEED</c> or <c>FILE</c>.</summary>
+    public string Source { get; set; } = "FEED";
+    public string? ExcludeReason { get; set; }
+    public DateTimeOffset? ReconciledAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
 }
 
 public class AccExchangeRate
@@ -517,6 +574,7 @@ public class AccExchangeRate
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string CurrencyCode { get; set; } = default!;
     public DateOnly Date { get; set; }
     public decimal Rate { get; set; }
@@ -532,6 +590,7 @@ public class AccFxRevaluation
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string PeriodId { get; set; } = default!;
     public DateOnly AsAt { get; set; }
     public string RatesJson { get; set; } = "{}";
@@ -551,6 +610,7 @@ public class AccFxRevaluationLine
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string RevaluationId { get; set; } = default!;
     public string Kind { get; set; } = default!;
     public string Currency { get; set; } = default!;
@@ -570,6 +630,7 @@ public class AccCustomField
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Entity { get; set; } = default!;
     public string Key { get; set; } = default!;
     public string Label { get; set; } = default!;
@@ -593,6 +654,7 @@ public class AccDataSource
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Provider { get; set; } = default!;
     public string Kind { get; set; } = default!;
@@ -618,6 +680,7 @@ public class AccFieldMapping
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string SourceId { get; set; } = default!;
     public string Entity { get; set; } = default!;
     public string SourceField { get; set; } = default!;
@@ -631,9 +694,14 @@ public class AccImportBatch
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string? SourceId { get; set; }
+    public string Number { get; set; } = default!;
+    public string Entity { get; set; } = "Journals";
+    public string? FileName { get; set; }
+    public string? JournalId { get; set; }
     public string Name { get; set; } = default!;
-    public string Status { get; set; } = "DRAFT";
+    public string Status { get; set; } = "NEEDS_REVIEW";
     public int RowsReceived { get; set; }
     public int RowsPosted { get; set; }
     public int RowsHeld { get; set; }
@@ -650,6 +718,7 @@ public class AccImportRecord
     public string Id { get; set; } = default!;
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
     public string BatchId { get; set; } = default!;
     public int LineNo { get; set; }
     public string Reference { get; set; } = "";
@@ -657,7 +726,60 @@ public class AccImportRecord
     public decimal Amount { get; set; }
     public string Status { get; set; } = "VALID";
     public string? Error { get; set; }
+    public bool Posted { get; set; }
     public string PayloadJson { get; set; } = "{}";
 
     public AccImportBatch? Batch { get; set; }
+}
+
+/// <summary>
+/// One event another Trovesuite app published (core_platform.cp_events) that the books post: a MyStoreGuard sale, a
+/// payment, a return. Kept per business; one row per event (event_id), one journal per row. See docs/POSTINGS.md.
+/// </summary>
+public class AccPostingInbox
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    /// <summary>core_platform.cp_events.id, unique in this database.</summary>
+    public long EventId { get; set; }
+    public string SourceApp { get; set; } = default!;
+    public string Kind { get; set; } = default!;
+    public string SubjectId { get; set; } = default!;
+    public string DocumentNumber { get; set; } = "";
+    public DateOnly? DocumentDate { get; set; }
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = "";
+    public string PayloadJson { get; set; } = "{}";
+    /// <summary>PENDING, POSTED, FAILED or SKIPPED.</summary>
+    public string Status { get; set; } = "PENDING";
+    public string? Reason { get; set; }
+    public string? JournalId { get; set; }
+    public int Attempts { get; set; }
+    public DateTimeOffset EventAt { get; set; }
+    public DateTimeOffset? LastAttemptAt { get; set; }
+    public DateTimeOffset? PostedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
+}
+
+/// <summary>
+/// Which account a posting role (SALES_REVENUE, CASH, TAX:&lt;tax id&gt;, ...) posts to in one business's books. A role
+/// without a row posts to the standard account by code; a row is the business's own choice (Settings → Posting accounts).
+/// </summary>
+public class AccPostingAccount
+{
+    public string Id { get; set; } = default!;
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string BusId { get; set; } = default!;
+    public string Role { get; set; } = default!;
+    public string AccountId { get; set; } = default!;
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedById { get; set; }
+    public string? UpdatedById { get; set; }
 }

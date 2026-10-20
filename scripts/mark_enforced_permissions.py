@@ -13,8 +13,8 @@ written to cp_permissions.is_enforced, which the permissions screen then shows. 
     scripts/mark_enforced_permissions.py /path/to/trovesuite            # writes
     scripts/mark_enforced_permissions.py /path/to/trovesuite --dry-run  # reports only
 
-Run it after changing what an endpoint checks. It reads the four app repos out of the given
-monorepo root, so it needs them checked out beside each other.
+Run it after changing what an endpoint checks. It reads the five app repos out of the given
+monorepo root (Accounting at accounting/tvs-accounting-bk), so it needs them checked out beside each other.
 """
 import argparse, os, sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -23,7 +23,7 @@ from _enforced_permissions import all_enforced
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("root", help="the monorepo root holding the four app repos")
+    ap.add_argument("root", help="the monorepo root holding the five app repos")
     ap.add_argument("--dry-run", action="store_true", help="report without writing")
     ap.add_argument("--dsn", default=os.environ.get("DATABASE_URL"))
     args = ap.parse_args()

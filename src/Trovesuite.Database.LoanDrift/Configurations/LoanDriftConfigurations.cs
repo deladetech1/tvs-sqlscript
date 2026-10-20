@@ -35,13 +35,18 @@ internal static class LoanDriftDefaults
         return b;
     }
 
-    /// <summary>Composite FK to ld_clients (5-column).</summary>
+    /// <summary>
+    /// Composite FK (TenantId, OrgId, BusId, ClientId) → ld_clients(TenantId, OrgId, BusId, Id).
+    /// A client belongs to the business, not to a branch: a loan, a savings account or a
+    /// guarantor at any of the business's branches points at the same client. (The child's
+    /// own LocId is the branch it was made at; the client's is the branch they registered at.)
+    /// </summary>
     public static EntityTypeBuilder<T> WithClientFk<T>(this EntityTypeBuilder<T> b,
         DeleteBehavior onDelete = DeleteBehavior.Cascade) where T : class
     {
         b.HasOne<Client>().WithMany()
-            .HasForeignKey("TenantId", "OrgId", "BusId", "LocId", "ClientId")
-            .HasPrincipalKey("TenantId", "OrgId", "BusId", "LocId", "Id")
+            .HasForeignKey("TenantId", "OrgId", "BusId", "ClientId")
+            .HasPrincipalKey("TenantId", "OrgId", "BusId", "Id")
             .OnDelete(onDelete);
         return b;
     }
@@ -68,8 +73,10 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         b.Property(x => x.RegistrationDatetime).HasColumnType("timestamptz");
         b.Property(x => x.Contacts).HasColumnType("text[]").HasDefaultValueSql("ARRAY[]::text[]");
         b.ApplyAuditDefaults();
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Email }).IsUnique();
-        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.LocId, x.Contact }).IsUnique();
+        // One email, one phone per client of the business (not per branch). LocId is the
+        // branch they registered at; the client is the business's.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Email }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.BusId, x.Contact }).IsUnique();
         b.HasInCheck("marital_status", "SINGLE", "MARRIED", "DIVORCED", "WIDOWED", null!);
         b.HasInCheck("gender", "MALE", "FEMALE", "OTHER", null!);
         // Widened past the four documents an officer used to be able to sight:
