@@ -11,6 +11,10 @@
 -- Reversals of a charges entry carry the source of the entry they reverse, so
 -- they are relabelled with it.
 --
+-- The constraint is owned by 20260928-04, which re-creates it on every deploy;
+-- LOAN_CHARGES is added to its list there too, so that file never re-adds a
+-- narrower check than the rows this one relabels. Keep both lists the same.
+--
 -- Idempotent: the constraint is dropped and recreated by name, and the UPDATEs
 -- only match rows still labelled EXPENSE.
 
