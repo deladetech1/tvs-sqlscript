@@ -22,6 +22,15 @@
 #                      because each tenant's credential lives in its own Key
 #                      Vault secret and there are as many as there are tenants.
 #
+# WHICH SQL is decided here too, from the target, never by the caller: a
+# production database gets exactly `master`, a dev one gets `dev` (or, for a push
+# inside this repository, the branch that was pushed). Until 20261020 a
+# cross-repo caller always got `dev`, so the Accounting and ZelosHR deploys on
+# `main` applied tvs-sqlscript's DEV branch to saas-prod and skipped the
+# rehearse-then-promote-to-master step. `target_env` is required and checked
+# against the vault and the GitHub Environment, so a caller that says "dev" about
+# a prod database fails instead of applying unpromoted SQL to it.
+#
 # The credential is read INSIDE this workflow either way. It is never a job
 # output or a matrix value, because those are visible to anything that can read
 # the run.
@@ -41,10 +50,14 @@ on:
         required: false
         default: all
       command:
-        description: "deploy | validate | verify"
+        description: "deploy | validate | verify | status | rollback | migrations-list | plan (plan touches no database: it only shows which SQL would be applied)"
         type: string
         required: false
         default: validate
+      target_env:
+        description: "dev | prod -- the environment of the DATABASE. prod applies tvs-sqlscript master, dev applies dev."
+        type: string
+        required: true
       target_class:
         description: "saas | silo | enterprise — selects migrations/<class>/"
         type: string
@@ -127,33 +140,77 @@ jobs:
       TVS_ENTERPRISE: ${{ inputs.enterprise_slug }}
 
     steps:
-      # The SQL and the runner live in THIS repository, and a bare checkout in a
-      # reusable workflow takes the CALLER's repository -- which for a cross-repo
-      # caller is an app repo with no Trovesuite.Database.sln in it. That is
-      # exactly how the zeloshr migrate job failed with
-      # "MSBUILD : error MSB1009: Project file does not exist".
-      #
-      # The same trap as the `uses:` line in migrate.yml, which is pinned to a
-      # full path for the same reason. Two steps rather than always naming the
-      # repository, so a push to saas/silo/enterprise still builds and applies
-      # the SQL from THAT branch instead of silently from dev.
-      - uses: actions/checkout@v4
-        if: github.repository == 'deladetech1/tvs-sqlscript'
+      # Production gets master. Nothing a caller passes can change that: the ref
+      # follows target_env, and target_env is cross-checked against the two
+      # things that actually name the database -- the GitHub Environment (whose
+      # DATABASE_URL is used) and the Key Vault (whose secret is used).
+      - name: Which SQL
+        id: sql
+        env:
+          TARGET_ENV: ${{ inputs.target_env }}
+          GH_ENVIRONMENT: ${{ inputs.environment }}
+          SECRET_URI: ${{ inputs.secret_uri }}
+          IN_REPO: ${{ github.repository == 'deladetech1/tvs-sqlscript' }}
+        run: |
+          set -euo pipefail
+          case "$TARGET_ENV" in
+            dev|prod) ;;
+            *) echo "::error::target_env must be dev or prod, got '$TARGET_ENV'"; exit 1 ;;
+          esac
 
+          looks_prod=""
+          [[ "$GH_ENVIRONMENT" == *prod* ]] && looks_prod="GitHub Environment '$GH_ENVIRONMENT'"
+          [[ "$SECRET_URI" =~ ^https://[^.]*-prod-kv\. ]] && looks_prod="vault in '$SECRET_URI'"
+          if [ -n "$looks_prod" ] && [ "$TARGET_ENV" != prod ]; then
+            echo "::error::target_env=$TARGET_ENV but the $looks_prod is production. Refusing: production only ever gets master."
+            exit 1
+          fi
+
+          if [ "$TARGET_ENV" = prod ]; then
+            REF=master
+            # The SQL is master regardless. The workflow DEFINITION running this
+            # is whatever the dispatch chose, so say so when it is not master.
+            if [ "$IN_REPO" = true ] && [ "$GITHUB_REF" != refs/heads/master ]; then
+              echo "::warning::Production run dispatched from $GITHUB_REF. The SQL is still master; dispatch from master to run master's workflow too."
+            fi
+          elif [ "$IN_REPO" = true ]; then
+            # A push to dev/saas/silo deploys THAT branch's SQL to dev targets.
+            REF="$GITHUB_SHA"
+          else
+            REF=dev
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "::notice title=SQL ref::target_env=$TARGET_ENV -> tvs-sqlscript@$REF"
+
+      # Always names the repository: a bare checkout in a reusable workflow
+      # takes the CALLER's repository, which for an app pipeline has no
+      # Trovesuite.Database.sln ("MSB1009: Project file does not exist").
       - uses: actions/checkout@v4
-        if: github.repository != 'deladetech1/tvs-sqlscript'
         with:
           repository: deladetech1/tvs-sqlscript
-          ref: dev
+          ref: ${{ steps.sql.outputs.ref }}
+
+      - name: Record the SQL commit
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          echo "::notice title=SQL commit::tvs-sqlscript@${{ steps.sql.outputs.ref }} = $SHA ($(git log -1 --format=%s))"
+          {
+            echo "### SQL · ${{ inputs.label }}"
+            echo ""
+            echo "target_env \`${{ inputs.target_env }}\` → tvs-sqlscript \`${{ steps.sql.outputs.ref }}\` at \`$SHA\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-dotnet@v4
+        if: inputs.command != 'plan'
         with:
           dotnet-version: "10.0.x"
 
       - run: dotnet build Trovesuite.Database.sln -c Release --nologo
+        if: inputs.command != 'plan'
 
       - name: Azure login
-        if: inputs.source == 'keyvault'
+        if: inputs.source == 'keyvault' && inputs.command != 'plan'
         uses: azure/login@v2
         with:
           client-id: ${{ inputs.azure_client_id }}
@@ -162,6 +219,7 @@ jobs:
 
       - name: Resolve the connection string
         id: db
+        if: inputs.command != 'plan'
         env:
           FROM_SECRET: ${{ secrets.database_url }}
           SECRET_URI: ${{ inputs.secret_uri }}
@@ -197,6 +255,12 @@ jobs:
           # A silo whose secret resolves to the pool would apply silo-only SQL to
           # every tenant's data. Checked here, where the name is already parsed,
           # rather than trusted in each caller.
+          # The last word on "is this production": the database's own name.
+          if [ "$DB_NAME" = prod-db ] && [ "${{ inputs.target_env }}" != prod ]; then
+            echo "::error::${{ inputs.label }} resolved to prod-db but target_env=${{ inputs.target_env }}. Refusing."
+            exit 1
+          fi
+
           if [ "${{ inputs.refuse_pooled_database }}" = "true" ]; then
             case "$DB_NAME" in
               dev-db|prod-db|staging-db)
@@ -211,7 +275,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: ${{ inputs.command }}
-        if: inputs.command != 'migrations-list'
+        if: inputs.command != 'migrations-list' && inputs.command != 'plan'
         env:
           DB_HOST: ${{ steps.db.outputs.DB_HOST }}
           DB_PORT: ${{ steps.db.outputs.DB_PORT }}

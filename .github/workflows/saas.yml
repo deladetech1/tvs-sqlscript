@@ -45,7 +45,9 @@ on:
         type: choice
         required: true
         default: validate
-        options: [validate, verify, status, deploy, migrations-list, rollback]
+        # plan touches no database: it shows which tvs-sqlscript ref the target
+        # would get (prod is always master) and stops.
+        options: [validate, verify, status, deploy, migrations-list, rollback, plan]
       destructive_ack:
         description: 'For rollback only: type exactly YESDestructive'
         type: string
@@ -67,6 +69,7 @@ jobs:
     with:
       label: saas ${{ inputs.environment || 'dev' }}
       environment: saas-${{ inputs.environment || 'dev' }}
+      target_env: ${{ inputs.environment || 'dev' }}
       module: ${{ inputs.module || 'all' }}
       command: ${{ inputs.command || 'deploy' }}
       destructive_ack: ${{ inputs.destructive_ack }}
