@@ -29,6 +29,15 @@ COMMENT ON COLUMN mystoreguard.msg_purchase_batches.tracks_items IS
     'its own numbers. False when the delivery is a count. A product may hold '
     'both kinds of delivery; the check runs per delivery, not per product.';
 
+-- Asked on every write to either table, so it wants an index. Built BEFORE the update below:
+-- msg_purchase_batches carries deferred accounting triggers (20261019-39), and an update
+-- leaves trigger events pending until commit, which makes a later CREATE INDEX in the same
+-- transaction fail (55006). On a database with serialised deliveries this file and 20260911-02
+-- flip those rows every deploy, so the update is never a no-op there.
+CREATE INDEX IF NOT EXISTS ix_msg_purchase_batches_tracks_items
+    ON mystoreguard.msg_purchase_batches (tenant_id, org_id, bus_id, product_id)
+    WHERE tracks_items;
+
 -- Every delivery of a product that was serialised was, by definition, tracked.
 UPDATE mystoreguard.msg_purchase_batches pb
    SET tracks_items = true
@@ -38,10 +47,6 @@ UPDATE mystoreguard.msg_purchase_batches pb
    AND p.tracking_type = 'SERIALISED'
    AND pb.tracks_items = false;
 
--- Asked on every write to either table, so it wants an index.
-CREATE INDEX IF NOT EXISTS ix_msg_purchase_batches_tracks_items
-    ON mystoreguard.msg_purchase_batches (tenant_id, org_id, bus_id, product_id)
-    WHERE tracks_items;
 
 
 CREATE OR REPLACE FUNCTION mystoreguard.msg_check_serialised_stock()
