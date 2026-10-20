@@ -86,11 +86,18 @@ def run(rows, kind="all", target="all"):
     return code, out.getvalue(), err.getvalue()
 
 
-SHARED = "itech.dev.trovesuite.com|SILO_SHARED|silo-itech-dev|itech|"
-DEDI = "accesspoint.dev.trovesuite.com|SILO_DEDICATED|silo-accesspoint-dev|accesspoint|"
+# host | tier | db_name | silo_key | db_secret_uri | db_server_fqdn
+SHARED = "itech.dev.trovesuite.com|SILO_SHARED|silo-itech-dev|itech||tvs-dev-pg"
+DEDI = "accesspoint.dev.trovesuite.com|SILO_DEDICATED|silo-accesspoint-dev|accesspoint||ap-pg"
 BYOD = ("kofi.dev.trovesuite.com|SILO_BYOD|their_db|kofi|"
-        "https://tvs-dev-kv.vault.azure.net/secrets/db-byod-kofi")
-BYOD_NO_CRED = "kofi.dev.trovesuite.com|SILO_BYOD|their_db|kofi|"
+        "https://tvs-dev-kv.vault.azure.net/secrets/db-byod-kofi|kofi-pg")
+# BGCLT's shape: per-app logins, so the row names its silo and no single secret;
+# six hosts, one database.
+BGCLT = [f"{h}|SILO_BYOD|bgclt|bgclt||bgclt-prod-sql.postgres.database.azure.com"
+         for h in ("bgclt.trovesuite.com", "cp.prod.backend.bgclt.com", "erp.bgclt.com",
+                   "msg.app.frontend.bgclt.com", "msg.prod.backend.bgclt.com",
+                   "mystoreguard.frontend.bgclt.com")]
+BYOD_NO_CRED = "kofi.dev.trovesuite.com|SILO_BYOD|their_db|||kofi-pg"
 
 code, out, err = run([SHARED, DEDI, BYOD])
 check("all three are selected by 'all'", code == 0 and out.count('"host"') == 3,
@@ -107,11 +114,26 @@ check("...while our own silos still use their migrator secret",
       "migrator-db-url-itech" in out and "migrator-db-url-accesspoint" in out,
       out[:400])
 
-# FAILS CLOSED. A BYOD row with no credential has nothing to migrate with, and
-# saying so beats a vault 404 three jobs later.
+# FAILS CLOSED. A BYOD row naming neither a secret nor a silo has nothing to
+# migrate with, and saying so beats a vault 404 three jobs later.
 code, out, err = run([BYOD_NO_CRED])
-check("a BYOD route with no credential is refused", code != 0 and "db_secret_uri" in err,
-      f"code={code} err={err[:300]}")
+check("a BYOD route with neither db_secret_uri nor silo_key is refused",
+      code != 0 and "silo_key" in err, f"code={code} err={err[:300]}")
+
+# PER-APP LOGINS (B3): silo_key and no db_secret_uri. The apps compose
+# db-url-<app>-bgclt; migrations use the client's owner login, copied into our
+# vault as migrator-db-url-bgclt. And six hosts are ONE database: one job, not six
+# racing each other through the same migrations.
+code, out, err = run(BGCLT, kind="byod")
+check("a BYOD route with only a silo_key migrates with migrator-db-url-<silo>",
+      code == 0 and "secrets/migrator-db-url-bgclt" in out, f"code={code} err={err[:300]} out={out[:300]}")
+check("...once per database, however many hosts it has",
+      out.count('"host"') == 1 and '"host": "bgclt.trovesuite.com"' in out, out[:400])
+code, out, err = run(BGCLT + [SHARED, DEDI, BYOD])
+check("'all' is one job per database", code == 0 and out.count('"host"') == 4, out[:600])
+code, out, err = run(BGCLT, kind="byod", target="erp.bgclt.com")
+check("a target names its database through any of its hosts",
+      code == 0 and out.count('"host"') == 1 and "erp.bgclt.com" in out, out[:300])
 
 # The kind filter has to know the new tier, or `kind=byod` selects nothing and
 # the run goes green having done nothing.
@@ -134,6 +156,7 @@ option_lines = [l.strip()[2:] for l in (opts.group(1).splitlines() if opts else 
                 if l.strip().startswith("- ")]
 check("the target dropdown names the silos that exist",
       "itech.dev.trovesuite.com" in option_lines
+      and "bgclt.trovesuite.com" in option_lines
       and not any("siloshared" in o or "silodedicated" in o for o in option_lines),
       str(option_lines))
 
