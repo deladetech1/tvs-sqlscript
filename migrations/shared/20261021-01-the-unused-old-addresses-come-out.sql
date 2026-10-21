@@ -36,7 +36,7 @@ DECLARE missing text;
 BEGIN
     IF current_database() <> 'dev-db' THEN RETURN; END IF;
     SELECT coalesce(string_agg(want.h, ', ' ORDER BY want.h), '') INTO missing
-      FROM (VALUES ('dev.trovesuite.com'), ('cp.dev.backend.trovesuite.com'), ('msg.dev.backend.trovesuite.com'),
+      FROM (VALUES ('dev.trovesuite.com'),
                    ('api.dev.zeloshr.com'), ('dev.zeloshr.com'), ('dev.qpickstore.com'),
                    ('api.coreplatform.dev.trovesuite.com'), ('api.mystoreguard.dev.trovesuite.com'),
                    ('api.loandrift.dev.trovesuite.com'), ('api.zeloshr.dev.trovesuite.com'),
