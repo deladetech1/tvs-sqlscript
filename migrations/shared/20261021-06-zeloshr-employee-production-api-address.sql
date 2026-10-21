@@ -16,7 +16,7 @@
 BEGIN;
 
 INSERT INTO control_plane.ctl_tenant_routes (host, tenant_id, tier, cell_key, status, is_wildcard, cdate, ctime, cdatetime, created_by)
-SELECT h.host, NULL, 'POOLED', h.cell, 'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261021-05'
+SELECT h.host, NULL, 'POOLED', h.cell, 'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261021-06'
   FROM (VALUES
         ('api.zeloshr-portal.trovesuite.com', 'uksouth-prod')
        ) AS h(host, cell)
