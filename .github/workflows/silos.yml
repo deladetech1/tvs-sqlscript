@@ -19,10 +19,11 @@
 # the path gets exercised before a customer sees it. Prod is always a dispatch:
 # those are customers' databases.
 #
-# Targets are a dropdown, not typed text. A typed hostname is a typo whose
-# failure is silent -- you deploy to nothing and the run goes green. Onboarding a
-# silo adds a line to the options, which is reviewable; the run then checks the
-# choice against ctl_tenant_routes, so a stale option fails loudly.
+# Targets are derived from the route table, not listed here. A target is `all`
+# or a host, and the run checks it against the ACTIVE silo rows in
+# ctl_tenant_routes, refusing an unknown one by name -- the silent-typo failure
+# (deploy to nothing, run goes green) cannot happen, and onboarding a client no
+# longer needs an edit to this file.
 #
 # Also a REUSABLE workflow (workflow_call): tvs-iac's onboard-silo-app calls it
 # for step 4 -- `uses: deladetech1/tvs-sqlscript/.github/workflows/silos.yml@master`
@@ -94,22 +95,15 @@ on:
         default: dev
         options: [dev, prod]
       target:
-        description: "Which silo (add new ones to this list as they are onboarded)"
-        type: choice
+        # Typed, not a dropdown, since 20261022: the valid targets are the ACTIVE
+        # silo rows in control_plane.ctl_tenant_routes, and the job below refuses
+        # anything else by name -- so a typo fails loudly instead of deploying to
+        # nothing, without a list here that every new client had to be added to
+        # (tvs-iac register-byod-client registers the row and calls this).
+        description: "all, or one silo host (an ACTIVE silo route in ctl_tenant_routes, e.g. itech.dev.trovesuite.com)"
+        type: string
         required: true
         default: all
-        options:
-          - all
-          # The dev silos, named after the tenant rather than the kind -- they
-          # were siloshared/silodedicated until 20261002, and those options
-          # stayed here afterwards, so choosing either failed the check against
-          # ctl_tenant_routes rather than deploying anything.
-          - itech.dev.trovesuite.com
-          - accesspoint.dev.trovesuite.com
-          # PROD, SILO_BYOD: BGCLT's own database (bgclt-prod-sql/bgclt). Its
-          # route rows (six hosts, one database) exist only from the cutover on;
-          # until then choosing this fails the check below, which is the point.
-          - bgclt.trovesuite.com
       module:
         type: choice
         required: true
@@ -296,8 +290,8 @@ jobs:
               picked = [s for s in picked if s["tier"] == TIER[kind]]
           if target != "all":
               if target not in live:
-                  print(f"::error::'{target}' is an option in this workflow but not an "
-                        f"ACTIVE silo route. Live: {', '.join(sorted(live)) or '(none)'}",
+                  print(f"::error::'{target}' is not an ACTIVE silo route in "
+                        f"ctl_tenant_routes. Live: {', '.join(sorted(live)) or '(none)'}",
                         file=sys.stderr)
                   raise SystemExit(1)
               picked = [s for s in picked if s["host"] == target]
