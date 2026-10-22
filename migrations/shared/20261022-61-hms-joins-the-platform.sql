@@ -12,7 +12,8 @@
 --   * resource types, permissions (hms|<resource>|<action>||any) and the roles: HMS Admin is
 --     allowed by BEING the role and holds no HMS rows; the job roles carry grants;
 --   * which features each subscription tier includes (cp_app_feature_catalog);
---   * the reserved label "hms" and the frontend's route row.
+--   * the reserved label "hms" and the route rows for the website and the API (api.hms.dev:
+--     without it, a call with no browser Origin -- curl, webhooks -- is 404 "not configured").
 --
 -- Not to be confused with app-hams (a hospital system, coming soon): a different product.
 -- Nothing here asserts on rows a module seed creates. Idempotent; safe to re-run.
@@ -234,7 +235,8 @@ SELECT v.label, v.reason, 'migration:20261022-61'
 
 INSERT INTO control_plane.ctl_tenant_routes (host, tenant_id, tier, cell_key, status, is_wildcard, cdate, ctime, cdatetime, created_by)
 SELECT h.host, NULL, 'POOLED', h.cell, 'ACTIVE', false, CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261022-61'
-  FROM (VALUES ('hms.dev.trovesuite.com', 'uksouth-dev')) AS h(host, cell)
+  FROM (VALUES ('hms.dev.trovesuite.com',     'uksouth-dev'),
+               ('api.hms.dev.trovesuite.com', 'uksouth-dev')) AS h(host, cell)
  WHERE EXISTS (SELECT 1 FROM control_plane.ctl_cells c WHERE c.cell_key = h.cell)
 ON CONFLICT (host) DO NOTHING;
 
@@ -271,8 +273,8 @@ BEGIN
         RAISE EXCEPTION 'role-subscribed-app-hms-admin holds HMS permission rows';
     END IF;
     IF EXISTS (SELECT 1 FROM control_plane.ctl_tenant_routes
-                WHERE host = 'hms.dev.trovesuite.com' AND tenant_id IS NOT NULL) THEN
-        RAISE EXCEPTION 'the HMS address has been given to a tenant';
+                WHERE host IN ('hms.dev.trovesuite.com', 'api.hms.dev.trovesuite.com') AND tenant_id IS NOT NULL) THEN
+        RAISE EXCEPTION 'an HMS address has been given to a tenant';
     END IF;
 END $$;
 
