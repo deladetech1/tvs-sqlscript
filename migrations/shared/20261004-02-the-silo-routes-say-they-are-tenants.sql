@@ -29,57 +29,78 @@
 -- database then refuses the combination that cannot be true.
 -- =====================================================================================
 
-INSERT INTO control_plane.ctl_tenant_routes
-    (host, tenant_id, tier, cell_key,
-     db_server_fqdn, db_name, silo_key, db_secret_uri,
-     storage_account, container_prefix, storage_secret_uri,
-     status, is_wildcard, route_kind, cdate, ctime, cdatetime, created_by)
-VALUES
-    ('itech.dev.trovesuite.com',
-     'tnt_itech', 'SILO_SHARED', 'uksouth-dev',
-     'tvs-shared-sql.postgres.database.azure.com', 'silo-itech-dev', 'itech', NULL,
-     -- A shared silo names NO storage account: storage is per app, so it keeps each
-     -- app's own and prefixes its containers inside them. The prefix is the silo key,
-     -- which is why it is this tenant's and nobody else's.
-     NULL, 'itech', NULL,
-     'ACTIVE', false, 'TENANT',
-     CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261004-02'),
+-- ONLY IN DEV'S OWN DATABASES (2026-10-20).
+-- These two rows are dev test fixtures naming dev databases, but shared/ runs in every
+-- database -- production included. They used to be inserted everywhere and then removed
+-- by 20261006-04 further down the same deploy. The runner commits file by file, so for
+-- the minutes in between production's route table listed two silos it can never reach,
+-- and every fan-out job that ran in that window (MyStoreGuard's invoicing payment queue,
+-- Accounting's postings, Core Platform's sweeps) logged SiloUnavailable for them --
+-- after every single deploy. Now they are written only where they are true: the dev
+-- control plane and the two silo databases they name. 20261006-04 stays as the cleanup
+-- for any database that already holds them.
+DO $seed$
+BEGIN
+    IF current_database() NOT IN ('dev-db', 'silo-itech-dev', 'silo-accesspoint-dev') THEN
+        RAISE NOTICE 'dev silo routes: % is not a dev database, not seeding them',
+                     current_database();
+        RETURN;
+    END IF;
 
-    ('accesspoint.dev.trovesuite.com',
-     'tnt_accesspoint', 'SILO_DEDICATED', 'uksouth-dev',
-     'tvs-dev-silo-accesspoint-sql.postgres.database.azure.com', 'silo-accesspoint-dev',
-     'accesspoint', NULL,
-     -- Its own account, so its containers need no prefix to stay apart.
-     'tvsdevaccesspointsa', NULL, NULL,
-     'ACTIVE', false, 'TENANT',
-     CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261004-02')
-ON CONFLICT (host) DO UPDATE
-   -- tenant_id is NOT in this list.
-   --
-   -- Both of these clients have been cleared and set up again through the console, which
-   -- writes the real tenant id through control_plane.reconcile_route_tenant. Restating
-   -- 'tnt_itech' here on every deploy would point a live address back at a placeholder
-   -- tenant that no longer exists -- signing a customer out of their own system until
-   -- somebody noticed. The seed's job is the infrastructure columns; who is behind the
-   -- address is the console's.
-   SET tier             = EXCLUDED.tier,
-       route_kind       = EXCLUDED.route_kind,
-       db_server_fqdn   = EXCLUDED.db_server_fqdn,
-       db_name          = EXCLUDED.db_name,
-       silo_key         = EXCLUDED.silo_key,
-       storage_account  = EXCLUDED.storage_account,
-       container_prefix = EXCLUDED.container_prefix,
-       status           = EXCLUDED.status,
-       udatetime        = now(),
-       updated_by       = 'migration 20261004-02';
+    INSERT INTO control_plane.ctl_tenant_routes
+        (host, tenant_id, tier, cell_key,
+         db_server_fqdn, db_name, silo_key, db_secret_uri,
+         storage_account, container_prefix, storage_secret_uri,
+         status, is_wildcard, route_kind, cdate, ctime, cdatetime, created_by)
+    VALUES
+        ('itech.dev.trovesuite.com',
+         'tnt_itech', 'SILO_SHARED', 'uksouth-dev',
+         'tvs-shared-sql.postgres.database.azure.com', 'silo-itech-dev', 'itech', NULL,
+         -- A shared silo names NO storage account: storage is per app, so it keeps each
+         -- app's own and prefixes its containers inside them. The prefix is the silo key,
+         -- which is why it is this tenant's and nobody else's.
+         NULL, 'itech', NULL,
+         'ACTIVE', false, 'TENANT',
+         CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261004-02'),
+
+        ('accesspoint.dev.trovesuite.com',
+         'tnt_accesspoint', 'SILO_DEDICATED', 'uksouth-dev',
+         'tvs-dev-silo-accesspoint-sql.postgres.database.azure.com', 'silo-accesspoint-dev',
+         'accesspoint', NULL,
+         -- Its own account, so its containers need no prefix to stay apart.
+         'tvsdevaccesspointsa', NULL, NULL,
+         'ACTIVE', false, 'TENANT',
+         CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261004-02')
+    ON CONFLICT (host) DO UPDATE
+       -- tenant_id is NOT in this list.
+       --
+       -- Both of these clients have been cleared and set up again through the console, which
+       -- writes the real tenant id through control_plane.reconcile_route_tenant. Restating
+       -- 'tnt_itech' here on every deploy would point a live address back at a placeholder
+       -- tenant that no longer exists -- signing a customer out of their own system until
+       -- somebody noticed. The seed's job is the infrastructure columns; who is behind the
+       -- address is the console's.
+       SET tier             = EXCLUDED.tier,
+           route_kind       = EXCLUDED.route_kind,
+           db_server_fqdn   = EXCLUDED.db_server_fqdn,
+           db_name          = EXCLUDED.db_name,
+           silo_key         = EXCLUDED.silo_key,
+           storage_account  = EXCLUDED.storage_account,
+           container_prefix = EXCLUDED.container_prefix,
+           status           = EXCLUDED.status,
+           udatetime        = now(),
+           updated_by       = 'migration 20261004-02';
+END $seed$;
 
 -- ----------------------------------------------------------------------------- checks
 DO $$
 DECLARE n integer; k text;
 BEGIN
-    -- Both addresses exist and both say they belong to a customer.
+    -- Both addresses exist and both say they belong to a customer -- in dev's own
+    -- databases, the only place they are seeded.
     FOR k IN SELECT unnest(ARRAY['itech.dev.trovesuite.com',
                                  'accesspoint.dev.trovesuite.com'])
+             WHERE current_database() IN ('dev-db', 'silo-itech-dev', 'silo-accesspoint-dev')
     LOOP
         SELECT count(*) INTO n FROM control_plane.ctl_tenant_routes
          WHERE host = k AND route_kind = 'TENANT' AND tier <> 'POOLED';

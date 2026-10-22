@@ -34,13 +34,11 @@ SELECT h.host, NULL, 'POOLED', h.cell, 'ACTIVE', false, CURRENT_DATE::text, CURR
  WHERE EXISTS (SELECT 1 FROM control_plane.ctl_cells c WHERE c.cell_key = h.cell)
 ON CONFLICT (host) DO NOTHING;
 
--- The first version's address and label.
-DELETE FROM control_plane.ctl_tenant_routes
- WHERE host = 'accounting.dev.trovesuite.com'
-   AND tier = 'POOLED'
-   AND tenant_id IS NULL
-   AND silo_key IS NULL;
-
+-- The first version's label. (This file used to DELETE the accounting.dev.trovesuite.com row
+-- here too. That address is served again since 2026-10-20 -- the owner-approved dev naming is
+-- <app>.dev.trovesuite.com -- and 20261020-24 registers it, so the DELETE is gone: migrations
+-- re-run on every deploy, and it would take the row out a moment before 20261020-24 put it
+-- back. The label stays released; the row is a PLATFORM route, which the trigger ignores.)
 UPDATE control_plane.ctl_reserved_labels
    SET released_at = now(), released_by = 'migration:20261019-28'
  WHERE label = 'accounting'

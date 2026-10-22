@@ -123,11 +123,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_ld_auto_repayment_runs_collected
 CREATE INDEX IF NOT EXISTS idx_ld_auto_repayment_runs_mandate ON loandrift.ld_auto_repayment_runs (mandate_id, cdatetime DESC);
 
 -- 5 -----------------------------------------------------------------------
-ALTER TABLE loandrift.ld_journal_entries DROP CONSTRAINT IF EXISTS ck_ld_journal_entries_source_type;
-ALTER TABLE loandrift.ld_journal_entries ADD CONSTRAINT ck_ld_journal_entries_source_type
-    CHECK (source_type IN ('LOAN_DISBURSEMENT', 'REPAYMENT', 'PENALTY', 'PENALTY_WAIVER', 'EXPENSE',
-        'SAVINGS_DEPOSIT', 'SAVINGS_WITHDRAWAL', 'SAVINGS_INTEREST', 'INVESTMENT', 'INVESTMENT_RETURN',
-        'DEPRECIATION', 'ASSET_ACQUISITION', 'ASSET_DISPOSAL', 'WRITE_OFF', 'MANUAL', 'CLIENT_CREDIT'));
+-- ck_ld_journal_entries_source_type is owned by 20260928-04 (the widest list, incl.
+-- CLIENT_CREDIT). This file used to DROP+ADD a NARROWER list; migrations re-run every
+-- deploy, so once dev held a WRITE_OFF_RECOVERY journal (2026-10-20 07:53) every deploy
+-- failed here and blocked all later files. A widened CHECK list lives in ONE file.
 
 -- 6 -----------------------------------------------------------------------
 INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime) VALUES

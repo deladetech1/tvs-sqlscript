@@ -92,6 +92,15 @@ MUST_REFUSE = [
     "  billing.dev.trovesuite.com",    # whitespace
 ]
 
+# A client's OWN domain (BGCLT's real hosts). Reserved words in their first label
+# are theirs to use: the rule protects our namespace, not the words.
+CLIENT_OWN_DOMAIN_HOSTS = [
+    "mystoreguard.frontend.bgclt.com",
+    "msg.app.frontend.bgclt.com",
+    "msg.prod.backend.bgclt.com",
+    "api.example-client.com",
+]
+
 FAILS = []
 
 
@@ -123,7 +132,15 @@ def main():
         # is not read as one of them.
         known = {"20261004-11-charges-we-add-to-a-clients-bill.sql",
                  "20261004-09-what-a-silo-costs-us.sql",
-                 "20261004-12-infrastructure-is-itemised-and-charged.sql"}
+                 "20261004-12-infrastructure-is-itemised-and-charged.sql",
+                 # The new apps join through core_platform.cp_app_schemas, which this
+                 # control-plane-only cluster does not have (an EF table). Their reserved
+                 # words are not what this test checks.
+                 "20261015-01-crm-joins-the-platform.sql",
+                 "20261016-01-projects-joins-the-platform.sql",
+                 "20261019-01-invoicing-joins-the-platform.sql",
+                 "20261019-26-expenses-joins-the-platform.sql",
+                 "20261022-61-hms-joins-the-platform.sql"}
         unexpected = [f for f in failures if f[0] not in known]
         check("the migrations apply", not unexpected,
               "; ".join(f"{n} -> {e}" for n, e in unexpected))
@@ -149,13 +166,51 @@ def main():
         # EVERY platform host is a reserved name. If one is not, the word that
         # protects it is missing from the seed.
         missed = []
+        # "crm" is seeded by 20261015-01, which this cluster cannot apply (see known).
+        crm_seeded = not any(f[0].startswith("20261015-01") for f in failures)
         for host in PLATFORM_HOSTS:
+            if host.startswith("crm.") and not crm_seeded:
+                continue
             word = c.value("SELECT coalesce(control_plane.reserved_label("
                            f"control_plane.host_label('{host}')), '')")
             if word == "":
                 missed.append(host)
         check("every host of ours is a name a client cannot take", not missed,
               ", ".join(missed))
+
+        # ---------------------------------------- only on OUR domains (20261020-01)
+        # A client's own domain is the client's namespace. BGCLT's browsers send
+        # mystoreguard.frontend.bgclt.com as Origin, so it must be a TENANT route.
+        for host in CLIENT_OWN_DOMAIN_HOSTS:
+            word = c.value("SELECT coalesce(control_plane.reserved_tenant_host("
+                           f"'{host}'), '')")
+            check(f"a client's own domain may use any label: {host}", word == "",
+                  f"refused because of {word!r}")
+            ok, msg = insert(c, host, "TENANT", "tnt_bgclt")
+            check(f"...and the trigger admits it as a tenant route: {host}", ok, msg)
+        for host in MUST_REFUSE + ["msg.dev.mystoreguard.com", "admin.zeloshr.com",
+                                   "API.TroveSuite.com.", "cp.backend.loandrift.com",
+                                   "api.dev.deladetech.com"]:
+            word = c.value("SELECT coalesce(control_plane.reserved_tenant_host("
+                           f"'{host}'), '')")
+            check(f"...while our domains still refuse: {host.strip()}", word != "",
+                  "reserved_tenant_host found nothing")
+        # The dot is the boundary: a lookalike domain is not ours.
+        for host in ("api.nottrovesuite.com", "api.trovesuite.com.attacker.example"):
+            word = c.value("SELECT coalesce(control_plane.reserved_tenant_host("
+                           f"'{host}'), '')")
+            check(f"a lookalike is not one of ours: {host}", word == "", word)
+        # BGCLT's whole row: SILO_BYOD, silo_key, no db_secret_uri, reserved label.
+        r = c.sql(
+            "INSERT INTO control_plane.ctl_tenant_routes (host, tenant_id, tier, cell_key, "
+            "status, is_wildcard, route_kind, db_server_fqdn, db_name, db_secret_uri, "
+            "silo_key, storage_account, storage_secret_uri, container_prefix) VALUES "
+            "('cp.prod.backend.bgclt.com', 'tnt_bgclt', 'SILO_BYOD', 'uksouth-dev', 'ACTIVE', "
+            "false, 'TENANT', 'bgclt-prod-sql.postgres.database.azure.com', 'bgclt', NULL, "
+            "'bgclt', 'bgcltprodmsgsa', "
+            "'https://tvs-prod-kv.vault.azure.net/secrets/storage-byod-bgclt', NULL)")
+        check("a SILO_BYOD tenant route with silo_key and no db_secret_uri is accepted",
+              r.returncode == 0, (r.stderr or "").strip())
 
         # ------------------------------------------------------------- the trigger
         ok, msg = insert(c, "api2.dev.trovesuite.com", "TENANT", "tnt_probe")
