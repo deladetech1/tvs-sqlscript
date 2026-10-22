@@ -128,7 +128,7 @@ permissions:
 jobs:
   select:
     name: which silos
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     environment: ${{ inputs.gh_environment || '' }}
     outputs:
       matrix: ${{ steps.pick.outputs.matrix }}
