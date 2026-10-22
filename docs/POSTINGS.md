@@ -873,7 +873,9 @@ every change is in the Apps audit trail (`cp_business_apps_audit_logs`, entity `
 **The receiving side enforces it and fails closed.** Accounting's `PostingRun` reads the business's switches before a
 pass posts anything (`GateConnectionsAsync`) and again for each row just before it posts (`PostOneAsync`, so the
 "Retry" in Accounting's own screen obeys it too). No row is OFF. A switch that cannot be read posts nothing: the rows
-stay PENDING with "Could not check whether this app is connected to Accounting; trying again shortly." The Accounting
+stay PENDING with "Could not check whether this app is connected to Accounting; trying again shortly." A database
+that does not have the table yet (a silo the migration has not reached) is treated the same way: the rows wait, and
+post once the migration and its backfill land; nothing is marked "not connected" for want of a table. The Accounting
 subscription rule (SKIPPED, not subscribed) and the books rule (waiting) apply first, as before.
 
 - **Turning on needs both apps subscribed** for the business (`cp_business_app_tier`); Core Platform refuses with
