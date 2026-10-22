@@ -24,6 +24,18 @@
 # silo adds a line to the options, which is reviewable; the run then checks the
 # choice against ctl_tenant_routes, so a stale option fails loudly.
 #
+# Also a REUSABLE workflow (workflow_call): tvs-iac's onboard-silo-app calls it
+# for step 4 -- `uses: deladetech1/tvs-sqlscript/.github/workflows/silos.yml@master`
+# for prod (`@silo` for dev) -- instead of dispatching it with a personal access
+# token and polling (that token expired on 20261022 and step 4 401'd). Called, the
+# jobs run in the CALLER's context: its org variables, and an OIDC subject of the
+# caller's repo. gh_environment binds the Azure-login jobs to one of the caller's
+# GitHub Environments (tvs-iac: platform-dev / platform-prod) so the subject is
+# repo:deladetech1/tvs-iac:environment:platform-<env>, which tvs-oidc-auth-01
+# already trusts. Dispatched or pushed here it is empty and nothing changes.
+# Production SQL is still master whatever calls this: apply.yml decides it from
+# target_env.
+#
 # Everything here only decides WHICH databases. apply.yml does the work, and
 # refuses outright if a silo's secret resolves to the pooled database.
 
@@ -40,6 +52,33 @@ on:
       - "Trovesuite.Database.sln"
       - ".github/workflows/silos.yml"
       - ".github/workflows/apply.yml"
+  workflow_call:
+    inputs:
+      kind:
+        description: "all | shared | dedicated | byod"
+        type: string
+        required: true
+      environment:
+        description: "dev | prod"
+        type: string
+        required: true
+      target:
+        description: "all, or one silo host -- checked against ctl_tenant_routes below"
+        type: string
+        required: true
+      module:
+        type: string
+        required: false
+        default: all
+      command:
+        type: string
+        required: false
+        default: validate
+      gh_environment:
+        description: "A GitHub Environment of the CALLER's repository to bind the Azure-login jobs to (sets the OIDC subject). Empty = none."
+        type: string
+        required: false
+        default: ""
   workflow_dispatch:
     inputs:
       kind:
@@ -98,6 +137,7 @@ jobs:
   select:
     name: which silos
     runs-on: ubuntu-latest
+    environment: ${{ inputs.gh_environment || '' }}
     outputs:
       matrix: ${{ steps.pick.outputs.matrix }}
       count: ${{ steps.pick.outputs.count }}
@@ -109,19 +149,32 @@ jobs:
     steps:
       - name: What this run is doing
         id: run
+        env:
+          IN_ENVIRONMENT: ${{ inputs.environment }}
+          IN_COMMAND: ${{ inputs.command }}
+          IN_MODULE: ${{ inputs.module }}
+          IN_KIND: ${{ inputs.kind }}
+          IN_TARGET: ${{ inputs.target }}
         run: |
           set -euo pipefail
-          # A merge deploys every dev silo. A dispatch says what it wants, and is
-          # the only way to reach prod.
-          if [ "${{ github.event_name }}" = "push" ]; then
+          # A merge deploys every dev silo. A dispatch (or a workflow_call) says
+          # what it wants, and is the only way to reach prod. No inputs = a push:
+          # github.event_name is the CALLER's event when this is called.
+          if [ -z "$IN_ENVIRONMENT" ]; then
             printf 'environment=dev\ncommand=deploy\nmodule=all\nkind=all\ntarget=all\n' >> "$GITHUB_OUTPUT"
           else
+            # A call is typed text, not a dropdown: check the words here.
+            case "$IN_ENVIRONMENT" in dev|prod) ;; *) echo "::error::environment '$IN_ENVIRONMENT'"; exit 1 ;; esac
+            case "$IN_KIND" in all|shared|dedicated|byod) ;; *) echo "::error::kind '$IN_KIND'"; exit 1 ;; esac
+            case "$IN_COMMAND" in validate|verify|status|deploy|migrations-list|rollback) ;; *) echo "::error::command '$IN_COMMAND'"; exit 1 ;; esac
+            [[ "$IN_TARGET" =~ ^[a-z0-9.-]+$ ]] || { echo "::error::target '$IN_TARGET'"; exit 1; }
+            [[ "$IN_MODULE" =~ ^[a-z_]+$ ]] || { echo "::error::module '$IN_MODULE'"; exit 1; }
             {
-              echo "environment=${{ inputs.environment }}"
-              echo "command=${{ inputs.command }}"
-              echo "module=${{ inputs.module }}"
-              echo "kind=${{ inputs.kind }}"
-              echo "target=${{ inputs.target }}"
+              echo "environment=$IN_ENVIRONMENT"
+              echo "command=$IN_COMMAND"
+              echo "module=$IN_MODULE"
+              echo "kind=$IN_KIND"
+              echo "target=$IN_TARGET"
             } >> "$GITHUB_OUTPUT"
           fi
 
@@ -293,8 +346,11 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix: ${{ fromJson(needs.select.outputs.matrix) }}
-    uses: ./.github/workflows/apply.yml
+    # The FULL path: called from another repository, a relative `uses:` can
+    # resolve against the caller (see migrate.yml).
+    uses: deladetech1/tvs-sqlscript/.github/workflows/apply.yml@master
     with:
+      environment: ${{ inputs.gh_environment || '' }}
       label: ${{ matrix.kind }} · ${{ matrix.host }}
       module: ${{ needs.select.outputs.module }}
       command: ${{ needs.select.outputs.command }}
