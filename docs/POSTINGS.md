@@ -900,10 +900,37 @@ anyone already posting (`changed_by = 'system'`). A marker in `core_platform.cp_
 (`accounting-links-20261022`) stops it running again: every deploy re-runs the file, and a business that sets up its
 books later must start OFF.
 
-Links drawn on the page (verified in code 2026-10-22). Switchable now: the five into Accounting. Drawn as "always on
-while both apps are subscribed, switching later": MyStoreGuard ⇄ Invoicing (invoices in, payments back through
-`inv_msg_payment_queue`, one two-way link), Expenses → Invoicing (billable expenses), Projects → Invoicing (billable
-time), Expenses → ZelosHR (claims on the payslip); lookups ZelosHR → Expenses (approvers, departments, payout
-details), MyStoreGuard → CRM and LoanDrift → CRM (customer sync), ZelosHR → Projects (leave, attendance). Each of those
-already gates on both subscriptions in the shared apps (`entitle.Business` / `Org`); a switch for them must be enforced
-in the receiving code (and for MyStoreGuard ⇄ Invoicing also in MyStoreGuard's queue drainer) before the page offers it.
+### Every link is a switch (20261022-90)
+
+Since 2026-10-22 (phase 2) every link on the page is switchable, each enforced by the code that **receives**, per
+business, failing closed (no row, an unreadable row or a missing table is OFF for new work; an unrelated request never
+fails because of it: the receiver degrades and says why). The subscription rules still apply on top (both apps live).
+Shared Go reading is `tvs-shared-apps-bk internal/platform/connections`.
+
+| Link | Kind, modes | Enforced in | Off means |
+|---|---|---|---|
+| `mystoreguard-invoicing` | sync, two-way; OFF / ALWAYS | Invoicing `msginvoices.go` (`msgInvoicesReady`, `msgLinkOff`, `msgClosed`), `payments.go` `recordPayment`; MyStoreGuard `invoicing_payment_queue_service.py` | no MyStoreGuard invoice listed or brought in; no new payment on a linked invoice by hand, from the bank, by saved card or started online ("take it in MyStoreGuard"). A payment a gateway completes after the switch went off is still recorded and queued (the customer had started paying). Linked invoices stay and keep following MyStoreGuard's lines and till payments. MyStoreGuard posts everything queued before the switch went off and anything a gateway took; anything else is HELD (`invoicing.msg_queue_hold`, "Held: …", never refused) and posts when the link is on again |
+| `expenses-invoicing` | sync; OFF / ONE_TIME / ALWAYS | Invoicing `billable.go` (`billableExpenses`, `claimBillable`) | nothing listed, nothing newly claimed; ONE_TIME: only expenses spent in the range |
+| `projects-invoicing` | sync; OFF / ONE_TIME / ALWAYS | Invoicing `billable.go` (`billableProjects`, `billableLines`, `claimBillable`) | as above, by work date / day spent |
+| `expenses-zeloshr` | sync; OFF / ONE_TIME / ALWAYS | `platform/payrollextras.Add` (ZelosHR's rules) | no new payback on a payslip; ONE_TIME: only claims approved in the range. A payback already on the payroll is still followed to paid |
+| `zeloshr-expenses` | lookup; OFF / ON (`ALWAYS`) | Expenses `readsHR` (approval route, departments, department budgets, payee details) | approvals go to finance; no departments offered or counted; no pay details suggested |
+| `mystoreguard-crm` | lookup | CRM `sync.go` (`runSync`, the 5-minute sweep, settings, `/connections`), `deals.go` `msgLinePrice` | the sweep passes it by; the CRM's stored prices stand |
+| `loandrift-crm` | lookup | CRM `sync.go` | the sweep passes it by |
+| `zeloshr-projects` | lookup | Projects `zhrConnected`, `lineManagerOf` | no leave, holidays, attendance or line managers in Projects |
+
+What was brought in stays in every case: it is the receiving app's own. A saved invoice keeps the expenses and time it
+already bills; re-saving it is never refused.
+
+**Backfill, once per link and database** (marker `<link>@20261022`, written only once the tables holding the evidence
+exist, so a silo without an app's schema runs it on the deploy that brings it): ALWAYS (`changed_by = 'system'`) for
+every business the data shows using the link -- MyStoreGuard invoices brought into Invoicing or payments queued;
+expenses invoiced or billable to a customer; project time/expenses invoiced or a project billed to a customer;
+paybacks by payroll; claims, an HR approval step or a department budget on a live ZelosHR subscription; CRM customers
+or products synced from MyStoreGuard / LoanDrift (or the sync enabled); projects whose organisation is on ZelosHR.
+Everyone else starts OFF. `ON CONFLICT DO NOTHING`: an owner's choice is never overwritten.
+
+Not yet on the page (found while verifying, still always on while both apps are subscribed): Invoicing's imports of
+MyStoreGuard customers / suppliers / products and LoanDrift clients, Invoicing purchase orders from MyStoreGuard,
+Projects reading MyStoreGuard jobs and workflow templates, Projects' suite links (CRM deals and tickets, MyStoreGuard
+jobs, LoanDrift loans), the CRM ⇄ Projects links, and Expenses reading Projects, Invoicing customers and MyStoreGuard
+spending (budgets).
