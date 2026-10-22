@@ -854,3 +854,56 @@ one dimension per project, lines on it, the report with and without Projects) an
 a bill, a company payment and an invoice on a project written by the real code, posted by the real worker, the report
 read against Projects' own tables through the views).
 
+
+## 10. Connected apps (20261022-65): the business decides what flows
+
+Until 2026-10-22 every link was automatic. Now each business switches each link in **Core Platform → Connected apps**
+(owners and administrators: permission `app-connection` get / update, held by Owner, Admin and Core Platform Admin by
+role, granted to no curated role). The switch is a row in `core_platform.cp_app_connections`
+(`tenant_id`, `bus_id`, `link_key`, `source_app`, `target_app`, `mode`, `range_from`, `range_to`, `run_started_at`,
+`changed_by`, `changed_by_name`, `changed_at`), written only by Core Platform's `/api/v1/app-connections` endpoints, and
+every change is in the Apps audit trail (`cp_business_apps_audit_logs`, entity `connection:<link key>`).
+
+| Mode | What the receiver does |
+|---|---|
+| `OFF` (no row is the same) | posts nothing; each event is SKIPPED "Not connected: …" |
+| `ONE_TIME` (`range_from` … `range_to`, both included, ending no later than now) | posts only events that **happened** in the range (`acc_posting_inbox.event_at`, when the source app recorded it), and brings back the ones skipped as not connected in that range, once |
+| `ALWAYS` | posts as today |
+
+**The receiving side enforces it and fails closed.** Accounting's `PostingRun` reads the business's switches before a
+pass posts anything (`GateConnectionsAsync`) and again for each row just before it posts (`PostOneAsync`, so the
+"Retry" in Accounting's own screen obeys it too). No row is OFF. A switch that cannot be read posts nothing: the rows
+stay PENDING with "Could not check whether this app is connected to Accounting; trying again shortly." A database
+that does not have the table yet (a silo the migration has not reached) is treated the same way: the rows wait, and
+post once the migration and its backfill land; nothing is marked "not connected" for want of a table. The Accounting
+subscription rule (SKIPPED, not subscribed) and the books rule (waiting) apply first, as before.
+
+- **Turning on needs both apps subscribed** for the business (`cp_business_app_tier`); Core Platform refuses with
+  "Subscribe to <App> … to connect". Turning off is always allowed.
+- **Turning off removes nothing.** Journals already posted stay; only new events are skipped.
+- **Skipped while off, brought back by a one-time run.** `RequeueOneTimeRunsAsync` puts back to PENDING the rows SKIPPED
+  with the "Not connected:" reason whose event happened inside a ONE_TIME range, then they go through every gate again.
+  Switching to ALWAYS does **not** bring them back: what happened while a link was off stays out until someone chooses
+  a one-time run over it.
+- **Never twice.** A row once POSTED is never touched again, and the journal's `source_document_id = evt:<id>` under
+  `ux_acc_journal_entries_event` refuses a second journal regardless.
+- **Never before the books.** A one-time run over events dated before the books' first period skips them as before
+  ("Dated before these books begin").
+- **Progress** (Core Platform reads `acc_posting_inbox` for the link's source and range): total, posted, waiting
+  (pending, or not-connected rows the next pass brings back), failed, skipped; DONE when nothing is waiting.
+- **Try again** from Core Platform calls `accounting.acc_posting_request_retry(tenant, bus, source, ids)`: FAILED rows
+  back to PENDING, nothing more. Accounting decides.
+
+**Backfill, once per database.** The migration set ALWAYS for every business whose books were set up on a live
+Accounting subscription (all five sources) and for every (business, source) with a POSTED row, so nothing changed for
+anyone already posting (`changed_by = 'system'`). A marker in `core_platform.cp_app_connection_backfills`
+(`accounting-links-20261022`) stops it running again: every deploy re-runs the file, and a business that sets up its
+books later must start OFF.
+
+Links drawn on the page (verified in code 2026-10-22). Switchable now: the five into Accounting. Drawn as "always on
+while both apps are subscribed, switching later": MyStoreGuard ⇄ Invoicing (invoices in, payments back through
+`inv_msg_payment_queue`, one two-way link), Expenses → Invoicing (billable expenses), Projects → Invoicing (billable
+time), Expenses → ZelosHR (claims on the payslip); lookups ZelosHR → Expenses (approvers, departments, payout
+details), MyStoreGuard → CRM and LoanDrift → CRM (customer sync), ZelosHR → Projects (leave, attendance). Each of those
+already gates on both subscriptions in the shared apps (`entitle.Business` / `Org`); a switch for them must be enforced
+in the receiving code (and for MyStoreGuard ⇄ Invoicing also in MyStoreGuard's queue drainer) before the page offers it.
