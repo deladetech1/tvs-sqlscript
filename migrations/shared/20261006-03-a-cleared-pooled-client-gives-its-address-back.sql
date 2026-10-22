@@ -102,9 +102,9 @@ COMMENT ON FUNCTION control_plane.release_tenant_host(text, text, text) IS
 DO $$
 DECLARE grp text; n integer := 0;
 BEGIN
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin
+    -- This database's pooled group only (app_groups_here(true), 20261001-01): the
+    -- pattern alone also matched the pooled group inside every silo database.
+    FOR grp IN SELECT control_plane.app_groups_here(true)
     LOOP
         EXECUTE format('GRANT EXECUTE ON FUNCTION control_plane.release_tenant_host('
                        'text, text, text) TO %I', grp);

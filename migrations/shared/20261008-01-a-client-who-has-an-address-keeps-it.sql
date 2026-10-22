@@ -197,8 +197,9 @@ REVOKE ALL ON FUNCTION control_plane.reconcile_route_tenant(text, text, text, te
 DO $$
 DECLARE grp text;
 BEGIN
-    FOR grp IN
-        SELECT rolname FROM pg_roles WHERE rolname LIKE 'tvs_app_%'
+    -- This database's own group(s) only (control_plane.app_groups_here, 20261001-01),
+    -- never every tvs_app_% in the cluster -- see silo-cross-tenant-pattern-grants.
+    FOR grp IN SELECT control_plane.app_groups_here()
     LOOP
         EXECUTE format(
             'GRANT EXECUTE ON FUNCTION control_plane.reconcile_route_tenant('

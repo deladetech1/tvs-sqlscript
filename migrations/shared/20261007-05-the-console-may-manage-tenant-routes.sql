@@ -75,10 +75,12 @@ COMMENT ON VIEW control_plane.ctl_tenant_routes_tenant IS
 DO $$
 DECLARE r text; n integer := 0;
 BEGIN
+    -- This database's console login(s) (control_plane.app_logins_here, 20261001-01):
+    -- the pooled coreplatform_<env> in the pool, coreplatform_<key>_<env> in a silo.
+    -- The bare pattern matched the POOLED login inside every silo database too.
     FOR r IN
-        SELECT rolname FROM pg_roles
-         WHERE rolcanlogin
-           AND rolname ~ '^(coreplatform|deladetech)_[a-z0-9]+$'
+        SELECT control_plane.app_logins_here('coreplatform')
+        UNION SELECT control_plane.app_logins_here('deladetech')
     LOOP
         EXECUTE format('GRANT USAGE ON SCHEMA control_plane TO %I', r);
         EXECUTE format(
@@ -92,9 +94,9 @@ END $$;
 DO $$
 DECLARE grp text;
 BEGIN
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9_]+$' AND NOT rolcanlogin
+    -- This database's own group(s) only (control_plane.app_groups_here, 20261001-01),
+    -- never every tvs_app_% in the cluster -- see silo-cross-tenant-pattern-grants.
+    FOR grp IN SELECT control_plane.app_groups_here()
     LOOP
         EXECUTE format('GRANT USAGE ON SCHEMA control_plane TO %I', grp);
         EXECUTE format(
