@@ -181,8 +181,10 @@ BEGIN
     IF to_regprocedure('invoicing.msg_queue_hold(text,text)') IS NULL THEN
         RETURN;
     END IF;
-    -- MyStoreGuard's logins, whatever the environment calls them (as 20261019-22 does).
-    FOR r IN SELECT rolname FROM pg_roles WHERE rolname ~ '^mystoreguard(_|$)' LOOP
+    -- THIS database's MyStoreGuard login(s), as 20261019-22 does -- derived from
+    -- current_database() (control_plane.app_logins_here), never every ^mystoreguard role
+    -- on the server, which reached into every other silo's database (20261023-01).
+    FOR r IN SELECT control_plane.app_logins_here('mystoreguard') LOOP
         EXECUTE format('GRANT EXECUTE ON FUNCTION invoicing.msg_queue_facts(text[]) TO %I', r);
         EXECUTE format('GRANT EXECUTE ON FUNCTION invoicing.msg_queue_hold(text, text) TO %I', r);
     END LOOP;

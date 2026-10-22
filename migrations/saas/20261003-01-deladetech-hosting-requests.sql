@@ -133,9 +133,7 @@ BEGIN
     --
     -- This file is saas-only, so the pooled group is the only one that should ever
     -- see it; a silo has no signup page pointed at it.
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin
+    FOR grp IN SELECT control_plane.app_groups_here(true)   -- the pool's own group(s)
     LOOP
         EXECUTE format('GRANT USAGE ON SCHEMA deladetech TO %I', grp);
         EXECUTE format(
