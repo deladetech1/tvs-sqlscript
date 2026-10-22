@@ -91,10 +91,15 @@ on:
         required: false
         default: ""
       environment:
-        description: "GitHub Environment to bind to, when source=secret"
+        description: "GitHub Environment to bind to: source=secret reads DATABASE_URL from it; with source=keyvault it only sets the OIDC subject (a cross-repo caller binds one of ITS environments, e.g. tvs-iac platform-dev)"
         type: string
         required: false
         default: ""
+      sql_ref:
+        description: "For a cross-repo caller: which tvs-sqlscript ref to check out (default dev). silos.yml on this branch passes `silo`, so tvs-iac onboarding applies the silo branch's SQL exactly as a dispatch here did."
+        type: string
+        required: false
+        default: dev
       refuse_pooled_database:
         description: "Fail if the resolved database is the pool. Set for silos."
         type: boolean
@@ -144,7 +149,7 @@ jobs:
         if: github.repository != 'deladetech1/tvs-sqlscript'
         with:
           repository: deladetech1/tvs-sqlscript
-          ref: dev
+          ref: ${{ inputs.sql_ref || 'dev' }}
 
       - uses: actions/setup-dotnet@v4
         with:
