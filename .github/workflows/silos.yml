@@ -67,6 +67,10 @@ on:
           # ctl_tenant_routes rather than deploying anything.
           - itech.dev.trovesuite.com
           - accesspoint.dev.trovesuite.com
+          # DEV, SILO_BYOD: a test client's own database and storage in BGCLT's
+          # Azure tenant (tvs-byodtest-sql/byodtest), set up by tvs-iac
+          # onboard-silo-app signing in to that tenant. Disposable.
+          - byodtest.dev.trovesuite.com
       module:
         type: choice
         required: true
@@ -200,14 +204,13 @@ jobs:
                   # be allowed to run migrations: a client who hands us a login
                   # that cannot create tables has handed us a database we cannot
                   # use, and that is a conversation to have at onboarding.
-                  if not db_secret_uri:
-                      print(f"::error::{host} is SILO_BYOD but names no "
-                            f"db_secret_uri. That column is the only credential "
-                            f"we have for a database we did not build, so there "
-                            f"is nothing to migrate with. Refusing.",
-                            file=sys.stderr)
-                      sys.exit(1)
-                  secret_uri = db_secret_uri
+                  # With only a silo_key (per-app logins, db_secret_uri NULL) the
+                  # apps compose db-url-<app>-<silo>, and migrations use
+                  # migrator-db-url-<silo> -- the client's migrator credential in
+                  # our vault (written by tvs-iac onboard-silo-app, or by hand at
+                  # handover). Same rule as master since 20261020.
+                  secret_uri = (db_secret_uri
+                                or f"{VAULT}/secrets/migrator-db-url-{silo_key}")
                   # NOT `kind`: that name holds the FILTER the dispatch asked
                   # for, and assigning it here overwrote it with whichever row
                   # happened to be last -- so every choice of kind returned the
