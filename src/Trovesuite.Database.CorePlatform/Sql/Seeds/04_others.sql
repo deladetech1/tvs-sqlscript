@@ -311,12 +311,19 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',    5,    50.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-premium',    'app-accounting',   'shared-subscription-premium',   15,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-enterprise', 'app-accounting',   'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- THE PRICES ABOVE ARE STARTING VALUES, NOT THE PRICE LIST (2026-10-23).
+-- A row that does not exist yet is created with them; a row that exists keeps
+-- its price, rate and max_login_users. The price list belongs to the Deladetech
+-- console (Billing > Price list), which fans a change out to every database and
+-- records it in core_platform.cp_price_list_changes. Before this, the upsert
+-- overwrote price and rate on every deploy, so a console change "succeeded" and
+-- was silently reverted by the next tvs-sqlscript run. Changing a number here
+-- changes nothing on an existing database; a price decision is made in the
+-- console. (The 2026-10-22 decision was applied once, recorded, by
+-- migrations/shared/20261023-30.)
 ON CONFLICT (id) DO UPDATE SET
     app_id          = EXCLUDED.app_id,
-    subscription_id = EXCLUDED.subscription_id,
-    max_login_users = EXCLUDED.max_login_users,
-    price           = EXCLUDED.price,
-    rate            = EXCLUDED.rate;
+    subscription_id = EXCLUDED.subscription_id;
 
 INSERT INTO cp_app_features (id, feature_type, title, description) VALUES
 ('upcoming-01', 'upcoming', 'Attendance Tracking', 'Enable employees or users to check in and out, track presence, and generate attendance logs.'),
