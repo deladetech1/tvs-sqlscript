@@ -28,65 +28,17 @@
 -- because "grant DELETE on the deladetech tables" is the obvious over-correction.
 -- =====================================================================================
 
-DO $$
-DECLARE grp text;
-BEGIN
-    -- The pooled app group only, and not a loop over every tvs_app_% -- the same
-    -- narrow shape as 20261003-04, for the same reason: these tables hold staff
-    -- credentials and a cross-tenant trail, and a retired tenant's group must not keep
-    -- accruing privileges on them.
-    FOR grp IN SELECT control_plane.app_groups_here(true)   -- the pool's own group(s)
-    LOOP
-        EXECUTE format(
-            'GRANT DELETE ON deladetech.dlt_client_setups TO %I', grp);
-        RAISE NOTICE 'the clear may now free a host: granted to %', grp;
-    END LOOP;
-
-    -- DELETE on every OTHER console table is taken back, every deploy.
-    --
-    -- tvs-iac's db-app-group lists deladetech and grants the app group DML on every table
-    -- in it -- exactly "the obvious over-correction" above. Applying it (2026-10-15) gave
-    -- the app groups DELETE on dlt_operators and dlt_client_clears and failed the checks
-    -- below, and with them every dev deploy. The DELETE grants these files ask for are
-    -- the only ones that should exist, so they are enforced here, not left to whatever
-    -- else grants on the schema. Narrowing tvs-iac is the lasting fix; until then this
-    -- re-asserts the rule on every deploy.
-    FOR grp IN SELECT control_plane.app_groups_here(true)   -- the pool's own group(s)
-    LOOP
-        DECLARE t text;
-        BEGIN
-            FOR t IN
-                SELECT tablename FROM pg_tables
-                 WHERE schemaname = 'deladetech'
-                   AND tablename NOT IN ('dlt_client_setups', 'dlt_operator_sessions')
-            LOOP
-                EXECUTE format('REVOKE DELETE, TRUNCATE ON deladetech.%I FROM %I', t, grp);
-            END LOOP;
-        END;
-    END LOOP;
-END $$;
+-- 2026-10-23: the grant this file was written for (DELETE on dlt_client_setups) now
+-- goes to the console's own login, in 20261023-20, and no longer to the application
+-- group -- every app login is a member of that group, and the console's tables were
+-- how any of them could become a console OWNER (CONSOLE-GAPS gap 1). 20261023-21 takes
+-- every console table from the group, every deploy, and asserts it. The checks below
+-- keep the two DELETEs that must never exist.
 
 -- ----------------------------------------------------------------------------- checks
 DO $$
-DECLARE n integer; groups integer;
+DECLARE n integer;
 BEGIN
-    SELECT count(*) INTO groups FROM pg_roles
-     WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin;
-    IF groups = 0 THEN
-        RAISE EXCEPTION 'no app group matched, so nothing was granted and the clear '
-                        'still cannot free a host';
-    END IF;
-
-    -- The grant that was missing.
-    SELECT count(*) INTO n FROM information_schema.role_table_grants
-     WHERE table_schema = 'deladetech' AND table_name = 'dlt_client_setups'
-       AND privilege_type = 'DELETE'
-       AND grantee ~ '^tvs_app_[a-z0-9]+$';
-    IF n < groups THEN
-        RAISE EXCEPTION 'DELETE on dlt_client_setups reached % of % app group(s)',
-            n, groups;
-    END IF;
-
     -- ...and the one that must stay missing. An app role that can delete a clear
     -- record can erase the evidence of a purge it performed.
     SELECT count(*) INTO n FROM information_schema.role_table_grants
@@ -109,5 +61,5 @@ BEGIN
                         'not asking for';
     END IF;
 
-    RAISE NOTICE 'the clear may delete a setup record, and nothing else new';
+    RAISE NOTICE 'no app group may delete the clear audit or an operator';
 END $$;

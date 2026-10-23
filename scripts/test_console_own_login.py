@@ -271,6 +271,21 @@ def main():
               pg.value("postgres", "SELECT has_function_privilege('mystoreguard_dev',"
                        "'control_plane.purge_tenant(text)','EXECUTE')") == "f")
 
+        # What dev and prod hold TODAY, from the old shape of the console files and
+        # tvs-iac's db-app-group: the group on every console table. The revoke has to
+        # take this away, not merely not add it.
+        legacy = pg.run("migrator", """
+            GRANT SELECT, INSERT, UPDATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA deladetech TO tvs_app_dev;
+            GRANT DELETE, TRUNCATE ON deladetech.dlt_operator_sessions, deladetech.dlt_client_setups TO tvs_app_dev;
+            GRANT SELECT (id) ON deladetech.dlt_operators TO tvs_app_dev;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA deladetech
+              GRANT SELECT, INSERT, UPDATE, REFERENCES, TRIGGER ON TABLES TO tvs_app_dev;""")
+        check("the legacy grants are in place to be taken away", legacy.returncode == 0,
+              (legacy.stderr or "")[:200])
+        check("...so an app login can mint a console session today",
+              pg.value("postgres", "SELECT has_table_privilege('mystoreguard_dev',"
+                       "'deladetech.dlt_operator_sessions','INSERT')") == "t")
+
         # -------------------------------- tvs-iac creates the login; next deploy
         pg.run("postgres", "CREATE ROLE deladetech_dev LOGIN; "
                            'GRANT CONNECT, CREATE, TEMPORARY ON DATABASE "dev-db" TO deladetech_dev')
