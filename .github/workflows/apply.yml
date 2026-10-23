@@ -322,6 +322,34 @@ jobs:
           echo "::endgroup::"
           echo "::notice title=${{ inputs.command }} succeeded::${{ inputs.label }} — module=${{ inputs.module }}"
 
+      # READ-ONLY. Which roles of OTHER databases on this server hold a privilege
+      # in, or can CONNECT to, this one (silo-cross-tenant-pattern-grants, found
+      # 2026-10-22). Runs after every command, success or failure, and never fails
+      # the job: it is evidence, and the invariant itself lives in migration
+      # 20261023-01. Look for the "ISOLATION <db>:" line.
+      - name: Isolation report
+        if: always() && steps.db.outputs.DB_NAME != ''
+        env:
+          PGHOST: ${{ steps.db.outputs.DB_HOST }}
+          PGPORT: ${{ steps.db.outputs.DB_PORT }}
+          PGUSER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          PGDATABASE: ${{ steps.db.outputs.DB_NAME }}
+          PGSSLMODE: require
+        run: |
+          set -uo pipefail
+          [ -f scripts/isolation_report.sql ] || { echo "no scripts/isolation_report.sql at this ref"; exit 0; }
+          command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null; }
+          psql --no-psqlrc -f scripts/isolation_report.sql 2>&1 | tee isolation.txt || true
+          {
+            echo "### isolation · ${{ inputs.label }}"
+            echo ""
+            echo '```'
+            grep -E '^ ?ISOLATION ' isolation.txt | head -1 || echo "(no summary line -- see the step log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
       - name: Restore dotnet-ef tool
         if: startsWith(inputs.command, 'migrations-')
         # The repo pins dotnet-ef as a LOCAL tool (dotnet-tools.json), so `dotnet ef`

@@ -854,3 +854,83 @@ one dimension per project, lines on it, the report with and without Projects) an
 a bill, a company payment and an invoice on a project written by the real code, posted by the real worker, the report
 read against Projects' own tables through the views).
 
+
+## 10. Connected apps (20261022-65): the business decides what flows
+
+Until 2026-10-22 every link was automatic. Now each business switches each link in **Core Platform → Connected apps**
+(owners and administrators: permission `app-connection` get / update, held by Owner, Admin and Core Platform Admin by
+role, granted to no curated role). The switch is a row in `core_platform.cp_app_connections`
+(`tenant_id`, `bus_id`, `link_key`, `source_app`, `target_app`, `mode`, `range_from`, `range_to`, `run_started_at`,
+`changed_by`, `changed_by_name`, `changed_at`), written only by Core Platform's `/api/v1/app-connections` endpoints, and
+every change is in the Apps audit trail (`cp_business_apps_audit_logs`, entity `connection:<link key>`).
+
+| Mode | What the receiver does |
+|---|---|
+| `OFF` (no row is the same) | posts nothing; each event is SKIPPED "Not connected: …" |
+| `ONE_TIME` (`range_from` … `range_to`, both included, ending no later than now) | posts only events that **happened** in the range (`acc_posting_inbox.event_at`, when the source app recorded it), and brings back the ones skipped as not connected in that range, once |
+| `ALWAYS` | posts as today |
+
+**The receiving side enforces it and fails closed.** Accounting's `PostingRun` reads the business's switches before a
+pass posts anything (`GateConnectionsAsync`) and again for each row just before it posts (`PostOneAsync`, so the
+"Retry" in Accounting's own screen obeys it too). No row is OFF. A switch that cannot be read posts nothing: the rows
+stay PENDING with "Could not check whether this app is connected to Accounting; trying again shortly." A database
+that does not have the table yet (a silo the migration has not reached) is treated the same way: the rows wait, and
+post once the migration and its backfill land; nothing is marked "not connected" for want of a table. The Accounting
+subscription rule (SKIPPED, not subscribed) and the books rule (waiting) apply first, as before.
+
+- **Turning on needs both apps subscribed** for the business (`cp_business_app_tier`); Core Platform refuses with
+  "Subscribe to <App> … to connect". Turning off is always allowed.
+- **Turning off removes nothing.** Journals already posted stay; only new events are skipped.
+- **Skipped while off, brought back by a one-time run.** `RequeueOneTimeRunsAsync` puts back to PENDING the rows SKIPPED
+  with the "Not connected:" reason whose event happened inside a ONE_TIME range, then they go through every gate again.
+  Switching to ALWAYS does **not** bring them back: what happened while a link was off stays out until someone chooses
+  a one-time run over it.
+- **Never twice.** A row once POSTED is never touched again, and the journal's `source_document_id = evt:<id>` under
+  `ux_acc_journal_entries_event` refuses a second journal regardless.
+- **Never before the books.** A one-time run over events dated before the books' first period skips them as before
+  ("Dated before these books begin").
+- **Progress** (Core Platform reads `acc_posting_inbox` for the link's source and range): total, posted, waiting
+  (pending, or not-connected rows the next pass brings back), failed, skipped; DONE when nothing is waiting.
+- **Try again** from Core Platform calls `accounting.acc_posting_request_retry(tenant, bus, source, ids)`: FAILED rows
+  back to PENDING, nothing more. Accounting decides.
+
+**Backfill, once per database.** The migration set ALWAYS for every business whose books were set up on a live
+Accounting subscription (all five sources) and for every (business, source) with a POSTED row, so nothing changed for
+anyone already posting (`changed_by = 'system'`). A marker in `core_platform.cp_app_connection_backfills`
+(`accounting-links-20261022`) stops it running again: every deploy re-runs the file, and a business that sets up its
+books later must start OFF.
+
+### Every link is a switch (20261022-90)
+
+Since 2026-10-22 (phase 2) every link on the page is switchable, each enforced by the code that **receives**, per
+business, failing closed (no row, an unreadable row or a missing table is OFF for new work; an unrelated request never
+fails because of it: the receiver degrades and says why). The subscription rules still apply on top (both apps live).
+Shared Go reading is `tvs-shared-apps-bk internal/platform/connections`.
+
+| Link | Kind, modes | Enforced in | Off means |
+|---|---|---|---|
+| `mystoreguard-invoicing` | sync, two-way; OFF / ALWAYS | Invoicing `msginvoices.go` (`msgInvoicesReady`, `msgLinkOff`, `msgClosed`), `payments.go` `recordPayment`; MyStoreGuard `invoicing_payment_queue_service.py` | no MyStoreGuard invoice listed or brought in; no new payment on a linked invoice by hand, from the bank, by saved card or started online ("take it in MyStoreGuard"). A payment a gateway completes after the switch went off is still recorded and queued (the customer had started paying). Linked invoices stay and keep following MyStoreGuard's lines and till payments. MyStoreGuard posts everything queued before the switch went off and anything a gateway took; anything else is HELD (`invoicing.msg_queue_hold`, "Held: …", never refused) and posts when the link is on again |
+| `expenses-invoicing` | sync; OFF / ONE_TIME / ALWAYS | Invoicing `billable.go` (`billableExpenses`, `claimBillable`) | nothing listed, nothing newly claimed; ONE_TIME: only expenses spent in the range |
+| `projects-invoicing` | sync; OFF / ONE_TIME / ALWAYS | Invoicing `billable.go` (`billableProjects`, `billableLines`, `claimBillable`) | as above, by work date / day spent |
+| `expenses-zeloshr` | sync; OFF / ONE_TIME / ALWAYS | `platform/payrollextras.Add` (ZelosHR's rules) | no new payback on a payslip; ONE_TIME: only claims approved in the range. A payback already on the payroll is still followed to paid |
+| `zeloshr-expenses` | lookup; OFF / ON (`ALWAYS`) | Expenses `readsHR` (approval route, departments, department budgets, payee details) | approvals go to finance; no departments offered or counted; no pay details suggested |
+| `mystoreguard-crm` | lookup | CRM `sync.go` (`runSync`, the 5-minute sweep, settings, `/connections`), `deals.go` `msgLinePrice` | the sweep passes it by; the CRM's stored prices stand |
+| `loandrift-crm` | lookup | CRM `sync.go` | the sweep passes it by |
+| `zeloshr-projects` | lookup | Projects `zhrConnected`, `lineManagerOf` | no leave, holidays, attendance or line managers in Projects |
+
+What was brought in stays in every case: it is the receiving app's own. A saved invoice keeps the expenses and time it
+already bills; re-saving it is never refused.
+
+**Backfill, once per link and database** (marker `<link>@20261022`, written only once the tables holding the evidence
+exist, so a silo without an app's schema runs it on the deploy that brings it): ALWAYS (`changed_by = 'system'`) for
+every business the data shows using the link -- MyStoreGuard invoices brought into Invoicing or payments queued;
+expenses invoiced or billable to a customer; project time/expenses invoiced or a project billed to a customer;
+paybacks by payroll; claims, an HR approval step or a department budget on a live ZelosHR subscription; CRM customers
+or products synced from MyStoreGuard / LoanDrift (or the sync enabled); projects whose organisation is on ZelosHR.
+Everyone else starts OFF. `ON CONFLICT DO NOTHING`: an owner's choice is never overwritten.
+
+Not yet on the page (found while verifying, still always on while both apps are subscribed): Invoicing's imports of
+MyStoreGuard customers / suppliers / products and LoanDrift clients, Invoicing purchase orders from MyStoreGuard,
+Projects reading MyStoreGuard jobs and workflow templates, Projects' suite links (CRM deals and tickets, MyStoreGuard
+jobs, LoanDrift loans), the CRM ⇄ Projects links, and Expenses reading Projects, Invoicing customers and MyStoreGuard
+spending (budgets).

@@ -281,7 +281,9 @@ REVOKE ALL ON FUNCTION control_plane.label_for_name(text) FROM PUBLIC;
 DO $$
 DECLARE grp text;
 BEGIN
-    FOR grp IN SELECT rolname FROM pg_roles WHERE rolname LIKE 'tvs_app_%' LOOP
+    -- This database's own group(s) only (control_plane.app_groups_here, 20261001-01),
+    -- never every tvs_app_% in the cluster -- see silo-cross-tenant-pattern-grants.
+    FOR grp IN SELECT control_plane.app_groups_here() LOOP
         EXECUTE format(
             'GRANT EXECUTE ON FUNCTION control_plane.label_for_name(text) TO %I', grp);
         EXECUTE format(

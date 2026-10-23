@@ -62,9 +62,9 @@ CREATE INDEX IF NOT EXISTS ix_ctl_storage_credentials_status
 DO $$
 DECLARE grp text;
 BEGIN
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9_]+$' AND NOT rolcanlogin
+    -- THIS database's group(s) only (control_plane.app_groups_here, 20261001-01).
+    -- Until 2026-10-23 every silo group on the server could rewrite this table.
+    FOR grp IN SELECT control_plane.app_groups_here()
     LOOP
         EXECUTE format('GRANT USAGE ON SCHEMA control_plane TO %I', grp);
         EXECUTE format(

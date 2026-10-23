@@ -35,9 +35,7 @@ BEGIN
     -- narrow shape as 20261003-04, for the same reason: these tables hold staff
     -- credentials and a cross-tenant trail, and a retired tenant's group must not keep
     -- accruing privileges on them.
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin
+    FOR grp IN SELECT control_plane.app_groups_here(true)   -- the pool's own group(s)
     LOOP
         EXECUTE format(
             'GRANT DELETE ON deladetech.dlt_client_setups TO %I', grp);
@@ -53,9 +51,7 @@ BEGIN
     -- the only ones that should exist, so they are enforced here, not left to whatever
     -- else grants on the schema. Narrowing tvs-iac is the lasting fix; until then this
     -- re-asserts the rule on every deploy.
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin
+    FOR grp IN SELECT control_plane.app_groups_here(true)   -- the pool's own group(s)
     LOOP
         DECLARE t text;
         BEGIN

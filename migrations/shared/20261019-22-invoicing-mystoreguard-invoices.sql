@@ -164,8 +164,11 @@ REVOKE ALL ON FUNCTION invoicing.msg_queue_done(text, text, text) FROM PUBLIC;
 DO $$
 DECLARE r text;
 BEGIN
-    -- MyStoreGuard's logins, whatever the environment calls them.
-    FOR r IN SELECT rolname FROM pg_roles WHERE rolname ~ '^mystoreguard(_|$)' LOOP
+    -- THIS database's MyStoreGuard login(s), whatever the environment calls them
+    -- (control_plane.app_logins_here, 20261001-01). Until 2026-10-23 it was every
+    -- ^mystoreguard(_|$) role on the server, so each silo's MyStoreGuard could claim
+    -- and mark another tenant's payment-queue rows in their database.
+    FOR r IN SELECT control_plane.app_logins_here('mystoreguard') LOOP
         EXECUTE format('GRANT EXECUTE ON FUNCTION invoicing.msg_queue_claim(int) TO %I', r);
         EXECUTE format('GRANT EXECUTE ON FUNCTION invoicing.msg_queue_done(text, text, text) TO %I', r);
     END LOOP;

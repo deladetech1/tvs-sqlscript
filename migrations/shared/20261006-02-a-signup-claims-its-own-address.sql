@@ -159,9 +159,11 @@ BEGIN
     -- The pooled app group only, and not every tvs_app_% -- the same narrow shape as
     -- 20261003-04 and 20261005-05, for the same reason: this hands out addresses, and a
     -- retired tenant's group must not keep the privilege.
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin
+    --
+    -- And only THIS database's pooled group (app_groups_here(true)): the pattern alone
+    -- also matched the pooled group inside every silo database on the shared server.
+    -- In a silo it now matches nothing, which is the intent -- a silo has no signup.
+    FOR grp IN SELECT control_plane.app_groups_here(true)
     LOOP
         EXECUTE format('GRANT EXECUTE ON FUNCTION control_plane.claim_tenant_host('
                        'text, text, text, text) TO %I', grp);
