@@ -37,6 +37,14 @@
 # Production SQL is still master whatever calls this: apply.yml decides it from
 # target_env.
 #
+# BYOD servers: apply.yml opens a firewall rule for its own runner's address
+# (trovesuite-ci-<run_id>-..., /32) as the client's app registration, whose ids
+# are our vault's byod-access-<silo>, and removes it in an always() step. The
+# app registration needs a federated credential for whichever subject this run
+# has: repo:deladetech1/tvs-sqlscript:ref:refs/heads/master (prod dispatch),
+# ...:refs/heads/silo (dev push), or tvs-iac's environment:platform-<env> when
+# called from onboard-silo-app. docs: tvs-iac docs/byod-client-setup.sh.
+#
 # Everything here only decides WHICH databases. apply.yml does the work, and
 # refuses outright if a silo's secret resolves to the pooled database.
 
@@ -283,6 +291,13 @@ jobs:
                   "secret_uri": secret_uri,
                   "kind": silo_kind,
                   "server": server,
+                  # BYOD: the ids (no secret) apply.yml needs to open a firewall
+                  # rule for its own runner on THEIR server -- Blacksmith runners
+                  # are not Azure, so "allow Azure services" does not admit them.
+                  # Missing in the vault = apply.yml warns and relies on a rule the
+                  # client already has (bgclt's allow-internet).
+                  "byod_access_uri": (f"{VAULT}/secrets/byod-access-{silo_key}"
+                                      if silo_kind == "byod" else ""),
               }
 
           picked = list(live.values())
@@ -357,3 +372,4 @@ jobs:
       azure_client_id: ${{ vars.TVS_AZURE_CLIENT_ID }}
       azure_tenant_id: ${{ vars.TVS_TENANT_ID }}
       refuse_pooled_database: true
+      byod_access_uri: ${{ matrix.byod_access_uri }}
