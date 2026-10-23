@@ -66,6 +66,8 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-projects-%'
   AND p.id NOT LIKE 'permission-invoicing-%'
   AND p.id NOT LIKE 'permission-accounting-%'
+  AND p.id NOT LIKE 'permission-expenses-%'
+  AND p.id NOT LIKE 'permission-hms-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -216,6 +218,11 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- backend; frontend tvs-expenses-ft. Registration beyond this row is
 -- migrations/shared/20261019-26-expenses-joins-the-platform.sql.
 ('app-expenses', 'EXPENSES', 'Receipts & Claims', 'Approvals', 'Pay Back by MoMo or Bank', 'Budgets & Policies', 'Reports & Exports', 'Every business expense in one place: snap a receipt, claim it, get it approved and paid back by mobile money or bank, within budget and policy', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- HMS: hospitality and property management -- hotels, guest houses, short stays, restaurants,
+-- landlords and property managers -- hosted by the shared apps backend; frontend tvs-hms-ft.
+-- Registration beyond this row is migrations/shared/20261022-61-hms-joins-the-platform.sql.
+-- Not app-hams below, which is a hospital system.
+('app-hms', 'HMS', 'Reservations & Front Desk', 'Housekeeping & Maintenance', 'Restaurant & Bar POS', 'Rentals & Leases', 'Occupancy & Revenue Reports', 'Run hotels, guest houses, short stays, restaurants and rentals from one place: reservations, check-in, guest bills, housekeeping, POS, leases and rent, set up for your kind of business', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-accounting', 'ACCOUNTING', 'General Ledger & Journals', 'Receivables & Payables', 'Bank Reconciliation', 'Multi-Currency', 'Financial Reports', 'Double-entry books for every organisation: chart of accounts, journals with approvals, invoices and bills, bank reconciliation, multi-currency and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
@@ -260,37 +267,63 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-zhr-advance',    'app-zeloshr',      'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-zhr-premium',    'app-zeloshr',      'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-zhr-enterprise', 'app-zeloshr',      'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
--- CRM: priced as ZelosHR, decided 2026-10-15.
-('tier-cfg-crm-basic',      'app-crm',          'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-crm-advance',    'app-crm',          'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-crm-premium',    'app-crm',          'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- ---------------------------------------------------------------------------------------
+-- The five business apps (CRM, Projects, Invoicing, Expenses, Accounting): prices decided
+-- by the owner 2026-10-22. USD per BUSINESS per month, not per location --
+-- core_platform.cp_apps.billing_unit = 'BUSINESS' for these five (shared/20261022-70).
+-- max_login_users is the seat cap per (business, app).
+--
+-- ENTERPRISE for these five is sold only for the whole suite, by quote, self-hosted. The
+-- rows stay because a self-hosted tenant must still resolve a tier; the hub never shows
+-- their price (it says "Contact us") and plan_eligibility never offers ENTERPRISE to a
+-- hosted client. A client's agreed price (cp_app_subscriptions.price_override) still wins
+-- over every number here.
+-- ---------------------------------------------------------------------------------------
+-- CRM, decided 2026-10-22.
+('tier-cfg-crm-basic',      'app-crm',          'shared-subscription-basic',      3,    45.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-crm-advance',    'app-crm',          'shared-subscription-advance',   10,   120.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-crm-premium',    'app-crm',          'shared-subscription-premium',   25,   250.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-crm-enterprise', 'app-crm',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
--- Projects: priced as the CRM, 2026-10-16.
-('tier-cfg-prj-basic',      'app-projects',     'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-prj-advance',    'app-projects',     'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-prj-premium',    'app-projects',     'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Projects, decided 2026-10-22.
+('tier-cfg-prj-basic',      'app-projects',     'shared-subscription-basic',      5,    25.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-prj-advance',    'app-projects',     'shared-subscription-advance',   15,    60.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-prj-premium',    'app-projects',     'shared-subscription-premium',   40,   120.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-prj-enterprise', 'app-projects',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
--- Invoicing: priced as the CRM and Projects, 2026-10-19 (not yet confirmed).
-('tier-cfg-inv-basic',      'app-invoicing',    'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-inv-advance',    'app-invoicing',    'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-inv-premium',    'app-invoicing',    'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Invoicing, decided 2026-10-22.
+('tier-cfg-inv-basic',      'app-invoicing',    'shared-subscription-basic',      3,    10.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-advance',    'app-invoicing',    'shared-subscription-advance',   10,    20.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-inv-premium',    'app-invoicing',    'shared-subscription-premium',   25,    35.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-inv-enterprise', 'app-invoicing',    'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
--- Expenses: priced as Invoicing, 2026-10-19 (placeholder, not yet confirmed).
-('tier-cfg-exp-basic',      'app-expenses',     'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-exp-advance',    'app-expenses',     'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-exp-premium',    'app-expenses',     'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Expenses, decided 2026-10-22.
+('tier-cfg-exp-basic',      'app-expenses',     'shared-subscription-basic',     10,    15.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-exp-advance',    'app-expenses',     'shared-subscription-advance',   25,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-exp-premium',    'app-expenses',     'shared-subscription-premium',   60,    60.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-exp-enterprise', 'app-expenses',     'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
--- Accounting (TapantaBooks): the platform default, as Invoicing and Expenses, 2026-10-18 (not yet confirmed).
-('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      6,   100.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',   12,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('tier-cfg-acc-premium',    'app-accounting',   'shared-subscription-premium',   24,   200.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- HMS: priced per property (a location) per month, below the suite default because a
+-- guest house is smaller than a lender. How many units a property may hold per tier is in
+-- tvs-shared-apps-bk internal/apps/hms/plan.go. 2026-10-22, placeholder, not yet confirmed.
+('tier-cfg-hms-basic',      'app-hms',          'shared-subscription-basic',      5,    40.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-hms-advance',    'app-hms',          'shared-subscription-advance',   15,    80.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-hms-premium',    'app-hms',          'shared-subscription-premium',   40,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-hms-enterprise', 'app-hms',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Accounting (TapantaBooks), decided 2026-10-22. Per business, like the four above.
+('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      2,    25.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',    5,    50.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-acc-premium',    'app-accounting',   'shared-subscription-premium',   15,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-enterprise', 'app-accounting',   'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- THE PRICES ABOVE ARE STARTING VALUES, NOT THE PRICE LIST (2026-10-23).
+-- A row that does not exist yet is created with them; a row that exists keeps
+-- its price, rate and max_login_users. The price list belongs to the Deladetech
+-- console (Billing > Price list), which fans a change out to every database and
+-- records it in core_platform.cp_price_list_changes. Before this, the upsert
+-- overwrote price and rate on every deploy, so a console change "succeeded" and
+-- was silently reverted by the next tvs-sqlscript run. Changing a number here
+-- changes nothing on an existing database; a price decision is made in the
+-- console. (The 2026-10-22 decision was applied once, recorded, by
+-- migrations/shared/20261023-30.)
 ON CONFLICT (id) DO UPDATE SET
     app_id          = EXCLUDED.app_id,
-    subscription_id = EXCLUDED.subscription_id,
-    max_login_users = EXCLUDED.max_login_users,
-    price           = EXCLUDED.price,
-    rate            = EXCLUDED.rate;
+    subscription_id = EXCLUDED.subscription_id;
 
 INSERT INTO cp_app_features (id, feature_type, title, description) VALUES
 ('upcoming-01', 'upcoming', 'Attendance Tracking', 'Enable employees or users to check in and out, track presence, and generate attendance logs.'),

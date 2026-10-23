@@ -113,6 +113,11 @@ on:
         type: boolean
         required: false
         default: false
+      byod_access_uri:
+        description: "SILO_BYOD: Key Vault secret holding {client_id, tenant_id, server_id} (ids, no secret). This job then opens a firewall rule for its own runner on that server and removes it at the end. Empty = not BYOD."
+        type: string
+        required: false
+        default: ""
     secrets:
       database_url:
         description: "The connection string, when source=secret"
@@ -274,6 +279,38 @@ jobs:
             echo "PGPASSWORD=$PGPASSWORD"; echo "DB_NAME=$DB_NAME"
           } >> "$GITHUB_OUTPUT"
 
+      # BYOD: the client's server admits "Azure services" at most, and Blacksmith
+      # runners are not Azure. Open a rule for THIS runner's address only
+      # (trovesuite-ci-<run_id>-<attempt>-<job>-<epoch>, /32), as the client's app
+      # registration (GitHub OIDC, no secret), and remove it in the always() step
+      # at the end. No byod-access-<silo> in our vault = warn and rely on a rule
+      # the client already has (allow-internet); a configured identity that cannot
+      # create the rule fails the job here, before any SQL.
+      - name: Runner access (open)
+        id: fw
+        if: inputs.byod_access_uri != '' && inputs.command != 'plan'
+        env:
+          BYOD_ACCESS_URI: ${{ inputs.byod_access_uri }}
+          LABEL: ${{ inputs.label }}
+        run: |
+          set -euo pipefail
+          vault="$(printf '%s' "$BYOD_ACCESS_URI" | sed -E 's#^https://([^.]+)\..*#\1#')"
+          name="$(printf '%s' "$BYOD_ACCESS_URI" | sed -E 's#^https://[^/]+/secrets/([^/]+).*#\1#')"
+          [[ "$name" =~ ^byod-access-[a-z0-9-]+$ ]] || { echo "::error::byod_access_uri '$BYOD_ACCESS_URI' does not name a byod-access-<silo> secret"; exit 1; }
+          if ! az keyvault secret show --vault-name "$vault" --name "$name" --query value -o tsv \
+                 > "$RUNNER_TEMP/byod-access.json" 2> "$RUNNER_TEMP/byod-access.err"; then
+            if grep -q "SecretNotFound" "$RUNNER_TEMP/byod-access.err"; then
+              echo "::warning::$LABEL: no $name in $vault, so no firewall rule is opened for this runner. Relying on a rule the client already has that admits it (e.g. allow-internet) -- do NOT remove that rule until the client has granted the 'Trovesuite CI firewall' role and $name exists."
+              rm -f "$RUNNER_TEMP/byod-access.json"
+              exit 0
+            fi
+            echo "::error::cannot read $name from $vault: $(head -c 400 "$RUNNER_TEMP/byod-access.err")"
+            exit 1
+          fi
+          [ -f scripts/ci_firewall.py ] || { echo "::error::$name exists but scripts/ci_firewall.py is not at this SQL ref"; exit 1; }
+          python3 scripts/ci_firewall.py open --access-file "$RUNNER_TEMP/byod-access.json" \
+            --state "$RUNNER_TEMP/ci-firewall.json" --job "apply"
+
       - name: ${{ inputs.command }}
         if: inputs.command != 'migrations-list' && inputs.command != 'plan'
         env:
@@ -321,6 +358,34 @@ jobs:
                 "$DB_HOST" "$DB_PORT" "$DB_USER" "$PGPASSWORD" "$DB_NAME" "${{ inputs.command }}"
           echo "::endgroup::"
           echo "::notice title=${{ inputs.command }} succeeded::${{ inputs.label }} — module=${{ inputs.module }}"
+
+      # READ-ONLY. Which roles of OTHER databases on this server hold a privilege
+      # in, or can CONNECT to, this one (silo-cross-tenant-pattern-grants, found
+      # 2026-10-22). Runs after every command, success or failure, and never fails
+      # the job: it is evidence, and the invariant itself lives in migration
+      # 20261023-01. Look for the "ISOLATION <db>:" line.
+      - name: Isolation report
+        if: always() && steps.db.outputs.DB_NAME != ''
+        env:
+          PGHOST: ${{ steps.db.outputs.DB_HOST }}
+          PGPORT: ${{ steps.db.outputs.DB_PORT }}
+          PGUSER: ${{ steps.db.outputs.DB_USER }}
+          PGPASSWORD: ${{ steps.db.outputs.PGPASSWORD }}
+          PGDATABASE: ${{ steps.db.outputs.DB_NAME }}
+          PGSSLMODE: require
+        run: |
+          set -uo pipefail
+          [ -f scripts/isolation_report.sql ] || { echo "no scripts/isolation_report.sql at this ref"; exit 0; }
+          command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null; }
+          psql --no-psqlrc -f scripts/isolation_report.sql 2>&1 | tee isolation.txt || true
+          {
+            echo "### isolation · ${{ inputs.label }}"
+            echo ""
+            echo '```'
+            grep -E '^ ?ISOLATION ' isolation.txt | head -1 || echo "(no summary line -- see the step log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
 
       - name: Restore dotnet-ef tool
         if: startsWith(inputs.command, 'migrations-')
@@ -493,3 +558,11 @@ jobs:
               echo "ℹ️  No migrations found in the repo for the selected module(s)."
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Always: success, failure or cancellation. A no-op when nothing was opened.
+      - name: Runner access (close)
+        if: always() && inputs.byod_access_uri != '' && inputs.command != 'plan'
+        run: |
+          set -uo pipefail
+          [ -f "$RUNNER_TEMP/ci-firewall.json" ] || { echo "no temporary firewall rule was opened in this job"; exit 0; }
+          python3 scripts/ci_firewall.py close --state "$RUNNER_TEMP/ci-firewall.json"

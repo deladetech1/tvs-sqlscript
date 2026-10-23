@@ -61,25 +61,9 @@ COMMENT ON TABLE deladetech.dlt_client_clears IS
 -- The other console tables allow UPDATE for workflow reasons. This one allows it only
 -- so a clear can record its own progress; nothing may remove a row. An audit trail the
 -- application can erase is not an audit trail.
-DO $$
-DECLARE grp text;
-BEGIN
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9]+$' AND NOT rolcanlogin
-    LOOP
-        EXECUTE format('GRANT USAGE ON SCHEMA deladetech TO %I', grp);
-        EXECUTE format(
-            'GRANT SELECT, INSERT, UPDATE ON deladetech.dlt_client_clears TO %I', grp);
-        -- And DELETE taken back, every deploy. tvs-iac's db-app-group grants the app
-        -- group DML on every table in each schema it lists, deladetech included, so
-        -- applying it hands this table DELETE too -- which failed the check below and
-        -- with it every dev deploy (2026-10-15). The rule is this table's, so it is
-        -- enforced here rather than left to whatever else grants on the schema.
-        EXECUTE format('REVOKE DELETE, TRUNCATE ON deladetech.dlt_client_clears FROM %I', grp);
-        RAISE NOTICE 'dlt_client_clears: granted to %', grp;
-    END LOOP;
-END $$;
+-- Granted to the console's own login (20261023-20), no longer to the application
+-- group, which every app login belongs to (CONSOLE-GAPS gap 1). 20261023-21 takes the
+-- table from the group every deploy.
 
 -- ----------------------------------------------------------------------------- checks
 DO $$

@@ -208,6 +208,177 @@ VALUES
     ('bgclt.trovesuite.com',                 NULL, 'POOLED', 'bgclt-prod',  'ACTIVE', CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, 'migration')
 ON CONFLICT (host) DO NOTHING;
 
+-- >>> tenancy role helpers (scripts/isolation_report.sql carries a pg_temp copy; keep them identical)
+-- ---------------------------------------------------------------------
+-- WHO BELONGS TO THIS DATABASE -- derived from current_database(), never from a
+-- role-name pattern alone.
+--
+-- PostgreSQL roles are per CLUSTER, and one server holds several of our databases
+-- (tvs-shared-sql: dev-db and every SILO_SHARED client). A migration that grants to
+-- "every tvs_app_% group" or "every ^mystoreguard role" therefore hands each silo's
+-- roles rights inside every OTHER database on that server -- found 2026-10-22 when
+-- offboarding regtest had to revoke mystoreguard_regtest_dev and tvs_app_regtest_dev
+-- privileges inside silo-itech-dev and dev-db. These functions answer "whose
+-- database is this" once, and every grant asks them.
+--
+--   silo    a shared or dedicated silo: its route row names this database
+--           (db_name + silo_key), or the database is named silo-<key>-<env>.
+--           Its group is tvs_app_<key>_<env>; its logins <app>_<key>_<env>.
+--   pooled  <env>-db (dev-db, prod-db, staging-db). Its groups are the pooled
+--           tvs_app_<env> ones; its logins <app>_<env>.
+--   single  anything else -- an enterprise or BYOD database on the CLIENT's own
+--           server, or a local test database. One client per server, so every
+--           group on the server is this database's (the behaviour before
+--           2026-10-23, which was harmless there).
+--
+-- Plain SECURITY INVOKER functions reading only pg_roles / the route table.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION control_plane.this_database_unit(
+    OUT unit text, OUT silo_key text, OUT env text, OUT app_groups text[])
+LANGUAGE plpgsql STABLE AS $fn$
+DECLARE
+    db text := current_database();
+    m  text[];
+    k  text;
+BEGIN
+    -- The route table first: it is what the platform itself routes by. Only SHARED
+    -- and DEDICATED silos -- a BYOD database is on the client's own server.
+    IF to_regclass('control_plane.ctl_tenant_routes') IS NOT NULL
+       AND EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'control_plane'
+                      AND table_name   = 'ctl_tenant_routes'
+                      AND column_name  = 'silo_key') THEN
+        EXECUTE 'SELECT min(silo_key) FROM control_plane.ctl_tenant_routes
+                  WHERE db_name = current_database() AND silo_key IS NOT NULL
+                    AND tier IN (''SILO_SHARED'', ''SILO_DEDICATED'')'
+           INTO k;
+    END IF;
+    m := regexp_match(db, '^silo-([a-z0-9-]+)-([a-z0-9]+)$');
+    IF k IS NULL AND m IS NOT NULL THEN
+        k := m[1];
+    END IF;
+
+    IF k IS NOT NULL THEN
+        unit     := 'silo';
+        silo_key := replace(lower(k), '-', '_');
+        env      := m[2];   -- NULL when only the route row named it
+        SELECT coalesce(array_agg(rolname::text ORDER BY rolname), '{}') INTO app_groups
+          FROM pg_roles
+         WHERE NOT rolcanlogin AND rolname = 'tvs_app_' || silo_key || '_' || env;
+        IF cardinality(app_groups) = 0 THEN
+            -- The name did not say the environment (or said one with no group):
+            -- take the silo's group whatever its environment suffix.
+            env := NULL;
+            SELECT coalesce(array_agg(rolname::text ORDER BY rolname), '{}') INTO app_groups
+              FROM pg_roles
+             WHERE NOT rolcanlogin AND rolname ~ ('^tvs_app_' || silo_key || '_[a-z0-9]+$');
+        END IF;
+        IF env IS NULL AND cardinality(app_groups) = 1 THEN
+            env := substring(app_groups[1] from '_([a-z0-9]+)$');
+        END IF;
+    ELSIF db ~ '^[a-z0-9]+-db$' THEN
+        unit := 'pooled';
+        env  := substring(db from '^([a-z0-9]+)-db$');
+        SELECT coalesce(array_agg(rolname::text ORDER BY rolname), '{}') INTO app_groups
+          FROM pg_roles
+         WHERE NOT rolcanlogin AND rolname ~ '^tvs_app_[a-z0-9]+$';
+    ELSE
+        unit := 'single';
+        SELECT coalesce(array_agg(rolname::text ORDER BY rolname), '{}') INTO app_groups
+          FROM pg_roles
+         WHERE NOT rolcanlogin AND rolname ~ '^tvs_app_[a-z0-9_]+$';
+    END IF;
+END
+$fn$;
+
+-- This database's application group(s). pooled_shape_only keeps just the
+-- tvs_app_<env> shape: for privileges that belong to the POOL alone (claiming or
+-- releasing a pooled address, the hosting-request console), so a silo -- whose
+-- group is tvs_app_<key>_<env> -- gets none, exactly as before.
+CREATE OR REPLACE FUNCTION control_plane.app_groups_here(pooled_shape_only boolean DEFAULT false)
+RETURNS SETOF text
+LANGUAGE sql STABLE AS $fn$
+    SELECT g
+      FROM unnest((control_plane.this_database_unit()).app_groups) AS g
+     WHERE NOT pooled_shape_only OR g ~ '^tvs_app_[a-z0-9]+$'
+     ORDER BY g
+$fn$;
+
+-- This database's login(s) for one application, e.g. app_logins_here('mystoreguard'):
+--   silo    mystoreguard_<key>_<env>
+--   pooled  mystoreguard_<env> (one per pooled environment sharing the database)
+--   single  ^mystoreguard(_|$) -- the old behaviour, on a one-client server
+CREATE OR REPLACE FUNCTION control_plane.app_logins_here(app text)
+RETURNS SETOF text
+LANGUAGE sql STABLE AS $fn$
+    WITH u AS (SELECT * FROM control_plane.this_database_unit())
+    SELECT r.rolname::text
+      FROM pg_roles r, u
+     WHERE app ~ '^[a-z0-9]+$'
+       AND CASE u.unit
+             WHEN 'silo'   THEN r.rolcanlogin
+                                AND (r.rolname = app || '_' || u.silo_key || '_' || u.env
+                                     OR (u.env IS NULL AND r.rolname ~ ('^' || app || '_' || u.silo_key || '_[a-z0-9]+$')))
+             WHEN 'pooled' THEN r.rolcanlogin AND r.rolname ~ ('^' || app || '_[a-z0-9]+$')
+             ELSE               r.rolname ~ ('^' || app || '(_|$)')
+           END
+     ORDER BY 1
+$fn$;
+
+-- Does this role belong to ANOTHER database on this server? The question the
+-- cleanup (20261023-01) and its invariant ask. Never true for infrastructure
+-- (superusers, the admin, the migrator, the database's owner, pg_*/azure_*), never
+-- true on a one-client server, and never true for a role of this database.
+CREATE OR REPLACE FUNCTION control_plane.role_is_foreign_here(r oid)
+RETURNS boolean
+LANGUAGE plpgsql STABLE AS $fn$
+DECLARE
+    u  record;
+    rr record;
+BEGIN
+    SELECT * INTO u FROM control_plane.this_database_unit();
+    IF u.unit = 'single' THEN
+        RETURN false;
+    END IF;
+    SELECT * INTO rr FROM pg_roles WHERE oid = r;
+    IF NOT FOUND
+       OR rr.rolsuper OR rr.rolcreaterole OR rr.rolreplication OR rr.rolbypassrls
+       OR rr.rolname ~ '^(pg_|azure)'
+       OR rr.rolname = current_user
+       OR r = (SELECT datdba FROM pg_database WHERE datname = current_database()) THEN
+        RETURN false;
+    END IF;
+
+    -- This database's own: its group(s), their members, a silo's tenant read-only
+    -- login, and a silo login whose group membership has not been applied yet.
+    IF rr.rolname = ANY (u.app_groups)
+       OR EXISTS (SELECT 1 FROM unnest(u.app_groups) g WHERE pg_has_role(r, g::name, 'MEMBER'))
+       OR (u.unit = 'silo' AND u.env IS NOT NULL
+           AND (rr.rolname = u.silo_key || '_readonly_' || u.env
+                OR right(rr.rolname, length(u.silo_key || '_' || u.env) + 1) = '_' || u.silo_key || '_' || u.env)) THEN
+        RETURN false;
+    END IF;
+
+    -- Another unit's: another app group, a member of one, another silo's tenant
+    -- read-only login, or a login carrying another silo group's suffix.
+    RETURN (NOT rr.rolcanlogin AND rr.rolname ~ '^tvs_app_[a-z0-9_]+$')
+        OR EXISTS (SELECT 1 FROM pg_roles g
+                    WHERE NOT g.rolcanlogin AND g.rolname ~ '^tvs_app_[a-z0-9_]+$'
+                      AND pg_has_role(r, g.oid, 'MEMBER'))
+        OR rr.rolname ~ '^[a-z0-9_]+_readonly_[a-z0-9]+$'
+        OR EXISTS (SELECT 1 FROM pg_roles g
+                    WHERE NOT g.rolcanlogin AND g.rolname ~ '^tvs_app_[a-z0-9]+_[a-z0-9]+$'
+                      AND right(rr.rolname, length(g.rolname) - 7) = '_' || substr(g.rolname, 9));
+END
+$fn$;
+
+-- Nobody but the migrator needs these, and a new function is executable by PUBLIC.
+REVOKE ALL ON FUNCTION control_plane.this_database_unit() FROM PUBLIC;
+REVOKE ALL ON FUNCTION control_plane.app_groups_here(boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION control_plane.app_logins_here(text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION control_plane.role_is_foreign_here(oid) FROM PUBLIC;
+-- <<< tenancy role helpers
+
 -- ---------------------------------------------------------------------
 -- Let the applications READ this, and only read it.
 --
@@ -220,9 +391,13 @@ ON CONFLICT (host) DO NOTHING;
 -- created the tables and no application could see them.
 --
 -- Granted to the tvs_app_<env> group rather than to each login role, which is
--- how core_platform is already shared. Discovered by pattern rather than named,
--- because the group's name carries the environment (tvs_app_dev,
--- tvs_app_bgclt_prod) while this file is identical in all of them.
+-- how core_platform is already shared. Discovered rather than named, because the
+-- group's name carries the environment (tvs_app_dev, tvs_app_bgclt_prod) while
+-- this file is identical in all of them -- but discovered from THIS DATABASE
+-- (control_plane.app_groups_here(), above), never by pattern alone. Until
+-- 2026-10-23 it was every `tvs\_app\_%` group in the cluster, so on the shared
+-- server each silo's group could read every other silo's control_plane, and the
+-- default privilege below kept handing them each new table.
 --
 -- SELECT only, deliberately. An application resolves a route. It must never
 -- write one. If an app role could UPDATE ctl_tenant_routes it could point a
@@ -241,11 +416,7 @@ DO $$
 DECLARE
     grp text;
 BEGIN
-    FOR grp IN
-        SELECT rolname
-          FROM pg_roles
-         WHERE rolname LIKE 'tvs\_app\_%'
-           AND NOT rolcanlogin
+    FOR grp IN SELECT control_plane.app_groups_here()
     LOOP
         EXECUTE format('GRANT USAGE ON SCHEMA control_plane TO %I', grp);
         EXECUTE format('GRANT SELECT ON ALL TABLES IN SCHEMA control_plane TO %I', grp);

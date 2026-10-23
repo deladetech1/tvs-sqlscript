@@ -176,6 +176,11 @@ BEGIN
         EXECUTE format('REVOKE ALL ON control_plane.ctl_billing_customers FROM %I', grp);
         EXECUTE format(
             'REVOKE ALL ON control_plane.ctl_billing_customers_current FROM %I', grp);
+    END LOOP;
+    -- INSERT to THIS database's group(s) only (app_groups_here, 20261001-01); the
+    -- revoke above stays wide on purpose -- taking a privilege from every group is safe.
+    FOR grp IN SELECT control_plane.app_groups_here()
+    LOOP
         EXECUTE format('GRANT INSERT ON control_plane.ctl_billing_customers TO %I', grp);
         RAISE NOTICE 'billing customers: append-only for %', grp;
     END LOOP;

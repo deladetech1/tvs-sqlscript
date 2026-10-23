@@ -350,9 +350,11 @@ END $$;
 DO $$
 DECLARE grp text;
 BEGIN
-    FOR grp IN
-        SELECT rolname FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9_]+$' AND NOT rolcanlogin
+    -- THIS database's app group(s) (control_plane.app_groups_here, 20261001-01). The
+    -- reporter writes here as the POOLED login (func/shared/billing_facts.py
+    -- _control_connection uses DATABASE_URL), so a silo's group never needed this --
+    -- and until 2026-10-23 every silo group on the server held it.
+    FOR grp IN SELECT control_plane.app_groups_here()
     LOOP
         EXECUTE format('GRANT USAGE ON SCHEMA control_plane TO %I', grp);
         EXECUTE format(
@@ -469,7 +471,7 @@ BEGIN
     -- the other half.
     FOR n IN
         SELECT 1 FROM pg_roles
-         WHERE rolname ~ '^tvs_app_[a-z0-9_]+$' AND NOT rolcanlogin
+         WHERE rolname IN (SELECT control_plane.app_groups_here())
            AND NOT (
              has_table_privilege(rolname, 'control_plane.ctl_billing_reports', 'INSERT')
              AND has_table_privilege(rolname, 'control_plane.ctl_billing_facts', 'INSERT')
