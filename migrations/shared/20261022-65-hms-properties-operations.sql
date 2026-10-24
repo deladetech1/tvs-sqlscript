@@ -62,11 +62,19 @@ CREATE TABLE IF NOT EXISTS hms.hms_files (
     cdatetime     timestamptz NOT NULL DEFAULT now(),
     created_by    text
 );
-ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_entity_check;
-ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_entity_check CHECK (entity_type IN
-    ('property', 'unit_type', 'guest', 'reservation', 'lease', 'renter', 'ticket', 'lost_item', 'asset', 'event'));
-ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_purpose_check;
-ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_purpose_check CHECK (purpose IN ('photo', 'id_document', 'signature', 'document'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_files_entity_check' AND conrelid = 'hms.hms_files'::regclass) THEN
+    ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_entity_check CHECK (entity_type IN
+        ('property', 'unit_type', 'guest', 'reservation', 'lease', 'renter', 'ticket', 'lost_item', 'asset', 'event'));
+  END IF;
+END $$;
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_files_purpose_check' AND conrelid = 'hms.hms_files'::regclass) THEN
+    ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_purpose_check CHECK (purpose IN ('photo', 'id_document', 'signature', 'document'));
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS hms_files_entity_idx ON hms.hms_files (bus_id, entity_type, entity_id, sort_order);
 
 -- -------------------------------------------------------------------- owners

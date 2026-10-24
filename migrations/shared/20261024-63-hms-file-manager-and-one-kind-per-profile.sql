@@ -20,10 +20,14 @@ UPDATE hms.hms_files SET kind = CASE WHEN content_type LIKE 'image/%' THEN 'imag
 
 ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_kind_check;
 ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_kind_check CHECK (kind IN ('image', 'document'));
-ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_entity_check;
-ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
-    ('property', 'unit_type', 'unit', 'guest', 'reservation', 'lease', 'renter', 'ticket', 'lost_item', 'asset', 'event', 'expense', 'staff',
-     'menu_item', 'menu_category', 'addon', 'activity', 'table', 'stock_item', 'voucher', 'company', 'owner', 'site'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_files_entity_check' AND conrelid = 'hms.hms_files'::regclass) THEN
+    ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
+        ('property', 'unit_type', 'unit', 'guest', 'reservation', 'lease', 'renter', 'ticket', 'lost_item', 'asset', 'event', 'expense', 'staff',
+         'menu_item', 'menu_category', 'addon', 'activity', 'table', 'stock_item', 'voucher', 'company', 'owner', 'site'));
+  END IF;
+END $$;
 ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_attached_check;
 ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_attached_check CHECK ((entity_type IS NULL) = (entity_id IS NULL));
 ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_purpose_check;

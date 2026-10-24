@@ -105,9 +105,13 @@ ALTER TABLE hms.hms_orders ADD COLUMN IF NOT EXISTS public_token text;
 CREATE UNIQUE INDEX IF NOT EXISTS hms_orders_public_uq ON hms.hms_orders (public_token) WHERE public_token IS NOT NULL;
 
 -- Online payments for orders and vouchers too, and who started one from the desk.
-ALTER TABLE hms.hms_payment_attempts DROP CONSTRAINT IF EXISTS hms_payment_attempts_subject_check;
-ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
-    CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_payment_attempts_subject_check' AND conrelid = 'hms.hms_payment_attempts'::regclass) THEN
+    ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
+        CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher'));
+  END IF;
+END $$;
 ALTER TABLE hms.hms_payment_attempts ADD COLUMN IF NOT EXISTS started_by text;
 ALTER TABLE hms.hms_payment_attempts ADD COLUMN IF NOT EXISTS checkout_url text;
 ALTER TABLE hms.hms_payment_attempts ADD COLUMN IF NOT EXISTS email text;
