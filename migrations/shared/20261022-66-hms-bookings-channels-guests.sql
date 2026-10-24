@@ -375,9 +375,13 @@ ALTER TABLE hms.hms_activity_bookings ADD CONSTRAINT hms_activity_bookings_statu
 CREATE INDEX IF NOT EXISTS hms_activity_bookings_session_idx ON hms.hms_activity_bookings (session_id);
 
 -- Activity and event charges reach the guest bill like the restaurant's.
-ALTER TABLE hms.hms_folio_lines DROP CONSTRAINT IF EXISTS hms_folio_lines_category_check;
-ALTER TABLE hms.hms_folio_lines ADD CONSTRAINT hms_folio_lines_category_check CHECK (category IN
-    ('room', 'restaurant', 'bar', 'minibar', 'laundry', 'service', 'damage', 'late_checkout', 'early_checkin',
-     'tax', 'deposit', 'payment', 'refund', 'activity', 'event', 'discount', 'other'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_folio_lines_category_check' AND conrelid = 'hms.hms_folio_lines'::regclass) THEN
+    ALTER TABLE hms.hms_folio_lines ADD CONSTRAINT hms_folio_lines_category_check CHECK (category IN
+        ('room', 'restaurant', 'bar', 'minibar', 'laundry', 'service', 'damage', 'late_checkout', 'early_checkin',
+         'tax', 'deposit', 'payment', 'refund', 'activity', 'event', 'discount', 'other'));
+  END IF;
+END $$;
 
 COMMIT;

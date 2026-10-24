@@ -68,8 +68,12 @@ CREATE TABLE IF NOT EXISTS hms.hms_order_payments (
     cdatetime        timestamptz NOT NULL DEFAULT now(),
     created_by       text
 );
-ALTER TABLE hms.hms_order_payments DROP CONSTRAINT IF EXISTS hms_order_payments_method_check;
-ALTER TABLE hms.hms_order_payments ADD CONSTRAINT hms_order_payments_method_check CHECK (method IN ('cash', 'card', 'momo', 'bank', 'other', 'room', 'company'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_order_payments_method_check' AND conrelid = 'hms.hms_order_payments'::regclass) THEN
+    ALTER TABLE hms.hms_order_payments ADD CONSTRAINT hms_order_payments_method_check CHECK (method IN ('cash', 'card', 'momo', 'bank', 'other', 'room', 'company'));
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS hms_order_payments_order_idx ON hms.hms_order_payments (order_id);
 -- A room charge posts to a bill once; the old one-charge-per-order rule gives way to this.
 DROP INDEX IF EXISTS hms.hms_folio_lines_order_uq;

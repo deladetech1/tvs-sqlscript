@@ -85,8 +85,12 @@ CREATE TABLE IF NOT EXISTS hms.hms_unit_types (
 ALTER TABLE hms.hms_unit_types DROP CONSTRAINT IF EXISTS hms_unit_types_category_check;
 ALTER TABLE hms.hms_unit_types ADD CONSTRAINT hms_unit_types_category_check CHECK (category IN
     ('room', 'suite', 'apartment', 'studio', 'bed', 'house', 'shop', 'office', 'hall', 'other'));
-ALTER TABLE hms.hms_unit_types DROP CONSTRAINT IF EXISTS hms_unit_types_rate_period_check;
-ALTER TABLE hms.hms_unit_types ADD CONSTRAINT hms_unit_types_rate_period_check CHECK (rate_period IN ('hour', 'night', 'week', 'month'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_unit_types_rate_period_check' AND conrelid = 'hms.hms_unit_types'::regclass) THEN
+    ALTER TABLE hms.hms_unit_types ADD CONSTRAINT hms_unit_types_rate_period_check CHECK (rate_period IN ('hour', 'night', 'week', 'month'));
+  END IF;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS hms_unit_types_name_uq
     ON hms.hms_unit_types (property_id, lower(name)) WHERE archived_at IS NULL;
 
@@ -230,13 +234,21 @@ CREATE TABLE IF NOT EXISTS hms.hms_folio_lines (
 );
 ALTER TABLE hms.hms_folio_lines DROP CONSTRAINT IF EXISTS hms_folio_lines_kind_check;
 ALTER TABLE hms.hms_folio_lines ADD CONSTRAINT hms_folio_lines_kind_check CHECK (kind IN ('charge', 'payment', 'refund'));
-ALTER TABLE hms.hms_folio_lines DROP CONSTRAINT IF EXISTS hms_folio_lines_category_check;
-ALTER TABLE hms.hms_folio_lines ADD CONSTRAINT hms_folio_lines_category_check CHECK (category IN
-    ('room', 'restaurant', 'bar', 'minibar', 'laundry', 'service', 'damage', 'late_checkout', 'early_checkin',
-     'tax', 'deposit', 'payment', 'refund', 'other'));
-ALTER TABLE hms.hms_folio_lines DROP CONSTRAINT IF EXISTS hms_folio_lines_method_check;
-ALTER TABLE hms.hms_folio_lines ADD CONSTRAINT hms_folio_lines_method_check CHECK (method IS NULL OR method IN
-    ('cash', 'card', 'momo', 'bank', 'cheque', 'other'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_folio_lines_category_check' AND conrelid = 'hms.hms_folio_lines'::regclass) THEN
+    ALTER TABLE hms.hms_folio_lines ADD CONSTRAINT hms_folio_lines_category_check CHECK (category IN
+        ('room', 'restaurant', 'bar', 'minibar', 'laundry', 'service', 'damage', 'late_checkout', 'early_checkin',
+         'tax', 'deposit', 'payment', 'refund', 'other'));
+  END IF;
+END $$;
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_folio_lines_method_check' AND conrelid = 'hms.hms_folio_lines'::regclass) THEN
+    ALTER TABLE hms.hms_folio_lines ADD CONSTRAINT hms_folio_lines_method_check CHECK (method IS NULL OR method IN
+        ('cash', 'card', 'momo', 'bank', 'cheque', 'other'));
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS hms_folio_lines_folio_idx ON hms.hms_folio_lines (folio_id, posted_at);
 CREATE UNIQUE INDEX IF NOT EXISTS hms_folio_lines_reverses_uq ON hms.hms_folio_lines (reverses_line_id) WHERE reverses_line_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS hms_folio_lines_idem_uq ON hms.hms_folio_lines (bus_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
