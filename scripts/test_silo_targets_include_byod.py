@@ -145,20 +145,19 @@ code, out, err = run([SHARED, DEDI, BYOD], kind="shared")
 check("kind=shared still selects only the shared one",
       code == 0 and out.count('"host"') == 1 and "itech" in out, out[:300])
 
-# And the dropdown must name silos that exist, or choosing one fails the
-# check against ctl_tenant_routes rather than deploying.
-opts = re.search(r"Which silo \(add new ones.*?options:\n(.*?)\n      module:",
-                 src, re.S)
-# The OPTION LINES only. The first version of this check looked at the whole
-# block, which now contains a comment explaining the old names -- so the check
-# failed on the explanation of the thing it was checking for.
-option_lines = [l.strip()[2:] for l in (opts.group(1).splitlines() if opts else [])
-                if l.strip().startswith("- ")]
-check("the target dropdown names the silos that exist",
-      "itech.dev.trovesuite.com" in option_lines
-      and "bgclt.trovesuite.com" in option_lines
-      and not any("siloshared" in o or "silodedicated" in o for o in option_lines),
-      str(option_lines))
+# The target is TYPED since 20261022 (no dropdown to keep in step with the
+# roster); what stops a typo deploying to nothing is the check against the
+# ACTIVE routes, which the selection above exercises. Assert that check exists.
+check("a typed target is refused unless it is an ACTIVE silo route",
+      "is not an ACTIVE silo route in" in src, "the refusal is gone from the selection")
+
+# BYOD: the ids apply.yml needs to open a firewall rule for its own runner.
+code, out, err = run(BGCLT + [SHARED], kind="all")
+check("BYOD rows carry byod_access_uri = byod-access-<silo>; our silos carry none",
+      code == 0 and '"byod_access_uri": "https://tvs-dev-kv.vault.azure.net/secrets/byod-access-bgclt"' in out
+      and '"byod_access_uri": ""' in out, out[:600])
+check("...and silos.yml hands it to apply.yml",
+      "byod_access_uri: ${{ matrix.byod_access_uri }}" in src, "not passed to apply.yml")
 
 print()
 if FAILS:
