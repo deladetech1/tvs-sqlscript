@@ -20,9 +20,13 @@ CREATE TABLE IF NOT EXISTS hms.hms_online_payments (
     updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE hms.hms_payment_attempts DROP CONSTRAINT IF EXISTS hms_payment_attempts_subject_check;
-ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
-    CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_payment_attempts_subject_check' AND conrelid = 'hms.hms_payment_attempts'::regclass) THEN
+    ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
+        CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking'));
+  END IF;
+END $$;
 ALTER TABLE hms.hms_payment_attempts ADD COLUMN IF NOT EXISTS channel text;
 ALTER TABLE hms.hms_payment_attempts ADD COLUMN IF NOT EXISTS provider_code text;
 
@@ -102,10 +106,14 @@ ALTER TABLE hms.hms_invoice_payments ADD CONSTRAINT hms_invoice_payments_method_
 CREATE UNIQUE INDEX IF NOT EXISTS hms_invoice_payments_online_uq ON hms.hms_invoice_payments (online_reference) WHERE online_reference IS NOT NULL;
 
 -- Files on an invoice (a signed copy, a purchase order from the client).
-ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_entity_check;
-ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
-    ('property', 'unit_type', 'unit', 'guest', 'reservation', 'lease', 'renter', 'ticket', 'lost_item', 'asset', 'event', 'expense', 'staff',
-     'menu_item', 'menu_category', 'addon', 'activity', 'table', 'stock_item', 'voucher', 'owner', 'site', 'invoice'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_files_entity_check' AND conrelid = 'hms.hms_files'::regclass) THEN
+    ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
+        ('property', 'unit_type', 'unit', 'guest', 'reservation', 'lease', 'renter', 'ticket', 'lost_item', 'asset', 'event', 'expense', 'staff',
+         'menu_item', 'menu_category', 'addon', 'activity', 'table', 'stock_item', 'voucher', 'owner', 'site', 'invoice'));
+  END IF;
+END $$;
 
 -- ================================================================ plan feature
 INSERT INTO core_platform.cp_app_feature_catalog (feature_key, app_id, title, min_tier_rank, description) VALUES

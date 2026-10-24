@@ -86,11 +86,19 @@ CREATE TABLE IF NOT EXISTS hms.hms_orders (
 );
 ALTER TABLE hms.hms_orders DROP CONSTRAINT IF EXISTS hms_orders_kind_check;
 ALTER TABLE hms.hms_orders ADD CONSTRAINT hms_orders_kind_check CHECK (kind IN ('dine_in', 'takeaway', 'delivery', 'room_service'));
-ALTER TABLE hms.hms_orders DROP CONSTRAINT IF EXISTS hms_orders_status_check;
-ALTER TABLE hms.hms_orders ADD CONSTRAINT hms_orders_status_check CHECK (status IN ('open', 'settled', 'charged_to_room', 'void'));
-ALTER TABLE hms.hms_orders DROP CONSTRAINT IF EXISTS hms_orders_settled_method_check;
-ALTER TABLE hms.hms_orders ADD CONSTRAINT hms_orders_settled_method_check CHECK (settled_method IS NULL OR settled_method IN
-    ('cash', 'card', 'momo', 'bank', 'other'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_orders_status_check' AND conrelid = 'hms.hms_orders'::regclass) THEN
+    ALTER TABLE hms.hms_orders ADD CONSTRAINT hms_orders_status_check CHECK (status IN ('open', 'settled', 'charged_to_room', 'void'));
+  END IF;
+END $$;
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_orders_settled_method_check' AND conrelid = 'hms.hms_orders'::regclass) THEN
+    ALTER TABLE hms.hms_orders ADD CONSTRAINT hms_orders_settled_method_check CHECK (settled_method IS NULL OR settled_method IN
+        ('cash', 'card', 'momo', 'bank', 'other'));
+  END IF;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS hms_orders_number_uq ON hms.hms_orders (property_id, number);
 CREATE INDEX IF NOT EXISTS hms_orders_board_idx ON hms.hms_orders (bus_id, property_id, status, cdatetime DESC);
 
