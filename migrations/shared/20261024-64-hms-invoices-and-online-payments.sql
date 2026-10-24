@@ -20,9 +20,13 @@ CREATE TABLE IF NOT EXISTS hms.hms_online_payments (
     updated_at    timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE hms.hms_payment_attempts DROP CONSTRAINT IF EXISTS hms_payment_attempts_subject_check;
-ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
-    CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking'));
+-- Created here; widened by a later migration, which owns it from then on (every file re-runs on each deploy).
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_payment_attempts_subject_check' AND conrelid = 'hms.hms_payment_attempts'::regclass) THEN
+    ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
+        CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking'));
+  END IF;
+END $$;
 ALTER TABLE hms.hms_payment_attempts ADD COLUMN IF NOT EXISTS channel text;
 ALTER TABLE hms.hms_payment_attempts ADD COLUMN IF NOT EXISTS provider_code text;
 
