@@ -39,11 +39,12 @@ ALTER TABLE core_platform.cp_apps
 COMMENT ON COLUMN core_platform.cp_apps.billing_unit IS
     'LOCATION: billed per deployed location per month. BUSINESS: billed once per (business, app) per month whatever the number of locations. Read by the bill generator, subscribe, pay-ahead and the hub.';
 
--- The five business apps. Only rows that exist are touched, so a database
--- that has not been seeded with one of them is not an error.
+-- The five business apps, and SCM since 20261026-01 (it runs purchasing, stock and
+-- fulfilment for the whole business, however many warehouses it has). Only rows that
+-- exist are touched, so a database that has not been seeded with one of them is not an error.
 UPDATE core_platform.cp_apps
    SET billing_unit = 'BUSINESS'
- WHERE id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting')
+ WHERE id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting', 'app-scm')
    AND billing_unit IS DISTINCT FROM 'BUSINESS';
 
 -- The per-location apps stay per location. Stated, not assumed: if somebody
@@ -67,7 +68,7 @@ DECLARE
 BEGIN
     SELECT string_agg(id || '=' || billing_unit, ', ') INTO wrong
       FROM core_platform.cp_apps
-     WHERE (id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting')
+     WHERE (id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting', 'app-scm')
             AND billing_unit <> 'BUSINESS')
         OR (id IN ('app-mystoreguard', 'app-loandrift', 'app-zeloshr', 'app-hms')
             AND billing_unit <> 'LOCATION');

@@ -68,6 +68,7 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-accounting-%'
   AND p.id NOT LIKE 'permission-expenses-%'
   AND p.id NOT LIKE 'permission-hms-%'
+  AND p.id NOT LIKE 'permission-scm-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -223,6 +224,11 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- Registration beyond this row is migrations/shared/20261022-61-hms-joins-the-platform.sql.
 -- Not app-hams below, which is a hospital system.
 ('app-hms', 'HMS', 'Reservations & Front Desk', 'Housekeeping & Maintenance', 'Restaurant & Bar POS', 'Rentals & Leases', 'Occupancy & Revenue Reports', 'Run hotels, guest houses, short stays, restaurants and rentals from one place: reservations, check-in, guest bills, housekeeping, POS, leases and rent, set up for your kind of business', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- SCM: supply chain management -- items, suppliers, purchasing and receiving, the inventory
+-- ledger, sales orders, shipments and an exceptions control tower -- hosted by the shared apps
+-- backend; frontend tvs-scm-ft. Billed once per business (shared/20261022-70).
+-- Registration beyond this row is migrations/shared/20261026-01-scm-joins-the-platform.sql.
+('app-scm', 'SCM', 'Items & Suppliers', 'Purchasing & Receiving', 'Inventory Ledger', 'Orders & Shipments', 'Control Tower', 'Run purchasing, stock and fulfilment from one place: items, suppliers, requisitions, purchase orders, receiving, a full inventory ledger, sales orders, shipments and an exceptions control tower', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-accounting', 'ACCOUNTING', 'General Ledger & Journals', 'Receivables & Payables', 'Bank Reconciliation', 'Multi-Currency', 'Financial Reports', 'Double-entry books for every organisation: chart of accounts, journals with approvals, invoices and bills, bank reconciliation, multi-currency and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
@@ -306,6 +312,12 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-hms-advance',    'app-hms',          'shared-subscription-advance',   15,    80.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-hms-premium',    'app-hms',          'shared-subscription-premium',   40,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-hms-enterprise', 'app-hms',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- SCM: USD per BUSINESS per month like the five business apps (billing_unit BUSINESS,
+-- shared/20261022-70). PLACEHOLDER, owner sets prices (in the console; see the note below).
+('tier-cfg-scm-basic',      'app-scm',          'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-scm-advance',    'app-scm',          'shared-subscription-advance',   15,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-scm-premium',    'app-scm',          'shared-subscription-premium',   40,   140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-scm-enterprise', 'app-scm',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- Accounting (TapantaBooks), decided 2026-10-22. Per business, like the four above.
 ('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      2,    25.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',    5,    50.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
