@@ -5,7 +5,7 @@
 -- location per month": the bill generator, the subscribe path, pay-ahead and
 -- the hub all wrote one bill line per (subscription, deployed location).
 --
--- That is right for MyStoreGuard, LoanDrift, ZelosHR and HMS -- a shop, a
+-- That is right for MyStoreGuard, LoanDrift and HMS -- a shop, a
 -- branch, a property each costs us and earns the client something. It is
 -- wrong for the business apps: the CRM, Projects, Invoicing, Expenses and
 -- Accounting work for the whole business, so the owner decided (2026-10-22)
@@ -39,12 +39,14 @@ ALTER TABLE core_platform.cp_apps
 COMMENT ON COLUMN core_platform.cp_apps.billing_unit IS
     'LOCATION: billed per deployed location per month. BUSINESS: billed once per (business, app) per month whatever the number of locations. Read by the bill generator, subscribe, pay-ahead and the hub.';
 
--- The five business apps, and SCM since 20261026-01 (it runs purchasing, stock and
--- fulfilment for the whole business, however many warehouses it has). Only rows that
+-- The five business apps, SCM since 20261026-01 (it runs purchasing, stock and
+-- fulfilment for the whole business, however many warehouses it has) and ZelosHR since
+-- 2026-10-26: the owner decided HR is a business app -- one charge per business per month,
+-- whatever the number of locations its staff work at. Only rows that
 -- exist are touched, so a database that has not been seeded with one of them is not an error.
 UPDATE core_platform.cp_apps
    SET billing_unit = 'BUSINESS'
- WHERE id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting', 'app-scm')
+ WHERE id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting', 'app-scm', 'app-zeloshr')
    AND billing_unit IS DISTINCT FROM 'BUSINESS';
 
 -- The per-location apps stay per location. Stated, not assumed: if somebody
@@ -52,7 +54,7 @@ UPDATE core_platform.cp_apps
 -- for one location instead of all of them.
 UPDATE core_platform.cp_apps
    SET billing_unit = 'LOCATION'
- WHERE id IN ('app-mystoreguard', 'app-loandrift', 'app-zeloshr', 'app-hms')
+ WHERE id IN ('app-mystoreguard', 'app-loandrift', 'app-hms')
    AND billing_unit IS DISTINCT FROM 'LOCATION';
 
 -- cp_app_subscriptions.price_override was documented as "per location". For a
@@ -68,9 +70,9 @@ DECLARE
 BEGIN
     SELECT string_agg(id || '=' || billing_unit, ', ') INTO wrong
       FROM core_platform.cp_apps
-     WHERE (id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting', 'app-scm')
+     WHERE (id IN ('app-crm', 'app-projects', 'app-invoicing', 'app-expenses', 'app-accounting', 'app-scm', 'app-zeloshr')
             AND billing_unit <> 'BUSINESS')
-        OR (id IN ('app-mystoreguard', 'app-loandrift', 'app-zeloshr', 'app-hms')
+        OR (id IN ('app-mystoreguard', 'app-loandrift', 'app-hms')
             AND billing_unit <> 'LOCATION');
     IF wrong IS NOT NULL THEN
         RAISE EXCEPTION 'billing_unit is wrong for: %', wrong;
