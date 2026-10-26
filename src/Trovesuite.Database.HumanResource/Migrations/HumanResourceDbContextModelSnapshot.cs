@@ -1786,6 +1786,14 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("reason");
 
+                    b.Property<string>("RequestedVia")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("hr")
+                        .HasColumnName("requested_via");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2310,6 +2318,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                     b.Property<Guid?>("BranchId")
                         .HasColumnType("uuid")
                         .HasColumnName("branch_id");
+
+                    b.Property<DateOnly?>("ContractEndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("contract_end_date");
 
                     b.Property<string>("ContractType")
                         .HasColumnType("text")
@@ -4427,6 +4439,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
                     b.Property<string>("CustomFieldsData")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -4460,6 +4476,24 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("org_id");
+
+                    b.Property<string>("Recommendation")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("recommendation");
+
+                    b.Property<string>("RecommendationNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("recommendation_note");
+
+                    b.Property<DateTimeOffset?>("RecommendedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recommended_at");
+
+                    b.Property<string>("RecommendedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("recommended_by");
 
                     b.Property<string>("Status")
                         .IsRequired()

@@ -264,6 +264,8 @@ public class ZhrEmployee
     public DateOnly? ProbationEndDate { get; set; }
     public DateOnly? EmploymentStartDate { get; set; }
     public DateOnly? StartDate { get; set; }
+    /// <summary>When a fixed-term contract ends; a "Contract ending" decision falls due ahead of it.</summary>
+    public DateOnly? ContractEndDate { get; set; }
     public string? WorkingHours { get; set; }
     public string? NoticePeriod { get; set; }
 
@@ -529,6 +531,14 @@ public class ZhrLifecycleEvent
     public string Status { get; set; } = default!;
     public string Urgency { get; set; } = default!;
     public string CustomFieldsData { get; set; } = "{}";
+    /// <summary>The line manager's recommendation on a probation review: confirm · extend · terminate.</summary>
+    public string? Recommendation { get; set; }
+    public string? RecommendationNote { get; set; }
+    /// <summary>cp_users id of the manager who recommended.</summary>
+    public string? RecommendedBy { get; set; }
+    public DateTimeOffset? RecommendedAt { get; set; }
+    /// <summary>cp_users id of whoever opened the event; null when the system did.</summary>
+    public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
@@ -843,6 +853,8 @@ public class ZhrCompensationVersion
     public string? ChangeType { get; set; }
     public decimal? ChangeValue { get; set; }
     public string ProposedBy { get; set; } = default!;
+    /// <summary>hr · manager: who asked for the change. A manager's request is decided by HR.</summary>
+    public string RequestedVia { get; set; } = "hr";
     public DateTimeOffset ProposedAt { get; set; }
     public string? DecidedBy { get; set; }
     public DateTimeOffset? DecidedAt { get; set; }

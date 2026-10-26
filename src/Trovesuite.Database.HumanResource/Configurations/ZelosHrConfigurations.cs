@@ -559,6 +559,10 @@ public sealed class ZhrLifecycleEventConfiguration : IEntityTypeConfiguration<Zh
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.DueDate });
         b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
+        b.Property(x => x.Recommendation).HasMaxLength(20);
+        b.Property(x => x.RecommendationNote).HasMaxLength(500);
+        b.Property(x => x.RecommendedBy).HasColumnType("text");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
     }
 }
 
@@ -847,6 +851,7 @@ public sealed class ZhrCompensationVersionConfiguration : IEntityTypeConfigurati
         b.Property(x => x.Reason).HasMaxLength(500);
         b.Property(x => x.Status).HasMaxLength(20);
         b.Property(x => x.ProposedBy).HasColumnType("text");
+        b.Property(x => x.RequestedVia).HasMaxLength(20).HasDefaultValue("hr");
         b.Property(x => x.DecidedBy).HasColumnType("text");
         b.Property(x => x.DecisionNote).HasMaxLength(500);
         b.Property(x => x.ChangeType).HasMaxLength(20);
