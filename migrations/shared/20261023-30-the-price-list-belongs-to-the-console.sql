@@ -50,6 +50,10 @@ CREATE TABLE IF NOT EXISTS core_platform.cp_price_list_changes (
     id                  text PRIMARY KEY
                         DEFAULT ('plc_' || replace(gen_random_uuid()::text, '-', '')),
     -- APP_TIER: cp_app_tier_configs.  BUNDLE_TIER: cp_bundle_tier_configs.
+    -- APP_METER: cp_app_tier_meter_prices (meter_key).  APP_VOLUME:
+    -- cp_apps.volume_threshold/volume_discount (config_id = app id). Both
+    -- since shared/20261026-11; the CHECK below lists them because this file
+    -- owns it and re-runs before that one on every deploy.
     kind                text NOT NULL,
     config_id           text NOT NULL,
     app_id              text,
@@ -74,7 +78,7 @@ CREATE TABLE IF NOT EXISTS core_platform.cp_price_list_changes (
 ALTER TABLE core_platform.cp_price_list_changes
     DROP CONSTRAINT IF EXISTS ck_cp_price_list_changes_kind;
 ALTER TABLE core_platform.cp_price_list_changes
-    ADD CONSTRAINT ck_cp_price_list_changes_kind CHECK (kind IN ('APP_TIER', 'BUNDLE_TIER'));
+    ADD CONSTRAINT ck_cp_price_list_changes_kind CHECK (kind IN ('APP_TIER', 'BUNDLE_TIER', 'APP_METER', 'APP_VOLUME'));
 ALTER TABLE core_platform.cp_price_list_changes
     DROP CONSTRAINT IF EXISTS ck_cp_price_list_changes_source;
 ALTER TABLE core_platform.cp_price_list_changes

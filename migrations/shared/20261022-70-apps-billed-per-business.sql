@@ -5,8 +5,8 @@
 -- location per month": the bill generator, the subscribe path, pay-ahead and
 -- the hub all wrote one bill line per (subscription, deployed location).
 --
--- That is right for MyStoreGuard, LoanDrift and HMS -- a shop, a
--- branch, a property each costs us and earns the client something. It is
+-- That is right for MyStoreGuard and LoanDrift -- a shop or a branch
+-- each costs us and earns the client something. It is
 -- wrong for the business apps: the CRM, Projects, Invoicing, Expenses and
 -- Accounting work for the whole business, so the owner decided (2026-10-22)
 -- they are charged ONCE per business per month however many locations the
@@ -24,6 +24,13 @@
 --             core_platform.fn_zeloshr_billable_employees counts them and
 --             cp_app_tier_configs.min_units is the monthly minimum
 --             (shared/20261026-10).
+--   UNIT      one bill line per (business, app) per month like EMPLOYEE, but
+--             metered per room, bed, rental unit and restaurant/bar outlet,
+--             each with its own price (cp_app_tier_meter_prices), rooms past a
+--             volume threshold cheaper, and a minimum of min_units rooms'
+--             worth. HMS since 2026-10-26 (owner's decision);
+--             core_platform.fn_hms_billable_meters counts them for ONE
+--             business (shared/20261026-11).
 --
 -- The backend reads the column and treats a database without it as all
 -- LOCATION, so a backend released ahead of this file bills as before.
@@ -40,10 +47,10 @@ ALTER TABLE core_platform.cp_apps
 
 ALTER TABLE core_platform.cp_apps DROP CONSTRAINT IF EXISTS ck_cp_apps_billing_unit;
 ALTER TABLE core_platform.cp_apps
-    ADD CONSTRAINT ck_cp_apps_billing_unit CHECK (billing_unit IN ('LOCATION', 'BUSINESS', 'EMPLOYEE'));
+    ADD CONSTRAINT ck_cp_apps_billing_unit CHECK (billing_unit IN ('LOCATION', 'BUSINESS', 'EMPLOYEE', 'UNIT'));
 
 COMMENT ON COLUMN core_platform.cp_apps.billing_unit IS
-    'LOCATION: billed per deployed location per month. BUSINESS: billed once per (business, app) per month whatever the number of locations. EMPLOYEE: one line per (business, app) per month like BUSINESS, priced per billable employee with a minimum (cp_app_tier_configs.min_units). Read by the bill generator, subscribe, pay-ahead and the hub.';
+    'LOCATION: billed per deployed location per month. BUSINESS: billed once per (business, app) per month whatever the number of locations. EMPLOYEE: one line per (business, app) per month like BUSINESS, priced per billable employee with a minimum (cp_app_tier_configs.min_units). UNIT: the same, metered per room, bed, rental unit and outlet of the business (HMS). Read by the bill generator, subscribe, pay-ahead and the hub.';
 
 -- The five business apps and SCM since 20261026-01 (it runs purchasing, stock and
 -- fulfilment for the whole business, however many warehouses it has). Only rows that
@@ -61,19 +68,28 @@ UPDATE core_platform.cp_apps
  WHERE id IN ('app-zeloshr')
    AND billing_unit IS DISTINCT FROM 'EMPLOYEE';
 
+-- HMS is billed per unit (owner's decision, 2026-10-26, "fix this once and for all"):
+-- one line per business per month, metered per room, bed, rental unit and restaurant or
+-- bar outlet, with a monthly minimum (shared/20261026-11). Nobody was on HMS in
+-- production, so no client's bill changes shape mid-contract.
+UPDATE core_platform.cp_apps
+   SET billing_unit = 'UNIT'
+ WHERE id IN ('app-hms')
+   AND billing_unit IS DISTINCT FROM 'UNIT';
+
 -- The per-location apps stay per location. Stated, not assumed: if somebody
 -- flipped one by hand, every one of its clients would quietly start paying
 -- for one location instead of all of them.
 UPDATE core_platform.cp_apps
    SET billing_unit = 'LOCATION'
- WHERE id IN ('app-mystoreguard', 'app-loandrift', 'app-hms')
+ WHERE id IN ('app-mystoreguard', 'app-loandrift')
    AND billing_unit IS DISTINCT FROM 'LOCATION';
 
 -- cp_app_subscriptions.price_override was documented as "per location". For a
 -- BUSINESS app the agreed price is per business, the same unit as the list
 -- price it replaces.
 COMMENT ON COLUMN core_platform.cp_app_subscriptions.price_override IS
-    'What this client agreed to pay per month for this app, in the app''s billing unit (cp_apps.billing_unit: per location, per business, or per employee). NULL = charge the tier price from cp_app_tier_configs.';
+    'What this client agreed to pay per month for this app, in the app''s billing unit (cp_apps.billing_unit: per location, per business, per employee, or per room or unit). NULL = charge the tier price from cp_app_tier_configs.';
 
 -- Invariant over this file's own work (holds at any row count).
 DO $$
@@ -86,16 +102,20 @@ BEGIN
             AND billing_unit <> 'BUSINESS')
         OR (id IN ('app-zeloshr')
             AND billing_unit <> 'EMPLOYEE')
-        OR (id IN ('app-mystoreguard', 'app-loandrift', 'app-hms')
+        OR (id IN ('app-hms')
+            AND billing_unit <> 'UNIT')
+        OR (id IN ('app-mystoreguard', 'app-loandrift')
             AND billing_unit <> 'LOCATION');
     IF wrong IS NOT NULL THEN
         RAISE EXCEPTION 'billing_unit is wrong for: %', wrong;
     END IF;
-    RAISE NOTICE 'apps billed per business: %; per employee: %',
+    RAISE NOTICE 'apps billed per business: %; per employee: %; per unit: %',
         (SELECT coalesce(string_agg(id, ', ' ORDER BY id), 'none')
            FROM core_platform.cp_apps WHERE billing_unit = 'BUSINESS'),
         (SELECT coalesce(string_agg(id, ', ' ORDER BY id), 'none')
-           FROM core_platform.cp_apps WHERE billing_unit = 'EMPLOYEE');
+           FROM core_platform.cp_apps WHERE billing_unit = 'EMPLOYEE'),
+        (SELECT coalesce(string_agg(id, ', ' ORDER BY id), 'none')
+           FROM core_platform.cp_apps WHERE billing_unit = 'UNIT');
 END $$;
 
 COMMIT;

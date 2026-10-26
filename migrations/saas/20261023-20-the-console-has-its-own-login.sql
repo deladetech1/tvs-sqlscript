@@ -55,6 +55,8 @@
 --                  cp_platform_charges      S I U     charges
 --                  cp_bundle_subscriptions, cp_bundle_tier_configs   S U   (bundles)
 --                  cp_price_list_changes    S I       price history (20261023-30)
+--                  cp_app_tier_meter_prices S I U     HMS meter prices (20261026-11)
+--                  cp_apps (volume_threshold, volume_discount)  U   the volume rule
 --                  cp_apps, cp_subscriptions, cp_businesses, cp_business_apps,
 --                  cp_business_app_locations, cp_users, cp_currencies,
 --                  cp_billings_logs, cp_bundles, cp_bundle_apps      S
@@ -206,7 +208,9 @@ DECLARE
         ['core_platform.cp_bundle_subscriptions',     'SELECT, UPDATE'],
         ['core_platform.cp_bundle_tier_configs',      'SELECT, UPDATE'],
         ['core_platform.cp_price_list_changes',       'SELECT, INSERT'],
-        ['core_platform.cp_apps',                     'SELECT'],
+        -- HMS meter prices and the volume rule (shared/20261026-11): the price list.
+        ['core_platform.cp_app_tier_meter_prices',    'SELECT, INSERT, UPDATE'],
+        ['core_platform.cp_apps',                     'SELECT, UPDATE (volume_threshold, volume_discount)'],
         ['core_platform.cp_subscriptions',            'SELECT'],
         ['core_platform.cp_businesses',               'SELECT'],
         ['core_platform.cp_business_apps',            'SELECT'],
