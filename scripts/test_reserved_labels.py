@@ -140,7 +140,8 @@ def main():
                  "20261016-01-projects-joins-the-platform.sql",
                  "20261019-01-invoicing-joins-the-platform.sql",
                  "20261019-26-expenses-joins-the-platform.sql",
-                 "20261022-61-hms-joins-the-platform.sql"}
+                 "20261022-61-hms-joins-the-platform.sql",
+                 "20261026-01-scm-joins-the-platform.sql"}
         unexpected = [f for f in failures if f[0] not in known]
         check("the migrations apply", not unexpected,
               "; ".join(f"{n} -> {e}" for n, e in unexpected))

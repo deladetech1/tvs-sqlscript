@@ -286,6 +286,8 @@ BEGIN
              WHEN r.id LIKE 'role-expenses%'  THEN 'expenses'
              -- HMS' job roles (20261022-61).
              WHEN r.id LIKE 'role-hms%'       THEN 'hms'
+             -- SCM's job roles (20261026-01).
+             WHEN r.id LIKE 'role-scm%'       THEN 'scm'
              -- Accounting's roles, once its permissions carry app_prefix (Accounting 02_permissions.sql).
              WHEN r.id LIKE 'role-accounting%' THEN 'accounting'
              ELSE '-' END;
