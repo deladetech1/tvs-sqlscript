@@ -52,9 +52,8 @@ CREATE TABLE IF NOT EXISTS scm.scm_number_series (
     padding      integer NOT NULL DEFAULT 5,
     PRIMARY KEY (bus_id, kind)
 );
-ALTER TABLE scm.scm_number_series DROP CONSTRAINT IF EXISTS scm_number_series_kind_check;
-ALTER TABLE scm.scm_number_series ADD CONSTRAINT scm_number_series_kind_check CHECK (kind IN
-    ('requisition', 'purchase_order', 'receipt', 'adjustment', 'transfer', 'sales_order', 'shipment'));
+-- The kind list (scm_number_series_kind_check) is owned by 20261026-09, which added the return
+-- and stock-count series: a CHECK list lives in the newest file that touches it.
 ALTER TABLE scm.scm_number_series DROP CONSTRAINT IF EXISTS scm_number_series_next_number_check;
 ALTER TABLE scm.scm_number_series ADD CONSTRAINT scm_number_series_next_number_check CHECK (next_number > 0);
 ALTER TABLE scm.scm_number_series DROP CONSTRAINT IF EXISTS scm_number_series_padding_check;
