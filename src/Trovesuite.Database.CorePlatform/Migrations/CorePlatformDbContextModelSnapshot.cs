@@ -3861,6 +3861,12 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("cdatetime");
 
+                    b.Property<bool>("ColoredSidebar")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("colored_sidebar");
+
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
