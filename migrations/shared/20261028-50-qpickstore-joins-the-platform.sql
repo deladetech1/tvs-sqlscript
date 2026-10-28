@@ -24,7 +24,8 @@
 --     whose MyStoreGuard plan includes ecommerce today gets a QPickStore subscription on the
 --     same tier, status and period, deployed where its MyStoreGuard is, so nobody loses a
 --     live storefront. A re-run (every deploy) never re-subscribes a business that later
---     leaves QPickStore.
+--     leaves QPickStore. created_by stays NULL on those rows (it is a foreign key to cp_users);
+--     they are marked by their description and by the decision row.
 --
 -- MyStoreGuard's catalogue keeps its ecommerce keys (the UI's padlock contract); the API
 -- opens them from the QPickStore subscription once app-qpickstore exists here
@@ -184,7 +185,7 @@ BEGIN
     INSERT INTO core_platform.cp_business_apps (id, tenant_id, bus_id, app_id, description, cdate, ctime, cdatetime, created_by)
     SELECT k.business_app_id, k.tenant_id, k.business_id, 'app-qpickstore',
            'Kept their storefront when ecommerce became QPickStore (2026-10-28)',
-           CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, 'migration:20261028-50'
+           CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, NULL
       FROM _qps_keep k
      WHERE NOT EXISTS (SELECT 1 FROM core_platform.cp_business_apps b
                         WHERE b.tenant_id = k.tenant_id AND b.bus_id = k.business_id
@@ -197,7 +198,7 @@ BEGIN
     SELECT k.tenant_id, b.id, k.business_id, 'app-qpickstore', k.shared_subscription_id, k.status, k.is_enterprise,
            k.is_payment_required, k.current_period_start, k.current_period_end, k.next_charge_date,
            true, 'NOT_DELETED', 'Kept their storefront when ecommerce became QPickStore (2026-10-28)',
-           CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, 'migration:20261028-50'
+           CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, NULL
       FROM _qps_keep k
       JOIN core_platform.cp_business_apps b
         ON b.tenant_id = k.tenant_id AND b.bus_id = k.business_id
@@ -209,10 +210,11 @@ BEGIN
             delete_status, start_at, end_at, cdate, ctime, cdatetime, created_by)
     SELECT s.tenant_id, s.id, s.business_id, 'app-qpickstore', s.shared_subscription_id, true,
            'NOT_DELETED', CURRENT_DATE::text, NULL, CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP,
-           'migration:20261028-50'
+           NULL
       FROM core_platform.cp_app_subscriptions s
       JOIN _qps_keep k ON k.tenant_id = s.tenant_id AND k.business_id = s.business_id
-     WHERE s.app_id = 'app-qpickstore' AND s.created_by = 'migration:20261028-50';
+     WHERE s.app_id = 'app-qpickstore'
+       AND s.description = 'Kept their storefront when ecommerce became QPickStore (2026-10-28)';
 
     -- Deployed wherever this business runs MyStoreGuard.
     INSERT INTO core_platform.cp_business_app_locations
@@ -220,7 +222,7 @@ BEGIN
             cdate, ctime, cdatetime, created_by)
     SELECT 'bal_qps_' || md5(m.tenant_id || ':' || m.bus_id || ':' || m.loc_id), m.tenant_id, b.id, m.loc_id,
            m.org_id, m.bus_id, 'app-qpickstore', true, 'NOT_DELETED',
-           CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, 'migration:20261028-50'
+           CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, NULL
       FROM (SELECT DISTINCT ml.tenant_id, ml.bus_id, ml.loc_id, ml.org_id
               FROM core_platform.cp_business_app_locations ml
               JOIN _qps_keep k ON k.tenant_id = ml.tenant_id AND k.business_id = ml.bus_id
