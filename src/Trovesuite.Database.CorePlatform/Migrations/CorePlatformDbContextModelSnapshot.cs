@@ -3935,7 +3935,7 @@ namespace Trovesuite.Database.CorePlatform.Migrations
                         {
                             t.HasCheckConstraint("ck_cp_themes_accent_color", "accent_color IN ('ORANGE','PURPLE','BLUE','GREEN')");
 
-                            t.HasCheckConstraint("ck_cp_themes_dark_scheme", "dark_scheme IN ('CHARCOAL','MIDNIGHT','OBSIDIAN','GRAPHITE','HARBOR','INK','ABYSS','CARBON','STONE')");
+                            t.HasCheckConstraint("ck_cp_themes_dark_scheme", "dark_scheme IN ('CHARCOAL','MIDNIGHT','OBSIDIAN','GRAPHITE','HARBOR','INK','ABYSS','CARBON','STONE','CONSOLE')");
 
                             t.HasCheckConstraint("ck_cp_themes_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 

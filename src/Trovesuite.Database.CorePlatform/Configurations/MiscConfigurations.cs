@@ -96,7 +96,7 @@ public sealed class ThemeConfiguration : IEntityTypeConfiguration<Theme>
         // so the backfill is the default and no reader has to treat null as a
         // fourth case.
         b.HasInCheck("dark_scheme", "CHARCOAL", "MIDNIGHT", "OBSIDIAN", "GRAPHITE", "HARBOR",
-            "INK", "ABYSS", "CARBON", "STONE");
+            "INK", "ABYSS", "CARBON", "STONE", "CONSOLE");
         b.HasInCheck("accent_color", "ORANGE", "PURPLE", "BLUE", "GREEN");
         b.HasDeleteStatusCheck();
         b.WithAuditUserFks();
