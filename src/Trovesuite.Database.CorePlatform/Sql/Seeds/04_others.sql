@@ -234,7 +234,7 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- technical and vocational institutes -- hosted by the shared apps backend; frontend tvs-sms-ft.
 -- Billed per location (one school profile per location). Registration beyond this row is
 -- migrations/shared/20261028-01-sms-joins-the-platform.sql. Not SMS the text message.
-('app-sms', 'EDUGUARD', 'School Profile & Setup', 'Academic Structure', 'Students & Classes', 'Fees & Billing', 'Report Cards', 'Run a creche, a school, a college or a university from one place: its profile and levels, academic structure, students and classes, fees and report cards, set up for your kind of institution', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+('app-sms', 'MyEduGuard', 'School Profile & Setup', 'Academic Structure', 'Students & Classes', 'Fees & Billing', 'Report Cards', 'Run a creche, a school, a college or a university from one place: its profile and levels, academic structure, students and classes, fees and report cards, set up for your kind of institution', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 -- QPickStore: MyStoreGuard's ecommerce sold as its own app, standalone or beside MyStoreGuard (owner,
 -- 2026-10-28) -- served by the MyStoreGuard API and frontend, billed per business. Registration
 -- beyond this row is
