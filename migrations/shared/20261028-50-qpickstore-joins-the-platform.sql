@@ -205,7 +205,7 @@ BEGIN
        AND b.app_id = 'app-qpickstore' AND b.delete_status = 'NOT_DELETED';
     GET DIAGNOSTICS v_subs = ROW_COUNT;
 
-    INSERT INTO core_platform.cp_app_subscription_history
+    INSERT INTO core_platform.cp_app_subscription_histories
            (tenant_id, app_subscription_id, business_id, app_id, shared_subscription_id, is_active,
             delete_status, start_at, end_at, cdate, ctime, cdatetime, created_by)
     SELECT s.tenant_id, s.id, s.business_id, 'app-qpickstore', s.shared_subscription_id, true,
