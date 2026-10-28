@@ -235,6 +235,11 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- Billed per location (one school profile per location). Registration beyond this row is
 -- migrations/shared/20261028-01-sms-joins-the-platform.sql. Not SMS the text message.
 ('app-sms', 'SMS', 'School Profile & Setup', 'Academic Structure', 'Students & Classes', 'Fees & Billing', 'Report Cards', 'Run a creche, a school, a college or a university from one place: its profile and levels, academic structure, students and classes, fees and report cards, set up for your kind of institution', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- QPickStore: MyStoreGuard's ecommerce sold as its own app, standalone or beside MyStoreGuard (owner,
+-- 2026-10-28) -- served by the MyStoreGuard API and frontend, billed per business. Registration
+-- beyond this row is
+-- migrations/shared/20261028-50-qpickstore-joins-the-platform.sql.
+('app-qpickstore', 'QPICKSTORE', 'Online Storefront', 'Pages & Appearance', 'Products & Stock', 'Offers & Online Prices', 'Orders & Deliveries', 'Sell online: your own storefront and pages, your products and stock, offers and online prices, orders and deliveries -- on its own, or inside MyStoreGuard when you have both', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'live', true),
 ('app-accounting', 'ACCOUNTING', 'General Ledger & Journals', 'Receivables & Payables', 'Bank Reconciliation', 'Multi-Currency', 'Financial Reports', 'Double-entry books for every organisation: chart of accounts, journals with approvals, invoices and bills, bank reconciliation, multi-currency and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
@@ -331,6 +336,11 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-sms-premium',    'app-sms',          'shared-subscription-premium',   40,   120.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-sms-enterprise', 'app-sms',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- Accounting (TapantaBooks), decided 2026-10-22. Per business, like the four above.
+-- QPickStore, per business. PLACEHOLDER, the console owns the price.
+('tier-cfg-qps-basic',      'app-qpickstore',   'shared-subscription-basic',      3,    20.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-qps-advance',    'app-qpickstore',   'shared-subscription-advance',   10,    45.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-qps-premium',    'app-qpickstore',   'shared-subscription-premium',   25,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-qps-enterprise', 'app-qpickstore',   'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      2,    25.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',    5,    50.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-premium',    'app-accounting',   'shared-subscription-premium',   15,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

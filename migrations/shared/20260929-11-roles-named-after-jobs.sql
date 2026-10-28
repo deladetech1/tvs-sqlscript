@@ -292,6 +292,9 @@ BEGIN
              WHEN r.id LIKE 'role-sms%'       THEN 'sms'
              -- Accounting's roles, once its permissions carry app_prefix (Accounting 02_permissions.sql).
              WHEN r.id LIKE 'role-accounting%' THEN 'accounting'
+             -- QPickStore's roles (20261028-50): the add-on is MyStoreGuard's ecommerce module and
+             -- is guarded by msg|ecommerce|*, so its roles hold MyStoreGuard permissions.
+             WHEN r.id LIKE 'role-qpickstore%' THEN 'msg'
              ELSE '-' END;
 
     IF leftover > 0 THEN
