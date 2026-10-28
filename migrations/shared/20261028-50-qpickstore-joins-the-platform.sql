@@ -1,24 +1,25 @@
--- QPickStore joins the platform: MyStoreGuard's ecommerce, sold as its own add-on app.
+-- QPickStore joins the platform: MyStoreGuard's ecommerce, sold as its own app.
 --
 -- Owner, 2026-10-28: the storefront (shop-owner screens: overview, setup, appearance, pages,
 -- products, pricing, auctions, coins) is its own app, QPickStore, with its own subscription
--- priced per business in the console. It is an ADD-ON: a business can only hold it alongside
--- MyStoreGuard, because underneath it uses MyStoreGuard's products, stock and sales -- an
--- online order is a sale on MyStoreGuard's Sales page, never a second stock. MyStoreGuard
+-- priced per business in the console, sold STANDALONE as well as beside MyStoreGuard (changed
+-- the same day: it was first an add-on). Underneath it uses MyStoreGuard's products, stock and
+-- sales -- an online order is a sale on the Sales page, never a second stock. A business with
+-- QPickStore alone gets a slim back office (store, products and stock, customers, deliveries,
+-- offers, sales to view); with both, ecommerce sits inside MyStoreGuard as before. MyStoreGuard
 -- Premium no longer includes the storefront. The shopper site (tvs-commerce-ft) is unchanged.
 --
 -- Served by the MyStoreGuard API and frontend (opened as QPickStore from the hub's /switch);
 -- no new backend, host or route. This file holds:
 --
---   * cp_apps.requires_app_id: the add-on rule, for Core Platform to enforce on subscribe
---     (no QPickStore without an active MyStoreGuard for the same business);
+--   * cp_apps.requires_app_id: kept for add-ons generally; NULL for QPickStore (standalone);
 --   * the app row, billed per BUSINESS, and its tier rows -- INSERT ONLY: a row that exists
 --     keeps its price, rate and seats, because the console owns list prices
 --     (shared/20261023-30). The starting prices are PLACEHOLDERS for the owner to set there;
---   * its resource type and job roles. Its screens are guarded by MyStoreGuard's own
---     ecommerce permissions (msg|ecommerce|*), so the roles carry those and the few
---     MyStoreGuard reads a shop owner needs (products, prices, online orders); the roles are
---     named role-qpickstore-* and the cross-app check (20260929-11) maps that prefix to msg;
+--   * its resource type and job roles. Its screens are MyStoreGuard's, guarded by msg|*
+--     permissions, so the roles carry the ones a standalone online shop works with (the store,
+--     products and stock, customers, deliveries, offers and taxes, sales to view); the roles
+--     are named role-qpickstore-* and the cross-app check (20260929-11) maps that prefix to msg;
 --   * which features each tier includes (all of them: tiers differ by seats);
 --   * ONCE per database, recorded in core_platform.cp_migration_decisions: every business
 --     whose MyStoreGuard plan includes ecommerce today gets a QPickStore subscription on the
@@ -37,20 +38,23 @@ BEGIN;
 -- ======================================================================= add-on rule
 ALTER TABLE core_platform.cp_apps ADD COLUMN IF NOT EXISTS requires_app_id text;
 COMMENT ON COLUMN core_platform.cp_apps.requires_app_id IS
-    'An add-on: a business may only subscribe to this app while it holds an active subscription to that one (QPickStore -> MyStoreGuard). NULL for a standalone app.';
+    'An add-on: a business may only subscribe to this app while it holds an active subscription to that one. NULL for a standalone app (QPickStore is standalone since 2026-10-28).';
 
 -- ====================================================================== the app row
 INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, feature4, feature5,
                                    description, cdate, ctime, cdatetime, status, is_active)
-VALUES ('app-qpickstore', 'QPICKSTORE', 'Online Storefront', 'Pages & Appearance', 'Online Prices',
-        'Auctions & Coins', 'Orders on Your Sales Page',
-        'Sell online from your MyStoreGuard stock: your own storefront, pages, online prices, auctions and coins, with every order landing on your MyStoreGuard Sales page',
+VALUES ('app-qpickstore', 'QPICKSTORE', 'Online Storefront', 'Pages & Appearance', 'Products & Stock',
+        'Offers & Online Prices', 'Orders & Deliveries',
+        'Sell online: your own storefront and pages, your products and stock, offers and online prices, orders and deliveries -- on its own, or inside MyStoreGuard when you have both',
         CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP, 'live', true)
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET app_name = EXCLUDED.app_name, feature1 = EXCLUDED.feature1,
+    feature2 = EXCLUDED.feature2, feature3 = EXCLUDED.feature3, feature4 = EXCLUDED.feature4,
+    feature5 = EXCLUDED.feature5, description = EXCLUDED.description;
 
+-- Standalone (owner, 2026-10-28): it was first an add-on of MyStoreGuard.
 UPDATE core_platform.cp_apps
-   SET requires_app_id = 'app-mystoreguard'
- WHERE id = 'app-qpickstore' AND requires_app_id IS DISTINCT FROM 'app-mystoreguard';
+   SET requires_app_id = NULL
+ WHERE id = 'app-qpickstore' AND requires_app_id IS NOT NULL;
 
 DO $$
 BEGIN
@@ -78,7 +82,7 @@ ON CONFLICT (id) DO UPDATE SET resource_type_name = EXCLUDED.resource_type_name,
 
 -- role_name is unique per tenant across every app, so every name starts with "QPickStore".
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
-('role-qpickstore-manager', 'system-tenant-id', 'QPickStore Manager', 'Runs the online store: storefront, pages, appearance, online prices, auctions and coins, and sees online orders', 'rt-system-role', true, true, CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP),
+('role-qpickstore-manager', 'system-tenant-id', 'QPickStore Manager', 'Runs the online store: storefront, pages, prices and offers, products and stock, customers, deliveries and the orders', 'rt-system-role', true, true, CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP),
 ('role-qpickstore-viewer',  'system-tenant-id', 'QPickStore Viewer',  'Reads the online store and its orders; changes nothing', 'rt-system-role', true, true, CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET role_name        = EXCLUDED.role_name,
                                description      = EXCLUDED.description,
@@ -86,9 +90,10 @@ ON CONFLICT (id) DO UPDATE SET role_name        = EXCLUDED.role_name,
                                is_system        = EXCLUDED.is_system,
                                is_active        = EXCLUDED.is_active;
 
--- The screens are MyStoreGuard's ecommerce module, guarded by msg|ecommerce|*; a shop owner
--- also reads the catalogue it sells from and the online orders on the Sales page, and keeps
--- the ECOMMERCE channel's prices. Only permissions that exist here are granted.
+-- What a standalone online shop works with: the store (msg|ecommerce|*), its products and the
+-- stock it keeps (products, deliveries in, store items), customers, deliveries out, offers,
+-- prices and taxes used at checkout, and the sales to view (never create, cancel or take
+-- payment at a counter -- that is MyStoreGuard's till). Only permissions that exist are granted.
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
 SELECT 'system-tenant-id', spec.role_id, p.id, r.role_name || ' can ' || lower(coalesce(p.description, p.permission_name)),
        CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP
@@ -107,6 +112,38 @@ SELECT 'system-tenant-id', spec.role_id, p.id, r.role_name || ' can ' || lower(c
         ('role-qpickstore-manager', 'permission-msg-pricing-rules-create'),
         ('role-qpickstore-manager', 'permission-msg-pricing-rules-update'),
         ('role-qpickstore-manager', 'permission-msg-customers-get'),
+        ('role-qpickstore-manager', 'permission-msg-customers-create'),
+        ('role-qpickstore-manager', 'permission-msg-customers-update'),
+        ('role-qpickstore-manager', 'permission-msg-products-create'),
+        ('role-qpickstore-manager', 'permission-msg-products-update'),
+        ('role-qpickstore-manager', 'permission-msg-product-metadata-create'),
+        ('role-qpickstore-manager', 'permission-msg-product-metadata-update'),
+        ('role-qpickstore-manager', 'permission-msg-purchase-orders-get'),
+        ('role-qpickstore-manager', 'permission-msg-purchase-orders-create'),
+        ('role-qpickstore-manager', 'permission-msg-purchase-orders-update'),
+        ('role-qpickstore-manager', 'permission-msg-store-products-get'),
+        ('role-qpickstore-manager', 'permission-msg-store-products-create'),
+        ('role-qpickstore-manager', 'permission-msg-store-products-update'),
+        ('role-qpickstore-manager', 'permission-msg-deliveries-get'),
+        ('role-qpickstore-manager', 'permission-msg-deliveries-update'),
+        ('role-qpickstore-manager', 'permission-msg-promo-codes-get'),
+        ('role-qpickstore-manager', 'permission-msg-promo-codes-create'),
+        ('role-qpickstore-manager', 'permission-msg-promo-codes-update'),
+        ('role-qpickstore-manager', 'permission-msg-gift-cards-get'),
+        ('role-qpickstore-manager', 'permission-msg-gift-cards-create'),
+        ('role-qpickstore-manager', 'permission-msg-gift-cards-update'),
+        ('role-qpickstore-manager', 'permission-msg-tax-rule-get'),
+        ('role-qpickstore-manager', 'permission-msg-tax-rule-create'),
+        ('role-qpickstore-manager', 'permission-msg-tax-rule-update'),
+        ('role-qpickstore-manager', 'permission-msg-taxes-get'),
+        ('role-qpickstore-manager', 'permission-msg-store-config-get'),
+        ('role-qpickstore-manager', 'permission-msg-store-config-create'),
+        ('role-qpickstore-manager', 'permission-msg-custom-fields-get'),
+        ('role-qpickstore-manager', 'permission-msg-file-upload-multiple'),
+        ('role-qpickstore-manager', 'permission-msg-file-list-documents'),
+        ('role-qpickstore-viewer',  'permission-msg-customers-get'),
+        ('role-qpickstore-viewer',  'permission-msg-deliveries-get'),
+        ('role-qpickstore-viewer',  'permission-msg-store-products-get'),
         ('role-qpickstore-viewer',  'permission-msg-ecommerce-get'),
         ('role-qpickstore-viewer',  'permission-msg-store-sales-get'),
         ('role-qpickstore-viewer',  'permission-msg-products-get')
@@ -135,7 +172,7 @@ INSERT INTO core_platform.cp_app_feature_catalog (feature_key, app_id, title, mi
 ('qpickstore.pages',      'app-qpickstore', 'Pages & Appearance',  1, 'Home, Pre-used and Market pages with versions, promotion and your own look'),
 ('qpickstore.pricing',    'app-qpickstore', 'Online Prices',       1, 'Prices and pricing rules for the online channel'),
 ('qpickstore.auctions',   'app-qpickstore', 'Auctions & Coins',    1, 'Timed auctions and coin packages for bidding'),
-('qpickstore.orders',     'app-qpickstore', 'Orders on Your Sales Page', 1, 'Every online order is a sale on your MyStoreGuard Sales page, from the same stock')
+('qpickstore.orders',     'app-qpickstore', 'Orders & Deliveries', 1, 'Every online order on your Sales page, from the same stock, with delivery to the customer')
 ON CONFLICT (feature_key) DO UPDATE SET
     app_id        = EXCLUDED.app_id,
     title         = EXCLUDED.title,
@@ -247,8 +284,15 @@ END $$;
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM core_platform.cp_apps WHERE id = 'app-qpickstore'
-                AND requires_app_id IS DISTINCT FROM 'app-mystoreguard') THEN
-        RAISE EXCEPTION 'QPickStore must be an add-on of MyStoreGuard';
+                AND requires_app_id IS NOT NULL) THEN
+        RAISE EXCEPTION 'QPickStore is sold standalone; it must not require another app';
+    END IF;
+    -- Never the till: a QPickStore role does not create, cancel or take payment on a sale.
+    IF EXISTS (SELECT 1 FROM core_platform.cp_role_permissions
+                WHERE role_id LIKE 'role-qpickstore-%'
+                  AND permission_id IN ('permission-msg-store-sales-create', 'permission-msg-store-sales-cancel',
+                                        'permission-msg-store-sales-update', 'permission-msg-store-sales-delete')) THEN
+        RAISE EXCEPTION 'a QPickStore role can make or change sales at a counter';
     END IF;
     IF EXISTS (SELECT 1 FROM core_platform.cp_role_permissions rp
                  JOIN core_platform.cp_permissions p ON p.id = rp.permission_id
@@ -265,15 +309,6 @@ BEGIN
     IF EXISTS (SELECT 1 FROM core_platform.cp_roles
                 WHERE id LIKE 'role-qpickstore-%' AND role_name NOT LIKE 'QPickStore %') THEN
         RAISE EXCEPTION 'a QPickStore role is not named "QPickStore ..."; role names are unique across apps';
-    END IF;
-    -- No business may hold QPickStore without MyStoreGuard.
-    IF EXISTS (SELECT 1 FROM core_platform.cp_app_subscriptions q
-                WHERE q.app_id = 'app-qpickstore' AND q.delete_status = 'NOT_DELETED' AND q.is_active
-                  AND NOT EXISTS (SELECT 1 FROM core_platform.cp_app_subscriptions m
-                                   WHERE m.tenant_id = q.tenant_id AND m.business_id = q.business_id
-                                     AND m.app_id = 'app-mystoreguard' AND m.delete_status = 'NOT_DELETED'
-                                     AND m.is_active)) THEN
-        RAISE EXCEPTION 'a business holds QPickStore without MyStoreGuard';
     END IF;
 END $$;
 
