@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS sms.sms_virtual_classes (
     cancelled_at  timestamptz
 );
 ALTER TABLE sms.sms_virtual_classes DROP CONSTRAINT IF EXISTS sms_virtual_classes_provider_check;
-ALTER TABLE sms.sms_virtual_classes ADD CONSTRAINT sms_virtual_classes_provider_check CHECK (provider IN ('zoom', 'meet', 'teams', 'other'));
+ALTER TABLE sms.sms_virtual_classes ADD CONSTRAINT sms_virtual_classes_provider_check CHECK (provider IN ('zoom', 'meet', 'teams', 'other', 'live'));
 ALTER TABLE sms.sms_virtual_classes DROP CONSTRAINT IF EXISTS sms_virtual_classes_minutes_check;
 ALTER TABLE sms.sms_virtual_classes ADD CONSTRAINT sms_virtual_classes_minutes_check CHECK (minutes BETWEEN 5 AND 480);
 CREATE INDEX IF NOT EXISTS sms_virtual_classes_profile_idx ON sms.sms_virtual_classes (profile_id, starts_at);
