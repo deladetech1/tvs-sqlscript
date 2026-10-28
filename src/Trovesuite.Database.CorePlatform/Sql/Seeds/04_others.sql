@@ -69,6 +69,7 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-expenses-%'
   AND p.id NOT LIKE 'permission-hms-%'
   AND p.id NOT LIKE 'permission-scm-%'
+  AND p.id NOT LIKE 'permission-sms-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -229,6 +230,11 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- backend; frontend tvs-scm-ft. Billed once per business (shared/20261022-70).
 -- Registration beyond this row is migrations/shared/20261026-01-scm-joins-the-platform.sql.
 ('app-scm', 'SCM', 'Items & Suppliers', 'Purchasing & Receiving', 'Inventory Ledger', 'Orders & Shipments', 'Control Tower', 'Run purchasing, stock and fulfilment from one place: items, suppliers, requisitions, purchase orders, receiving, a full inventory ledger, sales orders, shipments and an exceptions control tower', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- SMS: school management -- creches, primary, basic and high schools, colleges, universities,
+-- technical and vocational institutes -- hosted by the shared apps backend; frontend tvs-sms-ft.
+-- Billed per location (one school profile per location). Registration beyond this row is
+-- migrations/shared/20261028-01-sms-joins-the-platform.sql. Not SMS the text message.
+('app-sms', 'SMS', 'School Profile & Setup', 'Academic Structure', 'Students & Classes', 'Fees & Billing', 'Report Cards', 'Run a creche, a school, a college or a university from one place: its profile and levels, academic structure, students and classes, fees and report cards, set up for your kind of institution', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-accounting', 'ACCOUNTING', 'General Ledger & Journals', 'Receivables & Payables', 'Bank Reconciliation', 'Multi-Currency', 'Financial Reports', 'Double-entry books for every organisation: chart of accounts, journals with approvals, invoices and bills, bank reconciliation, multi-currency and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
 ('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
@@ -318,6 +324,12 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-scm-advance',    'app-scm',          'shared-subscription-advance',   15,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-scm-premium',    'app-scm',          'shared-subscription-premium',   40,   140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-scm-enterprise', 'app-scm',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- SMS: USD per location (one school) per month. PLACEHOLDER, owner sets prices (in the
+-- console; see the note below).
+('tier-cfg-sms-basic',      'app-sms',          'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sms-advance',    'app-sms',          'shared-subscription-advance',   15,    60.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sms-premium',    'app-sms',          'shared-subscription-premium',   40,   120.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sms-enterprise', 'app-sms',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- Accounting (TapantaBooks), decided 2026-10-22. Per business, like the four above.
 ('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      2,    25.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',    5,    50.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
