@@ -437,6 +437,16 @@ ON CONFLICT (feature_key) DO UPDATE SET
     app_id = EXCLUDED.app_id, title = EXCLUDED.title, min_tier_rank = EXCLUDED.min_tier_rank,
     description = EXCLUDED.description, is_active = true;
 
+-- Earlier files re-run first on every deploy, and 01 gives the viewer (and others) every
+-- read-only SMS permission -- which, once this file has made them, includes counselling and
+-- safeguarding reads. Take those back here so the rule below holds on every re-run.
+DELETE FROM core_platform.cp_role_permissions rp
+ USING core_platform.cp_permissions p
+ WHERE p.id = rp.permission_id
+   AND rp.role_id IN ('role-sms-viewer', 'role-sms-teacher', 'role-sms-registrar', 'role-sms-admissions', 'role-sms-nurse', 'role-sms-security')
+   AND p.app_prefix = 'sms'
+   AND (p.resource_key = 'counselling' OR (p.resource_key = 'safeguarding' AND p.action <> 'create'));
+
 -- =================================================================== invariants
 DO $$
 DECLARE n int;
