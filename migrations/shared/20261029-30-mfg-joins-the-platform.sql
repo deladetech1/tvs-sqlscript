@@ -3,8 +3,10 @@
 -- later releases.
 --
 -- Served by the shared apps backend (deladetech1/tvs-shared-apps-bk, module "mfg") like the CRM,
--- Projects, Invoicing, Expenses, HMS and SCM; frontend tvs-mfg-ft. Manufacturing posts stock into
--- SCM's ledger (internal/platform/stock), so its material features need an SCM subscription too.
+-- Projects, Invoicing, Expenses, HMS and SCM; frontend tvs-mfg-ft. It is subscribed on its own; SCM
+-- is optional. Stock it moves goes into the suite's one stock ledger (the scm.scm_inventory_* tables,
+-- posted through tvs-shared-apps-bk internal/platform/stock), so a business with both apps has one
+-- figure for what is on hand.
 -- Its cp_apps row, tier prices and the role-cp-admin exclusion live in the CorePlatform seed
 -- (04_others.sql), which owns every app row. This file holds the rest:
 --
@@ -290,11 +292,11 @@ SELECT h.host, NULL, 'POOLED', h.cell, 'ACTIVE', false, CURRENT_DATE::text, CURR
  WHERE EXISTS (SELECT 1 FROM control_plane.ctl_cells c WHERE c.cell_key = h.cell)
 ON CONFLICT (host) DO NOTHING;
 
--- ============================================================ billing, add-on, data
--- Manufacturing posts stock into SCM's ledger, so it is an add-on to SCM: a business may only
--- subscribe while it holds SCM (cp_apps.requires_app_id, 20261028-50; design decision D1). Billed
--- per business like SCM until the owner prices plants and stations. On unsubscribe its own schema
--- is purged after the grace period (20261028-60); the stock it posted is SCM's and stays with SCM.
+-- ============================================================ billing, standalone, data
+-- Manufacturing stands alone: no other app is needed to subscribe (cp_apps.requires_app_id NULL,
+-- 20261028-50). SCM is optional; with it a business adds purchasing, sales and warehouse work on the
+-- same stock. Billed per business until the owner prices plants and stations. On unsubscribe its own
+-- schema is purged after the grace period (20261028-60).
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns
@@ -304,12 +306,12 @@ BEGIN
     END IF;
     IF EXISTS (SELECT 1 FROM information_schema.columns
                 WHERE table_schema = 'core_platform' AND table_name = 'cp_apps' AND column_name = 'requires_app_id') THEN
-        UPDATE core_platform.cp_apps SET requires_app_id = 'app-scm'
-         WHERE id = 'app-mfg' AND requires_app_id IS DISTINCT FROM 'app-scm';
+        UPDATE core_platform.cp_apps SET requires_app_id = NULL
+         WHERE id = 'app-mfg' AND requires_app_id IS NOT NULL;
     END IF;
     IF to_regclass('core_platform.cp_app_data_owners') IS NOT NULL THEN
         INSERT INTO core_platform.cp_app_data_owners (app_id, schema_name, fate, note)
-        VALUES ('app-mfg', 'mfg', 'PURGE', 'Stock Manufacturing posted lives in SCM''s ledger and stays with SCM.')
+        VALUES ('app-mfg', 'mfg', 'PURGE', 'Stock movements live in the shared ledger (scm schema) and are not purged with Manufacturing.')
         ON CONFLICT (app_id) DO UPDATE SET schema_name = EXCLUDED.schema_name, fate = EXCLUDED.fate, note = EXCLUDED.note;
     END IF;
 END $$;
