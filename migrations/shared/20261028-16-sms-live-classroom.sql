@@ -17,8 +17,7 @@
 
 BEGIN;
 
-ALTER TABLE sms.sms_virtual_classes DROP CONSTRAINT IF EXISTS sms_virtual_classes_provider_check;
-ALTER TABLE sms.sms_virtual_classes ADD CONSTRAINT sms_virtual_classes_provider_check CHECK (provider IN ('zoom', 'meet', 'teams', 'other', 'live'));
+SELECT sms.widen_check('sms.sms_virtual_classes', 'sms_virtual_classes_provider_check', $q$'live'$q$, $q$CHECK (provider IN ('zoom', 'meet', 'teams', 'other', 'live'))$q$);
 ALTER TABLE sms.sms_virtual_classes ADD COLUMN IF NOT EXISTS waiting_room boolean NOT NULL DEFAULT true;
 ALTER TABLE sms.sms_virtual_classes ADD COLUMN IF NOT EXISTS live_started_at timestamptz;
 ALTER TABLE sms.sms_virtual_classes ADD COLUMN IF NOT EXISTS live_ended_at timestamptz;

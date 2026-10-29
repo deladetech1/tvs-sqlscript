@@ -122,8 +122,7 @@ CREATE TABLE IF NOT EXISTS sms.sms_virtual_classes (
     cdatetime     timestamptz NOT NULL DEFAULT now(),
     cancelled_at  timestamptz
 );
-ALTER TABLE sms.sms_virtual_classes DROP CONSTRAINT IF EXISTS sms_virtual_classes_provider_check;
-ALTER TABLE sms.sms_virtual_classes ADD CONSTRAINT sms_virtual_classes_provider_check CHECK (provider IN ('zoom', 'meet', 'teams', 'other', 'live'));
+SELECT sms.widen_check('sms.sms_virtual_classes', 'sms_virtual_classes_provider_check', $q$'live'$q$, $q$CHECK (provider IN ('zoom', 'meet', 'teams', 'other', 'live'))$q$);
 ALTER TABLE sms.sms_virtual_classes DROP CONSTRAINT IF EXISTS sms_virtual_classes_minutes_check;
 ALTER TABLE sms.sms_virtual_classes ADD CONSTRAINT sms_virtual_classes_minutes_check CHECK (minutes BETWEEN 5 AND 480);
 CREATE INDEX IF NOT EXISTS sms_virtual_classes_profile_idx ON sms.sms_virtual_classes (profile_id, starts_at);
@@ -263,11 +262,9 @@ ALTER TABLE sms.sms_lms_syncs DROP CONSTRAINT IF EXISTS sms_lms_syncs_kind_check
 ALTER TABLE sms.sms_lms_syncs ADD CONSTRAINT sms_lms_syncs_kind_check CHECK (kind IN ('roster_export', 'grades_import', 'grades_export'));
 
 -- Files: assignment briefs, submissions and class resources; videos for resources.
-ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_entity_check;
-ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
-    ('profile', 'application', 'enquiry', 'family', 'student', 'leave_request', 'assignment', 'submission', 'class_resource'));
-ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_kind_check;
-ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_kind_check CHECK (kind IN ('image', 'document', 'video'));
+SELECT sms.widen_check('sms.sms_files', 'sms_files_entity_check', $q$'class_resource'$q$, $q$CHECK (entity_type IS NULL OR entity_type IN
+    ('profile', 'application', 'enquiry', 'family', 'student', 'leave_request', 'assignment', 'submission', 'class_resource'))$q$);
+SELECT sms.widen_check('sms.sms_files', 'sms_files_kind_check', $q$'video'$q$, $q$CHECK (kind IN ('image', 'document', 'video'))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES

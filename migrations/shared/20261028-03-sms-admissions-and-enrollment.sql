@@ -189,8 +189,7 @@ CREATE TABLE IF NOT EXISTS sms.sms_students (
     updated_at       timestamptz,
     created_by       text
 );
-ALTER TABLE sms.sms_students DROP CONSTRAINT IF EXISTS sms_students_status_check;
-ALTER TABLE sms.sms_students ADD CONSTRAINT sms_students_status_check CHECK (status IN ('active', 'withdrawn', 'graduated'));
+SELECT sms.widen_check('sms.sms_students', 'sms_students_status_check', $q$'graduated'$q$, $q$CHECK (status IN ('active', 'withdrawn', 'graduated'))$q$);
 ALTER TABLE sms.sms_students DROP CONSTRAINT IF EXISTS sms_students_gender_check;
 ALTER TABLE sms.sms_students ADD CONSTRAINT sms_students_gender_check CHECK (gender IS NULL OR gender IN ('male', 'female'));
 CREATE UNIQUE INDEX IF NOT EXISTS sms_students_number_uq ON sms.sms_students (bus_id, student_number);
@@ -370,9 +369,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS sms_reenrollments_token_uq ON sms.sms_reenroll
 
 -- =================================================================== files
 -- 20261028-02 created the entity check for profiles only; this file owns it from here on.
-ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_entity_check;
-ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
-    ('profile', 'application', 'enquiry', 'family', 'student'));
+SELECT sms.widen_check('sms.sms_files', 'sms_files_entity_check', $q$'student'$q$, $q$CHECK (entity_type IS NULL OR entity_type IN
+    ('profile', 'application', 'enquiry', 'family', 'student'))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES

@@ -317,10 +317,9 @@ ALTER TABLE sms.sms_roll_call_marks ADD CONSTRAINT sms_roll_call_marks_check2
     CHECK (person_kind IN ('student', 'staff') AND status IN ('safe', 'missing', 'injured', 'off_site'));
 
 -- Files: a pickup person's photo, an incident's evidence, a safeguarding case's papers.
-ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_entity_check;
-ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
+SELECT sms.widen_check('sms.sms_files', 'sms_files_entity_check', $q$'safeguarding'$q$, $q$CHECK (entity_type IS NULL OR entity_type IN
     ('profile', 'application', 'enquiry', 'family', 'student', 'leave_request', 'assignment', 'submission', 'class_resource',
-     'pickup_person', 'incident', 'safeguarding'));
+     'pickup_person', 'incident', 'safeguarding'))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES

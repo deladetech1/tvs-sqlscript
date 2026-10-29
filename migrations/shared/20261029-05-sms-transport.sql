@@ -251,9 +251,8 @@ ALTER TABLE sms.sms_transport_alerts ADD CONSTRAINT sms_transport_alerts_check2 
 CREATE INDEX IF NOT EXISTS sms_transport_alerts_idx ON sms.sms_transport_alerts (profile_id, cdatetime DESC);
 
 -- Transport is a module a school can turn off (Settings, Modules).
-ALTER TABLE sms.sms_profiles DROP CONSTRAINT IF EXISTS sms_profiles_modules_check;
-ALTER TABLE sms.sms_profiles ADD CONSTRAINT sms_profiles_modules_check CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
-    'admissions', 'teaching', 'scheduling', 'attendance', 'grading', 'learning', 'welfare', 'inclusion', 'boarding', 'library', 'activities', 'transport']::text[]));
+SELECT sms.widen_check('sms.sms_profiles', 'sms_profiles_modules_check', $q$'transport'$q$, $q$CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
+    'admissions', 'teaching', 'scheduling', 'attendance', 'grading', 'learning', 'welfare', 'inclusion', 'boarding', 'library', 'activities', 'transport']::text[]))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES

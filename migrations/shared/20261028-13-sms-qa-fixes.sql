@@ -17,21 +17,16 @@ UPDATE sms.sms_classes c SET archived_at = coalesce(y.archived_at, now())
   FROM sms.sms_year_groups y
  WHERE y.id = c.year_group_id AND y.archived_at IS NOT NULL AND c.archived_at IS NULL;
 
-ALTER TABLE sms.sms_leave_requests DROP CONSTRAINT IF EXISTS sms_leave_requests_check2;
-ALTER TABLE sms.sms_leave_requests ADD CONSTRAINT sms_leave_requests_check2
-    CHECK (reason IN ('sick', 'medical', 'family', 'religious', 'travel', 'other') AND via IN ('portal', 'staff')
-           AND status IN ('pending', 'approved', 'declined', 'withdrawn', 'cancelled'));
+SELECT sms.widen_check('sms.sms_leave_requests', 'sms_leave_requests_check2', $q$'cancelled'$q$, $q$CHECK (reason IN ('sick', 'medical', 'family', 'religious', 'travel', 'other') AND via IN ('portal', 'staff')
+           AND status IN ('pending', 'approved', 'declined', 'withdrawn', 'cancelled'))$q$);
 
 ALTER TABLE sms.sms_staff_checkins ALTER COLUMN in_at DROP NOT NULL;
 ALTER TABLE sms.sms_staff_checkins ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'present';
 ALTER TABLE sms.sms_staff_checkins ADD COLUMN IF NOT EXISTS note text;
 ALTER TABLE sms.sms_staff_checkins ADD COLUMN IF NOT EXISTS recorded_by text;
-ALTER TABLE sms.sms_staff_checkins DROP CONSTRAINT IF EXISTS sms_staff_checkins_method_check;
-ALTER TABLE sms.sms_staff_checkins ADD CONSTRAINT sms_staff_checkins_method_check CHECK (method IN ('qr', 'mobile', 'biometric', 'manual'));
-ALTER TABLE sms.sms_staff_checkins DROP CONSTRAINT IF EXISTS sms_staff_checkins_status_check;
-ALTER TABLE sms.sms_staff_checkins ADD CONSTRAINT sms_staff_checkins_status_check
-    CHECK (status IN ('present', 'late', 'absent', 'sick', 'leave', 'duty')
-           AND (in_at IS NOT NULL OR status IN ('absent', 'sick', 'leave', 'duty')));
+SELECT sms.widen_check('sms.sms_staff_checkins', 'sms_staff_checkins_method_check', $q$'manual'$q$, $q$CHECK (method IN ('qr', 'mobile', 'biometric', 'manual'))$q$);
+SELECT sms.widen_check('sms.sms_staff_checkins', 'sms_staff_checkins_status_check', $q$'duty'$q$, $q$CHECK (status IN ('present', 'late', 'absent', 'sick', 'leave', 'duty')
+           AND (in_at IS NOT NULL OR status IN ('absent', 'sick', 'leave', 'duty')))$q$);
 
 CREATE TABLE IF NOT EXISTS sms.sms_calendar_events (
     id          text PRIMARY KEY DEFAULT gen_random_uuid()::text,
