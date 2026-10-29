@@ -4,22 +4,20 @@
 -- 20261029-47, whose invariant (every mfg product_id, component_id and *_party_id column is
 -- registered) re-runs on every deploy and so covers these tables too.
 --
---   is_extension = true    planning state derived per product (the net-change queue and the item
---                          plan state): moved by a merge (a clash on the merged key drops the
---                          dropped product's row, which the next re-net rebuilds), and not a use
---                          that stops the product being deleted
---   is_extension = false   everything else: demands, planned orders, pegging, MRP messages,
+--   is_extension = false   every R2 column: demands, planned orders, pegging, MRP messages,
 --                          inspection plans and inspections, holds, NCRs (and a line's regrade
---                          product), item costs and roll-up inputs, ECO items; a demand's
---                          customer, a planned buy's supplier, an NCR's supplier or customer
+--                          product), recall lots, item costs and roll-up inputs, ECO items; a
+--                          demand's customer, a planned buy's supplier, an NCR's supplier or
+--                          customer. No R2 table is an extension: the applied 20261029-47 allows
+--                          only item settings and unit conversions
+--   not registered         the derived planning state (mfg_mrp_dirty, mfg_item_plan_state) keeps
+--                          its product in item_id, deliberately (20261030-11); asserted below
 --
 -- The views of 20261030-16 are not registered (they are SCM's columns). Idempotent; safe to re-run.
 
 BEGIN;
 
 INSERT INTO core_platform.cp_product_references (table_name, column_name, is_extension) VALUES
-    ('mfg.mfg_mrp_dirty',               'product_id',          true),
-    ('mfg.mfg_item_plan_state',         'product_id',          true),
     ('mfg.mfg_demands',                 'product_id',          false),
     ('mfg.mfg_planned_orders',          'product_id',          false),
     ('mfg.mfg_pegging',                 'product_id',          false),
@@ -71,12 +69,17 @@ BEGIN
         RAISE EXCEPTION 'Manufacturing party column(s) not in cp_party_references: %', missing;
     END IF;
 
-    -- Only Manufacturing's own settings and derived planning state are extensions.
+    -- No R2 table is a product extension (20261029-47 allows only item settings and unit conversions).
     IF EXISTS (SELECT 1 FROM core_platform.cp_product_references
                 WHERE table_name LIKE 'mfg.%' AND is_extension
-                  AND table_name NOT IN ('mfg.mfg_item_settings', 'mfg.mfg_uom_conversions',
-                                         'mfg.mfg_mrp_dirty', 'mfg.mfg_item_plan_state')) THEN
+                  AND table_name NOT IN ('mfg.mfg_item_settings', 'mfg.mfg_uom_conversions')) THEN
         RAISE EXCEPTION 'a Manufacturing document table is registered as a product extension';
+    END IF;
+    -- The derived planning state stays unregistered and keeps no product_id column.
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'mfg' AND table_name IN ('mfg_mrp_dirty', 'mfg_item_plan_state')
+                  AND column_name = 'product_id') THEN
+        RAISE EXCEPTION 'mfg_mrp_dirty / mfg_item_plan_state must hold the product in item_id (20261030-11)';
     END IF;
 END $$;
 

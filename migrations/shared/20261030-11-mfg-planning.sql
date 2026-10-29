@@ -24,6 +24,13 @@
 --   mfg_mrp_messages       expedite | delay | cancel | increase | decrease | shortage | past_due |
 --                          below_safety | lead_time_violated, on the order they concern
 --
+-- mfg_mrp_dirty and mfg_item_plan_state hold the product in item_id, not product_id: they are
+-- derived state, deliberately NOT registered in cp_product_references. Registered as uses, a merge
+-- of two planned products would clash on their keys and fail, and a product with plan state could
+-- not be deleted; as extensions, the applied 20261029-47 refuses them. Unregistered, a merge or
+-- delete leaves the old product's rows, which the next re-net drops (the API returns item_id as
+-- product_id).
+--
 -- Item settings gain what MRP needs that R1 did not hold: lead_time_days (the purchase or transfer
 -- lead time; for a make, the routing's own lead time is added to make_lead_time_days by the engine)
 -- and safety_stock (C4). Both are added here as ADD COLUMN IF NOT EXISTS.
@@ -114,24 +121,24 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_mrp_dirty (
     org_id            text,
     bus_id            text NOT NULL,
     plant_id          text NOT NULL,
-    product_id        text NOT NULL,
+    item_id           text NOT NULL,            -- the product (cp_products.id); NOT registered, see below
     low_level_code    integer NOT NULL DEFAULT 0,
     reasons           text[] NOT NULL DEFAULT '{}',   -- e.g. production_order.released, demand.changed, bom.released
     first_marked_at   timestamptz NOT NULL DEFAULT now(),
     last_marked_at    timestamptz NOT NULL DEFAULT now(),
     marked_by         text,
-    PRIMARY KEY (bus_id, plant_id, product_id)
+    PRIMARY KEY (bus_id, plant_id, item_id)
 );
 CREATE INDEX IF NOT EXISTS mfg_mrp_dirty_claim_idx ON mfg.mfg_mrp_dirty (bus_id, low_level_code, first_marked_at);
 COMMENT ON TABLE mfg.mfg_mrp_dirty IS
-    'Net-change MRP queue (R2 C3). Mark: INSERT ... ON CONFLICT (bus_id, plant_id, product_id) DO UPDATE SET reasons = array_append, last_marked_at = now(). Claim: DELETE ... RETURNING under FOR UPDATE SKIP LOCKED, lowest low_level_code first.';
+    'Net-change MRP queue (R2 C3). Mark: INSERT ... ON CONFLICT (bus_id, plant_id, item_id) DO UPDATE SET reasons = array_append, last_marked_at = now(). Claim: DELETE ... RETURNING under FOR UPDATE SKIP LOCKED, lowest low_level_code first.';
 
 CREATE TABLE IF NOT EXISTS mfg.mfg_item_plan_state (
     tenant_id         text NOT NULL,
     org_id            text,
     bus_id            text NOT NULL,
     plant_id          text NOT NULL,
-    product_id        text NOT NULL,
+    item_id           text NOT NULL,            -- the product (cp_products.id); NOT registered, see below
     low_level_code    integer NOT NULL DEFAULT 0,
     last_netted_at    timestamptz,                    -- the API's planned_at
     last_run_id       text,                           -- the run that netted it last; NULL for a lazy re-net
@@ -139,7 +146,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_item_plan_state (
     status            text NOT NULL DEFAULT 'pending',
     error             text,
     updated_at        timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (bus_id, plant_id, product_id)
+    PRIMARY KEY (bus_id, plant_id, item_id)
 );
 CREATE INDEX IF NOT EXISTS mfg_item_plan_state_status_idx ON mfg.mfg_item_plan_state (bus_id, status) WHERE status <> 'fresh';
 

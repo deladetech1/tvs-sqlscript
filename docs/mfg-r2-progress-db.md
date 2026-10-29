@@ -16,7 +16,7 @@ Branch `feature/mfg-r2` (from `feature/mfg-r1`). Contract: tvs-shared-apps-bk `d
 | `20261030-16-mfg-src-views.sql` | `src_scm_open_so_lines`, `src_scm_open_po_lines`, `src_scm_open_transfer_lines`, `src_scm_receipt_lines`, `src_scm_shipment_lines`, each made only when its SCM tables exist |
 | `20261030-17/18/19-*-values.sql` | planning + exceptions; quality; costing + ECO |
 | `20261030-20-mfg-r2-references.sql` | product and party columns registered; invariant also catches `*product_id` names |
-| `20261029-47` (R1) | edited: its extension allow-list also admits `mfg_mrp_dirty`, `mfg_item_plan_state` |
+| `20261029-47` (R1) | untouched: identical to `origin/dev` (it is applied there) |
 | kit `mfg-e2e-kit/build.sh` | also applies `20261030-*-mfg-*.sql` (local commit `822ddad`); `mfg_tmpl` rebuilt with R2 |
 
 Verified (2026-10-29), real runner on a fresh `tvsdb_r2` (port 55471): run 1, run 2, then a row in every
@@ -65,8 +65,13 @@ active hold for the same subject and cause is refused. DELETE refusals need the 
    added by those files with `ADD COLUMN IF NOT EXISTS`; R1's `make_lead_time_days` stays (the make's
    fixed part; the engine adds the routing's lead time).
 3. **`mfg_mrp_dirty`** is the contract's name (03 says `mfg_mrp_dirty_items`). It and
-   `mfg_item_plan_state` are product **extensions** (a merge moves them, a clash drops the dropped
-   product's row), so R1's `-47` allow-list was widened.
+   `mfg_item_plan_state` keep the product in **`item_id`** and are **not registered** in
+   `cp_product_references`. They cannot be extensions: the applied `20261029-47` re-runs before -20
+   and refuses any mfg extension but item settings and unit conversions (editing it is not allowed).
+   Registered as uses, a merge of two planned products would fail on their keys and a product with
+   plan state could not be deleted. Unregistered, a merge or delete leaves the old product's rows,
+   which the next re-net drops. -20 asserts neither table has a `product_id` column. The API returns
+   `item_id` as `product_id`.
 4. **Item costs are one row per element** (`element`, `this_level`, `lower_level`, `total`), as the
    contract's "per set, per element" and 02's "per level and rolled up", not 03's one-row-with-columns.
    Added `mfg_cost_rollups` (header of the reproducible inputs) which §3 does not list.
@@ -99,6 +104,7 @@ active hold for the same subject and cause is refused. DELETE refusals need the 
 | `mfg_demands.due_on` | `due_date` |
 | `mfg_planned_orders.due_on`, `release_on` | `due_on`, `release_on` (FP uses these names); purchase suggestions `need_by`, `order_by` |
 | `mfg_item_plan_state.last_netted_at` | `planned_at`; `mfg_mrp_dirty.first_marked_at` → `dirty_since` |
+| `mfg_mrp_dirty.item_id`, `mfg_item_plan_state.item_id` | `product_id` |
 | `mfg_mrp_messages.current_on`, `suggested_on`, `message` | `current_date`, `suggested_date`, `text` |
 | `mfg_exceptions.root_type`, `root_id` | `root_cause_type`, `root_cause_id` |
 | `mfg_exceptions.owner_id` | `owner_id` (+ `owner_name` joined) |
@@ -118,7 +124,7 @@ active hold for the same subject and cause is refused. DELETE refusals need the 
 Number series kinds (no CHECK): `demand` (DM-), `planned_order` (PLN-), `inspection` (QI-), `ncr` (NCR-),
 `capa` (CAPA-), `eco` (ECO-), `recall` (RC-).
 
-Net-change queue: mark with `INSERT ... ON CONFLICT (bus_id, plant_id, product_id) DO UPDATE SET reasons
+Net-change queue: mark with `INSERT ... ON CONFLICT (bus_id, plant_id, item_id) DO UPDATE SET reasons
 = mfg_mrp_dirty.reasons || EXCLUDED.reasons, last_marked_at = now()` in the writer's transaction; claim
 with `DELETE ... RETURNING` (FOR UPDATE SKIP LOCKED, lowest `low_level_code` first). Partitioned
 results: PK `(id, measured_at)`; idempotency key is the duplicate guard.
