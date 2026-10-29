@@ -26,6 +26,24 @@ BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS sms;
 
+-- widen_check: (re)defines a CHECK constraint, unless it already holds `token` -- the value the
+-- calling migration introduced. Every migration re-runs on each deploy, oldest first, so a
+-- constraint that later migrations widened must not be put back to an older, narrower list:
+-- a row using a newer value would fail it and stop the deploy there, and nothing after it
+-- would ever run. Each migration names its newest value; an older one then leaves a newer
+-- definition alone.
+CREATE OR REPLACE FUNCTION sms.widen_check(tbl regclass, name text, token text, def text) RETURNS void
+LANGUAGE plpgsql AS $f$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conrelid = tbl AND c.conname = name
+                AND position(token IN pg_get_constraintdef(c.oid)) > 0) THEN
+        RETURN;
+    END IF;
+    EXECUTE format('ALTER TABLE %s DROP CONSTRAINT IF EXISTS %I', tbl, name);
+    EXECUTE format('ALTER TABLE %s ADD CONSTRAINT %I %s', tbl, name, def);
+END
+$f$;
+
 INSERT INTO core_platform.cp_app_schemas (app_id, schema_name, description)
 VALUES ('app-sms', 'sms', 'SMS (school management) audit logs')
 ON CONFLICT (app_id) DO UPDATE SET schema_name = EXCLUDED.schema_name,

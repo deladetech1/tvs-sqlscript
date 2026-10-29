@@ -158,10 +158,8 @@ CREATE TABLE IF NOT EXISTS sms.sms_leave_requests (
     cdatetime     timestamptz NOT NULL DEFAULT now(),
     CHECK (ends_on >= starts_on)
 );
-ALTER TABLE sms.sms_leave_requests DROP CONSTRAINT IF EXISTS sms_leave_requests_check2;
-ALTER TABLE sms.sms_leave_requests ADD CONSTRAINT sms_leave_requests_check2
-    CHECK (reason IN ('sick', 'medical', 'family', 'religious', 'travel', 'other') AND via IN ('portal', 'staff')
-           AND status IN ('pending', 'approved', 'declined', 'withdrawn'));
+SELECT sms.widen_check('sms.sms_leave_requests', 'sms_leave_requests_check2', $q$'withdrawn'$q$, $q$CHECK (reason IN ('sick', 'medical', 'family', 'religious', 'travel', 'other') AND via IN ('portal', 'staff')
+           AND status IN ('pending', 'approved', 'declined', 'withdrawn'))$q$);
 CREATE INDEX IF NOT EXISTS sms_leave_requests_idx ON sms.sms_leave_requests (profile_id, status, starts_on);
 
 CREATE TABLE IF NOT EXISTS sms.sms_staff_checkins (
@@ -179,13 +177,11 @@ CREATE TABLE IF NOT EXISTS sms.sms_staff_checkins (
     distance_m  int,
     UNIQUE (profile_id, user_id, checkin_on)
 );
-ALTER TABLE sms.sms_staff_checkins DROP CONSTRAINT IF EXISTS sms_staff_checkins_method_check;
-ALTER TABLE sms.sms_staff_checkins ADD CONSTRAINT sms_staff_checkins_method_check CHECK (method IN ('qr', 'mobile', 'biometric'));
+SELECT sms.widen_check('sms.sms_staff_checkins', 'sms_staff_checkins_method_check', $q$'biometric'$q$, $q$CHECK (method IN ('qr', 'mobile', 'biometric'))$q$);
 
 -- A leave request's medical notes go through the file manager like every other record's.
-ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_entity_check;
-ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
-    ('profile', 'application', 'enquiry', 'family', 'student', 'leave_request'));
+SELECT sms.widen_check('sms.sms_files', 'sms_files_entity_check', $q$'leave_request'$q$, $q$CHECK (entity_type IS NULL OR entity_type IN
+    ('profile', 'application', 'enquiry', 'family', 'student', 'leave_request'))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES

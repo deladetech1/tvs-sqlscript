@@ -123,8 +123,7 @@ CREATE TABLE IF NOT EXISTS sms.sms_files (
     created_by    text
 );
 
-ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_kind_check;
-ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_kind_check CHECK (kind IN ('image', 'document'));
+SELECT sms.widen_check('sms.sms_files', 'sms_files_kind_check', $q$'document'$q$, $q$CHECK (kind IN ('image', 'document'))$q$);
 ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_attached_check;
 ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_attached_check CHECK ((entity_type IS NULL) = (entity_id IS NULL));
 ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_purpose_check;

@@ -263,10 +263,9 @@ ALTER TABLE sms.sms_menu_items DROP CONSTRAINT IF EXISTS sms_menu_items_stock_fk
 ALTER TABLE sms.sms_menu_items ADD CONSTRAINT sms_menu_items_stock_fk FOREIGN KEY (stock_item_id) REFERENCES sms.sms_kitchen_items(id) ON DELETE SET NULL;
 
 -- Catering is a module a school can turn off (Settings, Modules).
-ALTER TABLE sms.sms_profiles DROP CONSTRAINT IF EXISTS sms_profiles_modules_check;
-ALTER TABLE sms.sms_profiles ADD CONSTRAINT sms_profiles_modules_check CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
+SELECT sms.widen_check('sms.sms_profiles', 'sms_profiles_modules_check', $q$'catering'$q$, $q$CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
     'admissions', 'teaching', 'scheduling', 'attendance', 'grading', 'learning', 'welfare', 'inclusion', 'boarding', 'library', 'activities', 'transport',
-    'catering']::text[]));
+    'catering']::text[]))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES

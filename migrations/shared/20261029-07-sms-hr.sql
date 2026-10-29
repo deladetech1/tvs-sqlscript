@@ -402,21 +402,17 @@ CREATE TABLE IF NOT EXISTS sms.sms_lesson_observations (
 CREATE INDEX IF NOT EXISTS sms_lesson_observations_idx ON sms.sms_lesson_observations (staff_id, observed_on DESC);
 
 -- Staff attendance gains a half day.
-ALTER TABLE sms.sms_staff_checkins DROP CONSTRAINT IF EXISTS sms_staff_checkins_status_check;
-ALTER TABLE sms.sms_staff_checkins ADD CONSTRAINT sms_staff_checkins_status_check
-    CHECK (status IN ('present', 'late', 'half_day', 'absent', 'sick', 'leave', 'duty') AND (in_at IS NOT NULL OR status IN ('absent', 'sick', 'leave', 'duty')));
+SELECT sms.widen_check('sms.sms_staff_checkins', 'sms_staff_checkins_status_check', $q$'half_day'$q$, $q$CHECK (status IN ('present', 'late', 'half_day', 'absent', 'sick', 'leave', 'duty') AND (in_at IS NOT NULL OR status IN ('absent', 'sick', 'leave', 'duty')))$q$);
 
 -- The file manager's records: activities' (20261029-04, which left them out) and HR's.
-ALTER TABLE sms.sms_files DROP CONSTRAINT IF EXISTS sms_files_entity_check;
-ALTER TABLE sms.sms_files ADD CONSTRAINT sms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
+SELECT sms.widen_check('sms.sms_files', 'sms_files_entity_check', $q$'payslip'$q$, $q$CHECK (entity_type IS NULL OR entity_type IN
     ('profile', 'application', 'enquiry', 'family', 'student', 'leave_request', 'assignment', 'submission', 'class_resource', 'pickup_person', 'incident',
-     'safeguarding', 'achievement', 'service_hours', 'trip', 'staff', 'staff_document', 'staff_check', 'job_application', 'staff_leave', 'payslip'));
+     'safeguarding', 'achievement', 'service_hours', 'trip', 'staff', 'staff_document', 'staff_check', 'job_application', 'staff_leave', 'payslip'))$q$);
 
 -- HR is a module a school can turn off (Settings, Modules).
-ALTER TABLE sms.sms_profiles DROP CONSTRAINT IF EXISTS sms_profiles_modules_check;
-ALTER TABLE sms.sms_profiles ADD CONSTRAINT sms_profiles_modules_check CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
+SELECT sms.widen_check('sms.sms_profiles', 'sms_profiles_modules_check', $q$'hr'$q$, $q$CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
     'admissions', 'teaching', 'scheduling', 'attendance', 'grading', 'learning', 'welfare', 'inclusion', 'boarding', 'library', 'activities', 'transport',
-    'catering', 'hr']::text[]));
+    'catering', 'hr']::text[]))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES

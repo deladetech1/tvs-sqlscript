@@ -105,8 +105,7 @@ ALTER TABLE sms.sms_students ADD COLUMN IF NOT EXISTS leaving_reason text;
 ALTER TABLE sms.sms_students ADD COLUMN IF NOT EXISTS leaving_destination text;
 ALTER TABLE sms.sms_students ADD COLUMN IF NOT EXISTS graduated_year text;
 
-ALTER TABLE sms.sms_students DROP CONSTRAINT IF EXISTS sms_students_status_check;
-ALTER TABLE sms.sms_students ADD CONSTRAINT sms_students_status_check CHECK (status IN ('active', 'withdrawn', 'transferred', 'graduated'));
+SELECT sms.widen_check('sms.sms_students', 'sms_students_status_check', $q$'transferred'$q$, $q$CHECK (status IN ('active', 'withdrawn', 'transferred', 'graduated'))$q$);
 ALTER TABLE sms.sms_students DROP CONSTRAINT IF EXISTS sms_students_blood_check;
 ALTER TABLE sms.sms_students ADD CONSTRAINT sms_students_blood_check
     CHECK (blood_group IS NULL OR blood_group IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'));

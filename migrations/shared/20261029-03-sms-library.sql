@@ -229,9 +229,8 @@ ALTER TABLE sms.sms_library_resources ADD CONSTRAINT sms_library_resources_check
 CREATE INDEX IF NOT EXISTS sms_library_resources_idx ON sms.sms_library_resources (profile_id, sort_order) WHERE archived_at IS NULL;
 
 -- The library is a module a school can turn off (Settings, Modules).
-ALTER TABLE sms.sms_profiles DROP CONSTRAINT IF EXISTS sms_profiles_modules_check;
-ALTER TABLE sms.sms_profiles ADD CONSTRAINT sms_profiles_modules_check CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
-    'admissions', 'teaching', 'scheduling', 'attendance', 'grading', 'learning', 'welfare', 'inclusion', 'boarding', 'library']::text[]));
+SELECT sms.widen_check('sms.sms_profiles', 'sms_profiles_modules_check', $q$'library'$q$, $q$CHECK (modules IS NULL OR (cardinality(modules) > 0 AND modules <@ ARRAY[
+    'admissions', 'teaching', 'scheduling', 'attendance', 'grading', 'learning', 'welfare', 'inclusion', 'boarding', 'library']::text[]))$q$);
 
 -- =================================================================== permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
