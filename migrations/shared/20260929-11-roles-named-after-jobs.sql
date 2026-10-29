@@ -290,6 +290,8 @@ BEGIN
              WHEN r.id LIKE 'role-scm%'       THEN 'scm'
              -- SMS' job roles (20261028-01).
              WHEN r.id LIKE 'role-sms%'       THEN 'sms'
+             -- Manufacturing's job roles (20261029-30).
+             WHEN r.id LIKE 'role-mfg%'       THEN 'mfg'
              -- Accounting's roles, once its permissions carry app_prefix (Accounting 02_permissions.sql).
              WHEN r.id LIKE 'role-accounting%' THEN 'accounting'
              -- QPickStore's roles (20261028-50): the add-on is MyStoreGuard's ecommerce module and
