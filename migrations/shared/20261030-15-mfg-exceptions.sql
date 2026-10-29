@@ -33,15 +33,16 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_exceptions (
     severity            text NOT NULL DEFAULT 'medium',
     rule_key            text NOT NULL,             -- the rule that raised it, for time-to-resolve and dismissal stats
     root_key            text NOT NULL,             -- the root cause, e.g. shortage:<plant_id>:<product_id>
-    root_type           text NOT NULL,             -- product | resource | inspection | ncr | planned_order | production_order | scm_po_line
-    root_id             text NOT NULL,
+    root_type           text NOT NULL,             -- the API's root_cause_type: item | resource | lot | inspection | ncr | planned_order | production_order
+    root_id             text NOT NULL,             -- the API's root_cause_id
     title               text NOT NULL,
     summary             text,
-    affected            jsonb NOT NULL DEFAULT '[]',   -- [{"type", "id", "label", "impact"}]
-    impact              jsonb NOT NULL DEFAULT '{}',   -- {"orders", "customers", "value", "worst_late_days"}
+    affected            jsonb NOT NULL DEFAULT '[]',   -- [{"type", "id", "label", "due", "customer_name", "value"}]
+    impact              jsonb NOT NULL DEFAULT '{}',   -- {"orders", "customers", "value", "currency", "worst_late_days"}
     playbooks           jsonb NOT NULL DEFAULT '[]',   -- [{"key", "label", "enabled", "disabled_reason", "target"}]
     status              text NOT NULL DEFAULT 'open',
-    owner               text,                      -- assigned user
+    owner_id            text,                      -- assigned user
+    sla_due_at          timestamptz,               -- when it should be resolved by
     opened_at           timestamptz NOT NULL DEFAULT now(),
     last_seen_at        timestamptz NOT NULL DEFAULT now(),   -- the last refresh that still found the cause
     acknowledged_at     timestamptz,

@@ -15,15 +15,16 @@
 --   MRP message kind        expedite | delay | cancel | increase | decrease | shortage | past_due |
 --                           below_safety | lead_time_violated
 --   MRP message subject     planned_order | production_order | scm_po_line | demand | item
---   MRP message status      open | accepted | dismissed | resolved
---   exception kind          shortage | mrp_action | late_order | quality_failure | ncr_overdue |
---                           resource_down | supplier_late
+--   MRP message status      open | closed
+--   exception kind          shortage | mrp_message | inspection_failed | ncr_overdue | resource_down
 --   exception severity      low | medium | high | critical
 --   exception status        open | acknowledged | in_resolution | resolved | dismissed
---   exception root type     product | resource | inspection | ncr | planned_order |
---                           production_order | scm_po_line | supplier
+--   exception root type     item | resource | lot | inspection | ncr | planned_order | production_order
 --   exception event kind    opened | updated | acknowledged | assigned | resolved | dismissed |
 --                           reopened | playbook_run
+--
+-- The demand, planned order, MRP message and exception lists are the FP screens' types
+-- (tvs-mfg-ft src/models/response/planning.ts; R1 B17).
 --
 -- Idempotent; safe to re-run.
 
@@ -91,11 +92,11 @@ ALTER TABLE mfg.mfg_mrp_messages ADD CONSTRAINT mfg_mrp_messages_subject_type_ch
 
 ALTER TABLE mfg.mfg_mrp_messages DROP CONSTRAINT IF EXISTS mfg_mrp_messages_status_check;
 ALTER TABLE mfg.mfg_mrp_messages ADD CONSTRAINT mfg_mrp_messages_status_check CHECK (status IN
-    ('open', 'accepted', 'dismissed', 'resolved'));
+    ('open', 'closed'));
 
 ALTER TABLE mfg.mfg_exceptions DROP CONSTRAINT IF EXISTS mfg_exceptions_kind_check;
 ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_kind_check CHECK (kind IN
-    ('shortage', 'mrp_action', 'late_order', 'quality_failure', 'ncr_overdue', 'resource_down', 'supplier_late'));
+    ('shortage', 'mrp_message', 'inspection_failed', 'ncr_overdue', 'resource_down'));
 
 ALTER TABLE mfg.mfg_exceptions DROP CONSTRAINT IF EXISTS mfg_exceptions_severity_check;
 ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_severity_check CHECK (severity IN
@@ -107,7 +108,7 @@ ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_status_check CHECK 
 
 ALTER TABLE mfg.mfg_exceptions DROP CONSTRAINT IF EXISTS mfg_exceptions_root_type_check;
 ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_root_type_check CHECK (root_type IN
-    ('product', 'resource', 'inspection', 'ncr', 'planned_order', 'production_order', 'scm_po_line', 'supplier'));
+    ('item', 'resource', 'lot', 'inspection', 'ncr', 'planned_order', 'production_order'));
 
 ALTER TABLE mfg.mfg_exception_events DROP CONSTRAINT IF EXISTS mfg_exception_events_kind_check;
 ALTER TABLE mfg.mfg_exception_events ADD CONSTRAINT mfg_exception_events_kind_check CHECK (kind IN

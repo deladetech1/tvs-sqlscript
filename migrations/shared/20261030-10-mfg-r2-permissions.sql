@@ -5,10 +5,12 @@
 --   resources   mrp, planned_orders, demands, inspections, ncrs, capas, holds, trace, ecos, costing,
 --               exceptions (mfg|<resource>|<verb>||any, permission-mfg-<resource>-<verb>)
 --   grants      planner: mrp, planned_orders, demands, exceptions
---               quality engineer: inspections, ncrs, capas, holds, trace
+--               quality engineer: inspections (incl. manage: inspection plans, contract C18), ncrs,
+--               capas, holds, trace
 --               operator: inspections|record, holds|get
 --               engineer: ecos get, create, implement; costing get
---               plant manager: every R2 get, plus exceptions (all), ecos approve, costing manage
+--               plant manager: every R2 get, plus exceptions (all), ecos approve, costing manage,
+--               inspections manage (C18)
 --               viewer: every R2 get (the read-only verbs, as the join file's viewer rule)
 --   features    mfg.planning, mfg.quality, mfg.trace, mfg.costing come from the join file
 --               (20261029-30); asserted here, not re-seeded.
@@ -63,8 +65,9 @@ WITH spec(resource_key, resource_type_id, action, label) AS (VALUES
     ('demands',        'rt-mfg-demands',        'get',         'View demands entered in Manufacturing'),
     ('demands',        'rt-mfg-demands',        'manage',      'Enter, change and cancel demands, and set safety stock'),
     ('inspections',    'rt-mfg-inspections',    'get',         'View inspection plans, inspections and results'),
+    ('inspections',    'rt-mfg-inspections',    'manage',      'Draft, change and release inspection plans'),
     ('inspections',    'rt-mfg-inspections',    'record',      'Record inspection results and complete inspections'),
-    ('inspections',    'rt-mfg-inspections',    'waive',       'Waive an inspection, and draft and release inspection plans'),
+    ('inspections',    'rt-mfg-inspections',    'waive',       'Waive an inspection'),
     ('ncrs',           'rt-mfg-ncrs',           'get',         'View non-conformance reports'),
     ('ncrs',           'rt-mfg-ncrs',           'manage',      'Raise and change non-conformance reports'),
     ('ncrs',           'rt-mfg-ncrs',           'disposition', 'Disposition non-conforming quantities, which moves stock'),
@@ -112,7 +115,7 @@ SELECT 'system-tenant-id', spec.role_id, p.id, r.role_name || ' can ' || lower(p
        CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP
   FROM (
     SELECT 'role-mfg-plant-manager' AS role_id, k AS resource_key, a AS action FROM (VALUES
-        ('mrp', 'get'), ('planned_orders', 'get'), ('demands', 'get'), ('inspections', 'get'), ('ncrs', 'get'),
+        ('mrp', 'get'), ('planned_orders', 'get'), ('demands', 'get'), ('inspections', 'get'), ('inspections', 'manage'), ('ncrs', 'get'),
         ('capas', 'get'), ('holds', 'get'), ('trace', 'get'), ('ecos', 'get'), ('ecos', 'approve'),
         ('costing', 'get'), ('costing', 'manage'),
         ('exceptions', 'get'), ('exceptions', 'assign'), ('exceptions', 'resolve')) AS pm(k, a)
@@ -123,7 +126,7 @@ SELECT 'system-tenant-id', spec.role_id, p.id, r.role_name || ' can ' || lower(p
         ('exceptions', 'get'), ('exceptions', 'assign'), ('exceptions', 'resolve')) AS pl(k, a)
     UNION ALL
     SELECT 'role-mfg-quality', k, a FROM (VALUES
-        ('inspections', 'get'), ('inspections', 'record'), ('inspections', 'waive'),
+        ('inspections', 'get'), ('inspections', 'manage'), ('inspections', 'record'), ('inspections', 'waive'),
         ('ncrs', 'get'), ('ncrs', 'manage'), ('ncrs', 'disposition'), ('ncrs', 'close'),
         ('capas', 'get'), ('capas', 'manage'), ('capas', 'close'),
         ('holds', 'get'), ('holds', 'place'), ('holds', 'release'), ('trace', 'get')) AS qa(k, a)

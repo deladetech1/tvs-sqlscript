@@ -25,12 +25,14 @@
 --                                   dispositioned -> closed. Each line is a quantity of a lot or
 --                                   serial with its disposition; executing it posts the stock itself
 --                                   (C8) and keeps the movement ids, the rework order or the ECO
---   mfg_capas / mfg_capa_actions    CAPA or 8D with its D1-D8 discipline, root cause and actions;
---                                   NCRs link to it by mfg_ncrs.capa_id
+--   mfg_capas / mfg_capa_steps /    CAPA or 8D with its current D1-D8 discipline and root cause; one
+--   mfg_capa_actions                step row per discipline (owner, due date, notes, open | done)
+--                                   and its actions; NCRs link to it by mfg_ncrs.capa_id
 --   mfg_recall_runs                 APPEND-ONLY; a recall snapshot (C9, 03 §3.5 Traceability): the
 --                                   root, the direction, the lots, orders, receipts, shipments and
 --                                   customers found, and the holds placed, so a recall is
---                                   reproducible. Traceability itself needs no other table: it
+--                                   reproducible; mfg_recall_lots (append-only) are the lots the
+--                                   person confirmed and the hold placed on each. Traceability itself needs no other table: it
 --                                   reads mfg_genealogy_links, Manufacturing receipts (ledger
 --                                   movements with reference_type mfg_stock_receipt) and, with SCM,
 --                                   mfg.src_scm_receipt_lines / src_scm_shipment_lines (20261030-16)
@@ -374,6 +376,28 @@ ALTER TABLE mfg.mfg_capas DROP CONSTRAINT IF EXISTS mfg_capas_closed_check;
 ALTER TABLE mfg.mfg_capas ADD CONSTRAINT mfg_capas_closed_check
     CHECK (status <> 'closed' OR (closed_at IS NOT NULL AND effectiveness_verified_at IS NOT NULL));
 
+CREATE TABLE IF NOT EXISTS mfg.mfg_capa_steps (
+    id            text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    tenant_id     text NOT NULL,
+    org_id        text,
+    bus_id        text NOT NULL,
+    capa_id       text NOT NULL REFERENCES mfg.mfg_capas (id) ON DELETE CASCADE,
+    discipline    text NOT NULL,                  -- D1 .. D8
+    owner         text,
+    due_on        date,
+    notes         text,
+    status        text NOT NULL DEFAULT 'open',   -- open | done (the API's done flag)
+    done_at       timestamptz,
+    done_by       text,
+    version       integer NOT NULL DEFAULT 1,
+    cdatetime     timestamptz NOT NULL DEFAULT now(),
+    created_by    text,
+    updated_at    timestamptz NOT NULL DEFAULT now(),
+    updated_by    text,
+    UNIQUE (capa_id, discipline),
+    CHECK ((status = 'done') = (done_at IS NOT NULL))
+);
+
 CREATE TABLE IF NOT EXISTS mfg.mfg_capa_actions (
     id            text PRIMARY KEY DEFAULT gen_random_uuid()::text,
     tenant_id     text NOT NULL,
@@ -404,7 +428,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_recall_runs (
     tenant_id        text NOT NULL,
     org_id           text,
     bus_id           text NOT NULL,
-    number           text,                        -- RC-00042 (mfg_number_series kind recall)
+    number           text NOT NULL,               -- RC-00042 (mfg_number_series kind recall)
     root_kind        text NOT NULL,               -- lot | serial
     root_id          text NOT NULL,
     direction        text NOT NULL,               -- forward | backward
@@ -413,10 +437,12 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_recall_runs (
     result           jsonb NOT NULL DEFAULT '{}', -- {"lots", "serials", "orders", "receipts", "shipments", "customers", "suppliers"}
     counts           jsonb NOT NULL DEFAULT '{}',
     holds_placed     integer NOT NULL DEFAULT 0 CHECK (holds_placed >= 0),
+    already_held     integer NOT NULL DEFAULT 0 CHECK (already_held >= 0),
     idempotency_key  text,
     actor            text NOT NULL,
     cdatetime        timestamptz NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS mfg_recall_runs_number_uq ON mfg.mfg_recall_runs (bus_id, number);
 CREATE INDEX IF NOT EXISTS mfg_recall_runs_list_idx ON mfg.mfg_recall_runs (bus_id, cdatetime DESC);
 CREATE INDEX IF NOT EXISTS mfg_recall_runs_root_idx ON mfg.mfg_recall_runs (bus_id, root_id);
 CREATE UNIQUE INDEX IF NOT EXISTS mfg_recall_runs_idempotency_uq
@@ -424,6 +450,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS mfg_recall_runs_idempotency_uq
 
 DROP TRIGGER IF EXISTS mfg_recall_runs_append_only ON mfg.mfg_recall_runs;
 CREATE TRIGGER mfg_recall_runs_append_only BEFORE UPDATE OR DELETE ON mfg.mfg_recall_runs
+    FOR EACH ROW EXECUTE FUNCTION mfg.mfg_refuse_change();
+
+-- The lots a recall covered (exactly the confirmed snapshot) and the hold placed on each.
+CREATE TABLE IF NOT EXISTS mfg.mfg_recall_lots (
+    id             text PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    tenant_id      text NOT NULL,
+    org_id         text,
+    bus_id         text NOT NULL,
+    recall_id      text NOT NULL REFERENCES mfg.mfg_recall_runs (id),
+    lot_id         text NOT NULL,                -- scm.scm_lots id
+    lot_number     text,
+    product_id     text,
+    qty_on_hand    numeric(18,6),                -- stock on hand when it was recalled
+    hold_id        text,                         -- the hold placed; NULL when it was already held
+    already_held   boolean NOT NULL DEFAULT false,
+    cdatetime      timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (recall_id, lot_id)
+);
+CREATE INDEX IF NOT EXISTS mfg_recall_lots_lot_idx ON mfg.mfg_recall_lots (bus_id, lot_id);
+
+DROP TRIGGER IF EXISTS mfg_recall_lots_append_only ON mfg.mfg_recall_lots;
+CREATE TRIGGER mfg_recall_lots_append_only BEFORE UPDATE OR DELETE ON mfg.mfg_recall_lots
     FOR EACH ROW EXECUTE FUNCTION mfg.mfg_refuse_change();
 
 -- ===================================================================== invariants
@@ -444,7 +492,7 @@ BEGIN
     END LOOP;
 
     -- Every append-only table has its refuse trigger on the parent.
-    FOREACH t IN ARRAY ARRAY['mfg_inspection_results', 'mfg_recall_runs'] LOOP
+    FOREACH t IN ARRAY ARRAY['mfg_inspection_results', 'mfg_recall_runs', 'mfg_recall_lots'] LOOP
         IF NOT EXISTS (SELECT 1 FROM pg_trigger g JOIN pg_proc p ON p.oid = g.tgfoid
                         WHERE g.tgrelid = ('mfg.' || t)::regclass AND p.proname = 'mfg_refuse_change' AND NOT g.tgisinternal) THEN
             RAISE EXCEPTION 'mfg.% is not append-only: its mfg_refuse_change trigger is missing', t;

@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_demands (
     org_id            text,
     bus_id            text NOT NULL,
     plant_id          text NOT NULL REFERENCES mfg.mfg_plants (id),
-    party_id          text,                           -- the customer (cp_parties.id); NULL for a plain demand line
+    number            text,                           -- DM-00012 (mfg_number_series kind demand); NULL if none kept
+    party_id          text,                           -- the customer (cp_parties.id), optional
+    customer_name     text,                           -- the customer as shown: the party's name, or the text typed
     product_id        text NOT NULL,                  -- cp_products.id
     qty               numeric(18,6) NOT NULL CHECK (qty > 0),
     unit              text NOT NULL,
@@ -66,6 +68,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_demands (
     updated_at        timestamptz NOT NULL DEFAULT now(),
     updated_by        text
 );
+CREATE UNIQUE INDEX IF NOT EXISTS mfg_demands_number_uq ON mfg.mfg_demands (bus_id, number) WHERE number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS mfg_demands_list_idx ON mfg.mfg_demands (bus_id, plant_id, status, due_on);
 CREATE INDEX IF NOT EXISTS mfg_demands_open_idx ON mfg.mfg_demands (bus_id, product_id, due_on) WHERE status = 'open';
 CREATE UNIQUE INDEX IF NOT EXISTS mfg_demands_idempotency_uq
@@ -147,6 +150,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_planned_orders (
     org_id              text,
     bus_id              text NOT NULL,
     plant_id            text NOT NULL REFERENCES mfg.mfg_plants (id),
+    number              text,                           -- PLN-00031 (mfg_number_series kind planned_order); NULL if none kept
     run_id              text REFERENCES mfg.mfg_mrp_runs (id),   -- NULL when a net-change re-net made it
     netted_by           text NOT NULL DEFAULT 'regenerative',    -- net_change | regenerative
     product_id          text NOT NULL,
@@ -176,6 +180,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_planned_orders (
     updated_at          timestamptz NOT NULL DEFAULT now(),
     updated_by          text
 );
+CREATE UNIQUE INDEX IF NOT EXISTS mfg_planned_orders_number_uq ON mfg.mfg_planned_orders (bus_id, number) WHERE number IS NOT NULL;
 CREATE INDEX IF NOT EXISTS mfg_planned_orders_worklist_idx
     ON mfg.mfg_planned_orders (bus_id, plant_id, run_id, status, release_on);
 CREATE INDEX IF NOT EXISTS mfg_planned_orders_product_idx ON mfg.mfg_planned_orders (bus_id, product_id, status, due_on);
@@ -224,10 +229,11 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_mrp_messages (
     kind              text NOT NULL,
     subject_type      text NOT NULL,                  -- planned_order | production_order | scm_po_line | demand | item
     subject_id        text NOT NULL,
-    current_on        date,                           -- the subject's date now
+    current_on        date,                           -- the subject's date now; the API's current_date
     suggested_on      date,                           -- the API's suggested_date
     current_qty       numeric(18,6),
     suggested_qty     numeric(18,6),
+    message           text,                           -- the engine's sentence; the API's text
     detail            jsonb NOT NULL DEFAULT '{}',
     status            text NOT NULL DEFAULT 'open',
     acted_at          timestamptz,

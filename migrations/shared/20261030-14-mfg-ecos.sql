@@ -1,10 +1,11 @@
 -- Manufacturing: engineering change (design: docs/mfg/03-database-model.md §3.5 Engineering change;
 -- 02-domain-model.md §2, §6; contract R2.md §1.6, C8).
 --
---   mfg_ecos            an engineering change request (ecr) or order (eco): draft -> submitted ->
---                       approved -> implemented, or rejected | cancelled. source_ncr_id when an NCR
---                       line's needs_engineering_change disposition opened it (R-8). Effectivity:
---                       date (effective_on) | serial | lot (effectivity_ref) | use_up
+--   mfg_ecos            an engineering change request (ecr) or order (eco): draft -> impact_review
+--                       -> approval -> approved -> implemented, or rejected | cancelled (the lists
+--                       are the FC screens' types, R1 B17). source_ncr_id when an NCR line's
+--                       needs_engineering_change disposition opened it (R-8). Effectivity: date
+--                       (effective_on) | serial (effective_serial) | lot (effective_lot) | use_up
 --   mfg_eco_items       what it changes: an item revision, BOM, routing, work instruction or
 --                       inspection plan, from one revision to the next (to_revision_id is the new
 --                       draft revision; implementing releases it), with what happens to stock and
@@ -12,7 +13,7 @@
 --   mfg_eco_impacts     APPEND-ONLY; the impact report (where-used, stock, open orders, open
 --                       planned orders, cost) as computed. Recomputing adds a row; the row written
 --                       on submit is_frozen and is the one approval sees
---   mfg_eco_approvals   APPEND-ONLY; each approval decision (approve | reject) with its comment
+--   mfg_eco_approvals   APPEND-ONLY; each approval decision (approved | rejected) with its comment
 --
 -- Implementing an ECO writes the new revisions released (and supersedes the old ones) through the
 -- R1 engineering tables, whose eco_id columns name the ECO.
@@ -37,9 +38,10 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_ecos (
     urgency            text NOT NULL DEFAULT 'normal',
     effectivity        text NOT NULL DEFAULT 'date',
     effective_on       date,                       -- effectivity date (the API's effective_date)
-    effectivity_ref    text,                       -- effectivity serial or lot: from this serial / lot
+    effective_serial   text,                       -- effectivity serial: from this serial on
+    effective_lot      text,                       -- effectivity lot: from this lot on
     status             text NOT NULL DEFAULT 'draft',
-    submitted_at       timestamptz,
+    submitted_at       timestamptz,                -- sent for approval (status approval)
     submitted_by       text,
     approved_at        timestamptz,
     approved_by        text,
@@ -68,7 +70,7 @@ ALTER TABLE mfg.mfg_ecos ADD CONSTRAINT mfg_ecos_lifecycle_check
     CHECK ((status NOT IN ('approved', 'implemented') OR approved_at IS NOT NULL)
            AND (status <> 'implemented' OR implemented_at IS NOT NULL)
            AND (status <> 'rejected' OR rejected_at IS NOT NULL)
-           AND (effectivity <> 'date' OR status IN ('draft', 'cancelled', 'rejected') OR effective_on IS NOT NULL));
+           AND (effectivity <> 'date' OR status IN ('draft', 'impact_review', 'cancelled', 'rejected') OR effective_on IS NOT NULL));
 
 CREATE TABLE IF NOT EXISTS mfg.mfg_eco_items (
     id                   text PRIMARY KEY DEFAULT gen_random_uuid()::text,
@@ -82,8 +84,8 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_eco_items (
     from_revision_id     text,                    -- the released record it replaces; NULL for a new one
     to_revision_id       text,                    -- the draft record that becomes released
     change_summary       text,
-    stock_disposition    text NOT NULL DEFAULT 'use_up',
-    order_disposition    text NOT NULL DEFAULT 'none',
+    stock_disposition    text DEFAULT 'use_up',       -- old-revision stock
+    order_disposition    text DEFAULT 'finish_on_old', -- open orders on the old revision
     notes                text,
     cdatetime            timestamptz NOT NULL DEFAULT now(),
     created_by           text,

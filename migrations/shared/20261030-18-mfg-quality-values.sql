@@ -12,15 +12,19 @@
 --   result                    pass | fail
 --   hold subject              lot | serial | order | supplier;  source  manual | inspection | ncr | recall
 --   hold status               active | released
---   NCR source                inspection | operator_report | customer_complaint | supplier | audit | other
+--   NCR source                inspection | operator | customer | supplier | trace
 --   NCR severity              minor | major | critical
 --   NCR status                open | contained | dispositioned | closed
 --   disposition               use_as_is | rework | repair | return_to_supplier | scrap | regrade |
 --                             needs_engineering_change
 --   CAPA kind                 capa | 8d;  discipline  D1 .. D8
---   CAPA status               open | in_progress | verification | closed | cancelled
+--   CAPA status               open | verifying | closed
+--   CAPA step status          open | done
 --   CAPA action kind          containment | corrective | preventive;  status  open | done | cancelled
 --   recall root / direction   lot | serial;  forward | backward
+--
+-- The NCR source and CAPA status lists are the FQ screens' types (tvs-mfg-ft
+-- src/models/response/quality.ts; R1 B17); the others already matched (FQ's plan statuses are a subset).
 --
 -- Idempotent; safe to re-run.
 
@@ -76,7 +80,7 @@ ALTER TABLE mfg.mfg_holds ADD CONSTRAINT mfg_holds_status_check CHECK (status IN
 
 ALTER TABLE mfg.mfg_ncrs DROP CONSTRAINT IF EXISTS mfg_ncrs_source_check;
 ALTER TABLE mfg.mfg_ncrs ADD CONSTRAINT mfg_ncrs_source_check CHECK (source IN
-    ('inspection', 'operator_report', 'customer_complaint', 'supplier', 'audit', 'other'));
+    ('inspection', 'operator', 'customer', 'supplier', 'trace'));
 
 ALTER TABLE mfg.mfg_ncrs DROP CONSTRAINT IF EXISTS mfg_ncrs_severity_check;
 ALTER TABLE mfg.mfg_ncrs ADD CONSTRAINT mfg_ncrs_severity_check CHECK (severity IN
@@ -100,7 +104,15 @@ ALTER TABLE mfg.mfg_capas ADD CONSTRAINT mfg_capas_discipline_check CHECK (disci
 
 ALTER TABLE mfg.mfg_capas DROP CONSTRAINT IF EXISTS mfg_capas_status_check;
 ALTER TABLE mfg.mfg_capas ADD CONSTRAINT mfg_capas_status_check CHECK (status IN
-    ('open', 'in_progress', 'verification', 'closed', 'cancelled'));
+    ('open', 'verifying', 'closed'));
+
+ALTER TABLE mfg.mfg_capa_steps DROP CONSTRAINT IF EXISTS mfg_capa_steps_discipline_check;
+ALTER TABLE mfg.mfg_capa_steps ADD CONSTRAINT mfg_capa_steps_discipline_check CHECK (discipline IN
+    ('D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'));
+
+ALTER TABLE mfg.mfg_capa_steps DROP CONSTRAINT IF EXISTS mfg_capa_steps_status_check;
+ALTER TABLE mfg.mfg_capa_steps ADD CONSTRAINT mfg_capa_steps_status_check CHECK (status IN
+    ('open', 'done'));
 
 ALTER TABLE mfg.mfg_capa_actions DROP CONSTRAINT IF EXISTS mfg_capa_actions_kind_check;
 ALTER TABLE mfg.mfg_capa_actions ADD CONSTRAINT mfg_capa_actions_kind_check CHECK (kind IN

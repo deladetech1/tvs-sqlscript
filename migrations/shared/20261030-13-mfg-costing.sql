@@ -12,7 +12,7 @@
 --   mfg_cost_rollup_lines    APPEND-ONLY; every input a roll-up used (a component x qty x (1 +
 --                            scrap) at its unit cost, an operation's minutes x a work center rate,
 --                            a receipt's unit_cost, a standard_cost), so any roll-up can be
---                            reproduced
+--                            reproduced. input_type is the FC screens' input kind (R1 B17)
 --   mfg_order_costs          per production order and element: planned (the standard set x the
 --                            order's quantity), actual (ledger issues at cost, confirmed minutes x
 --                            rates) and the standard set used
@@ -47,8 +47,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_cost_sets (
     bus_id           text NOT NULL,
     kind             text NOT NULL,
     name             text NOT NULL,
-    period_from      date,                         -- a standard set's period
-    period_to        date,
+    period           text,                         -- a standard set's period: '2026' or '2026-11'
     status           text NOT NULL DEFAULT 'open',
     currency         text,
     scenario_id      text,                         -- simulated (R4 scenarios)
@@ -64,7 +63,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_cost_sets (
     created_by       text,
     updated_at       timestamptz NOT NULL DEFAULT now(),
     updated_by       text,
-    CHECK (period_to IS NULL OR period_from IS NULL OR period_to >= period_from)
+    CHECK (period IS NULL OR period ~ '^[0-9]{4}(-[0-9]{2})?$')
 );
 CREATE UNIQUE INDEX IF NOT EXISTS mfg_cost_sets_current_uq ON mfg.mfg_cost_sets (bus_id) WHERE kind = 'current';
 CREATE UNIQUE INDEX IF NOT EXISTS mfg_cost_sets_standard_uq ON mfg.mfg_cost_sets (bus_id) WHERE kind = 'standard' AND status = 'frozen';
@@ -140,14 +139,16 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_cost_rollup_lines (
     product_id      text NOT NULL,                 -- the item being costed
     low_level_code  integer NOT NULL DEFAULT 0,
     element         text NOT NULL,
-    input_type      text NOT NULL,                 -- component | operation | receipt | standard_cost | manual
-    input_id        text,                          -- the BOM line, routing operation or ledger movement
+    input_type      text NOT NULL,                 -- receipt_cost | standard_cost | component | routing | subcontract | overhead (the API's kind)
+    input_id        text,                          -- the BOM line, routing operation or ledger movement (the API's source_id)
+    label           text,                          -- what it is, e.g. 'Op 20 Mould on L1 (run)'
     component_id    text,                          -- component: its product (cp_products.id)
     work_center_id  text,                          -- operation
     qty             numeric(18,6),
     scrap_pct       numeric(6,3),
     minutes         numeric(14,3),
-    rate            numeric(18,4),                 -- per hour (operation) or per unit
+    rate            numeric(18,4),                 -- per hour (routing) or per unit
+    rate_kind       text,                          -- routing: setup | run | labour | machine | overhead | energy
     unit_cost       numeric(18,4),
     amount          numeric(18,4) NOT NULL,
     currency        text,

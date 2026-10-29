@@ -29,6 +29,7 @@ INSERT INTO core_platform.cp_product_references (table_name, column_name, is_ext
     ('mfg.mfg_holds',                   'product_id',          false),
     ('mfg.mfg_ncrs',                    'product_id',          false),
     ('mfg.mfg_ncr_lines',               'regrade_product_id',  false),
+    ('mfg.mfg_recall_lots',             'product_id',          false),
     ('mfg.mfg_item_costs',              'product_id',          false),
     ('mfg.mfg_cost_rollup_lines',       'product_id',          false),
     ('mfg.mfg_cost_rollup_lines',       'component_id',        false),
