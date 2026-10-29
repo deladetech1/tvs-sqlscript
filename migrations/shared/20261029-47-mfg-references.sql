@@ -58,10 +58,12 @@ BEGIN
         RAISE EXCEPTION 'Manufacturing party column(s) not in cp_party_references: %', missing;
     END IF;
 
-    -- Manufacturing's own settings move with a merged product; its documents are uses.
+    -- Manufacturing's own settings (and R2's derived planning state, 20261030-20) move with a
+    -- merged product; its documents are uses.
     IF EXISTS (SELECT 1 FROM core_platform.cp_product_references
                 WHERE table_name LIKE 'mfg.%' AND is_extension
-                  AND table_name NOT IN ('mfg.mfg_item_settings', 'mfg.mfg_uom_conversions')) THEN
+                  AND table_name NOT IN ('mfg.mfg_item_settings', 'mfg.mfg_uom_conversions',
+                                         'mfg.mfg_mrp_dirty', 'mfg.mfg_item_plan_state')) THEN
         RAISE EXCEPTION 'a Manufacturing document table is registered as a product extension';
     END IF;
 END $$;
