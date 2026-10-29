@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_item_settings (
     current_revision_id    text,
     default_bom_id         text,                    -- overrides the effectivity choice (R-2)
     default_routing_id     text,
+    tracking               text NOT NULL DEFAULT 'none',   -- none | lot | serial, for a business without SCM
     lot_size_rule          text NOT NULL DEFAULT 'lot_for_lot',
     lot_size_fixed         numeric(18,6),
     lot_size_min           numeric(18,6),
@@ -77,6 +78,8 @@ CREATE TABLE IF NOT EXISTS mfg.mfg_item_settings (
     updated_by             text,
     UNIQUE (bus_id, product_id)
 );
+-- Lot/serial tracking for a business without SCM (SCM's scm_item_settings.tracking is its own).
+ALTER TABLE mfg.mfg_item_settings ADD COLUMN IF NOT EXISTS tracking text NOT NULL DEFAULT 'none';
 CREATE INDEX IF NOT EXISTS mfg_item_settings_type_idx ON mfg.mfg_item_settings (bus_id, item_type, procurement) WHERE archived_at IS NULL;
 ALTER TABLE mfg.mfg_item_settings DROP CONSTRAINT IF EXISTS mfg_item_settings_numbers_check;
 ALTER TABLE mfg.mfg_item_settings ADD CONSTRAINT mfg_item_settings_numbers_check

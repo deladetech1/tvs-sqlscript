@@ -57,3 +57,18 @@ transaction.
 14. The helper tables' lists (costing method, custom field type) live in `-46`;
     `mfg_number_series.kind` has no CHECK (the API owns the kinds).
 15. R0's `mfg_audit_logs` and its UPDATE-only trigger are left as R0 made them (A6).
+
+## Unit 2: saved views and item tracking
+
+- `20261029-48-mfg-views-and-tracking.sql`: `mfg_saved_views` (user_id owner, list, name, query,
+  shared, position, archived_at, version; unique (bus_id, user_id, list, name) while not archived).
+  No product or party column, so nothing new in `-47`.
+- `mfg_item_settings.tracking` (`none | lot | serial`, default `none`), for a business without
+  SCM. SCM's `scm_item_settings.tracking` is not touched. The list is in `-45`.
+16. **Deviation:** the `tracking` column is added in `-42` (the table's own file, as a column and as
+    `ADD COLUMN IF NOT EXISTS`), not in `-48`. `-45` runs before `-48`, so a CHECK there on a
+    column that `-48` adds would be skipped on a fresh install's first deploy (or fail).
+    Neither file is applied anywhere yet.
+
+Verified as before: the existing `tvsdb_r1` (with R1 data) upgraded, then a fresh `tvsdb_r1`, a
+re-run, a run with saved-view and tracked-item rows, both test scripts, and the kit build.

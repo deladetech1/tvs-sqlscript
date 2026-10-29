@@ -6,6 +6,7 @@
 --                      tool | service | by_product | co_product
 --   procurement        make | buy | subcontract | transfer
 --   lot-size rule      lot_for_lot | fixed | min_max | period_of_supply
+--   tracking           none | lot | serial (item settings)
 --   revision status    draft | in_review | released | superseded | obsolete (item revisions, BOMs,
 --                      routings, work instructions; released and later are frozen, 20261029-40)
 --   BOM type / usage   engineering | manufacturing | planning;  production | costing
@@ -33,6 +34,10 @@ ALTER TABLE mfg.mfg_item_settings ADD CONSTRAINT mfg_item_settings_procurement_c
 ALTER TABLE mfg.mfg_item_settings DROP CONSTRAINT IF EXISTS mfg_item_settings_lot_size_rule_check;
 ALTER TABLE mfg.mfg_item_settings ADD CONSTRAINT mfg_item_settings_lot_size_rule_check CHECK (lot_size_rule IN
     ('lot_for_lot', 'fixed', 'min_max', 'period_of_supply'));
+
+ALTER TABLE mfg.mfg_item_settings DROP CONSTRAINT IF EXISTS mfg_item_settings_tracking_check;
+ALTER TABLE mfg.mfg_item_settings ADD CONSTRAINT mfg_item_settings_tracking_check CHECK (tracking IN
+    ('none', 'lot', 'serial'));
 
 -- One revision status list for every revisioned table.
 ALTER TABLE mfg.mfg_item_revisions DROP CONSTRAINT IF EXISTS mfg_item_revisions_status_check;
