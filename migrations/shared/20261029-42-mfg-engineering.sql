@@ -459,11 +459,13 @@ BEGIN
     END IF;
 
     -- Every BOM line names a product of its business, or is a text line.
-    IF to_regclass('core_platform.cp_products') IS NOT NULL AND EXISTS (
-        SELECT 1 FROM mfg.mfg_bom_lines l
-         WHERE l.line_type <> 'text'
-           AND NOT EXISTS (SELECT 1 FROM core_platform.cp_products p WHERE p.id = l.component_id AND p.bus_id = l.bus_id)) THEN
-        RAISE EXCEPTION 'a Manufacturing BOM line names a product that is not one of its business''s products';
+    IF to_regclass('core_platform.cp_products') IS NOT NULL THEN
+        IF EXISTS (SELECT 1 FROM mfg.mfg_bom_lines l
+                    WHERE l.line_type <> 'text'
+                      AND NOT EXISTS (SELECT 1 FROM core_platform.cp_products p
+                                       WHERE p.id = l.component_id AND p.bus_id = l.bus_id)) THEN
+            RAISE EXCEPTION 'a Manufacturing BOM line names a product that is not one of its business''s products';
+        END IF;
     END IF;
 END $$;
 
