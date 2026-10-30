@@ -6,15 +6,17 @@
 --   meter                   runtime_h | cycles | custom:<name> (lower case, digits, _; up to 40)
 --                           (asset meter readings and meter PM plans)
 --   failure-code kind       problem | cause | remedy
---   PM trigger              calendar | meter (condition is R4)
+--   PM trigger              calendar | meter | condition (R4a E10)
 --   PM basis                due | completion
 --   PM plan status          draft | active | paused
---   MWO type                preventive | corrective | inspection (predictive is R4)
+--   MWO type                preventive | corrective | inspection | predictive (R4a E10)
 --   MWO status              requested | approved | scheduled | in_progress | completed | closed | cancelled
 --   MWO priority            low | medium | high | critical
 --   task kind               check | value | photo
 --   task result             pass | fail | na
 --   parts kind              issue | return
+--
+-- Release 4a widened two lists in place (R4a.md §3: a list lives in one file); every R3 value stays.
 --
 -- Idempotent; safe to re-run.
 
@@ -38,7 +40,7 @@ ALTER TABLE mfg.mfg_failure_codes ADD CONSTRAINT mfg_failure_codes_kind_check CH
 
 ALTER TABLE mfg.mfg_pm_plans DROP CONSTRAINT IF EXISTS mfg_pm_plans_trigger_check;
 ALTER TABLE mfg.mfg_pm_plans ADD CONSTRAINT mfg_pm_plans_trigger_check CHECK (trigger IN
-    ('calendar', 'meter'));
+    ('calendar', 'meter', 'condition'));
 
 ALTER TABLE mfg.mfg_pm_plans DROP CONSTRAINT IF EXISTS mfg_pm_plans_basis_check;
 ALTER TABLE mfg.mfg_pm_plans ADD CONSTRAINT mfg_pm_plans_basis_check CHECK (basis IN
@@ -54,7 +56,7 @@ ALTER TABLE mfg.mfg_pm_plans ADD CONSTRAINT mfg_pm_plans_status_check CHECK (sta
 
 ALTER TABLE mfg.mfg_maintenance_orders DROP CONSTRAINT IF EXISTS mfg_maintenance_orders_type_check;
 ALTER TABLE mfg.mfg_maintenance_orders ADD CONSTRAINT mfg_maintenance_orders_type_check CHECK (type IN
-    ('preventive', 'corrective', 'inspection'));
+    ('preventive', 'corrective', 'inspection', 'predictive'));
 
 ALTER TABLE mfg.mfg_maintenance_orders DROP CONSTRAINT IF EXISTS mfg_maintenance_orders_status_check;
 ALTER TABLE mfg.mfg_maintenance_orders ADD CONSTRAINT mfg_maintenance_orders_status_check CHECK (status IN
