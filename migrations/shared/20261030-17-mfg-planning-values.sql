@@ -21,17 +21,18 @@
 --                           mfg_buy_order_line (R3 D21)
 --   MRP message status      open | closed
 --   exception kind          shortage | mrp_message | inspection_failed | ncr_overdue | resource_down |
---                           maintenance_conflict | pm_overdue (R3 D6)
+--                           maintenance_conflict | pm_overdue (R3 D6) | anomaly | device_offline (R4a E11)
 --   exception severity      low | medium | high | critical
 --   exception status        open | acknowledged | in_resolution | resolved | dismissed
 --   exception root type     item | resource | lot | inspection | ncr | planned_order | production_order |
---                           maintenance_order (R3 D6)
+--                           maintenance_order (R3 D6) | signal_map | device (R4a E11)
 --   exception event kind    opened | updated | acknowledged | assigned | resolved | dismissed |
 --                           reopened | playbook_run
 --
 -- The demand, planned order, MRP message and exception lists are the FP screens' types
 -- (tvs-mfg-ft src/models/response/planning.ts; R1 B17). Release 3 widened seven lists in place (R3.md
--- §3, D27: a list lives in one file); every R2 value stays.
+-- §3, D27: a list lives in one file); every R2 value stays. Release 4a widened two more (R4a.md §3,
+-- E11: exception kind and root type); every R2 and R3 value stays.
 --
 -- Idempotent; safe to re-run.
 
@@ -103,7 +104,8 @@ ALTER TABLE mfg.mfg_mrp_messages ADD CONSTRAINT mfg_mrp_messages_status_check CH
 
 ALTER TABLE mfg.mfg_exceptions DROP CONSTRAINT IF EXISTS mfg_exceptions_kind_check;
 ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_kind_check CHECK (kind IN
-    ('shortage', 'mrp_message', 'inspection_failed', 'ncr_overdue', 'resource_down', 'maintenance_conflict', 'pm_overdue'));
+    ('shortage', 'mrp_message', 'inspection_failed', 'ncr_overdue', 'resource_down', 'maintenance_conflict', 'pm_overdue',
+     'anomaly', 'device_offline'));
 
 ALTER TABLE mfg.mfg_exceptions DROP CONSTRAINT IF EXISTS mfg_exceptions_severity_check;
 ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_severity_check CHECK (severity IN
@@ -115,7 +117,8 @@ ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_status_check CHECK 
 
 ALTER TABLE mfg.mfg_exceptions DROP CONSTRAINT IF EXISTS mfg_exceptions_root_type_check;
 ALTER TABLE mfg.mfg_exceptions ADD CONSTRAINT mfg_exceptions_root_type_check CHECK (root_type IN
-    ('item', 'resource', 'lot', 'inspection', 'ncr', 'planned_order', 'production_order', 'maintenance_order'));
+    ('item', 'resource', 'lot', 'inspection', 'ncr', 'planned_order', 'production_order', 'maintenance_order',
+     'signal_map', 'device'));
 
 ALTER TABLE mfg.mfg_exception_events DROP CONSTRAINT IF EXISTS mfg_exception_events_kind_check;
 ALTER TABLE mfg.mfg_exception_events ADD CONSTRAINT mfg_exception_events_kind_check CHECK (kind IN
