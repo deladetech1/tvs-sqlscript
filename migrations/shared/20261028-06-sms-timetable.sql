@@ -37,9 +37,9 @@ CREATE TABLE IF NOT EXISTS sms.sms_resources (
     cdatetime   timestamptz NOT NULL DEFAULT now(),
     archived_at timestamptz
 );
-ALTER TABLE sms.sms_resources DROP CONSTRAINT IF EXISTS sms_resources_kind_check;
-ALTER TABLE sms.sms_resources ADD CONSTRAINT sms_resources_kind_check
-    CHECK (kind IN ('classroom', 'lab', 'ict', 'hall', 'sports', 'library', 'other', 'equipment'));
+-- Widened later (20261030-35 adds fields, pools and chapels): never narrowed here.
+SELECT sms.widen_check('sms.sms_resources', 'sms_resources_kind_check', $q$'equipment'$q$,
+    $q$CHECK (kind IN ('classroom', 'lab', 'ict', 'hall', 'sports', 'library', 'other', 'equipment'))$q$);
 CREATE UNIQUE INDEX IF NOT EXISTS sms_resources_name_idx ON sms.sms_resources (profile_id, lower(name)) WHERE archived_at IS NULL;
 
 -- =================================================================== timetables
@@ -192,8 +192,8 @@ CREATE TABLE IF NOT EXISTS sms.sms_bookings (
     cancelled_at timestamptz,
     CHECK (ends_at > starts_at)
 );
-ALTER TABLE sms.sms_bookings DROP CONSTRAINT IF EXISTS sms_bookings_status_check;
-ALTER TABLE sms.sms_bookings ADD CONSTRAINT sms_bookings_status_check CHECK (status IN ('confirmed', 'cancelled'));
+-- Widened later (20261030-35: external hire waits pending, or is declined): never narrowed here.
+SELECT sms.widen_check('sms.sms_bookings', 'sms_bookings_status_check', $q$'cancelled'$q$, $q$CHECK (status IN ('confirmed', 'cancelled'))$q$);
 CREATE INDEX IF NOT EXISTS sms_bookings_resource_idx ON sms.sms_bookings (resource_id, booked_on) WHERE status = 'confirmed';
 
 -- =================================================================== exams
