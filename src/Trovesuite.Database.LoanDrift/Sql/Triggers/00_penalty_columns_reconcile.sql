@@ -77,3 +77,11 @@ END $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ix_ld_loan_details_loan_reference
     ON loandrift.ld_loan_details (loan_reference);
+
+-- ---- 20261031164513_AddLoanPenaltyPeriod ---------------------------------
+-- The view reads ld.penalty_period, so it must exist before 02 runs.
+ALTER TABLE loandrift.ld_loan_types
+    ADD COLUMN IF NOT EXISTS penalty_period text NOT NULL DEFAULT 'DAILY';
+
+ALTER TABLE loandrift.ld_loan_details
+    ADD COLUMN IF NOT EXISTS penalty_period text NOT NULL DEFAULT 'DAILY';

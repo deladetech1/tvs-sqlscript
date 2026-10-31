@@ -96,8 +96,11 @@ public class LoanType : TenantScopedEntity
     public string PenaltyMode { get; set; } = "NONE";
 
     /// <summary>Penalty rate (%) charged on the outstanding defaulted amount each penalty
-    /// period for this product. Null falls back to the global penalty settings rate.</summary>
+    /// period for this product. Null means no penalty is charged.</summary>
     public decimal? PenaltyPercentage { get; set; }
+
+    /// <summary>DAILY | WEEKLY | MONTHLY — how often the penalty accrues after the grace period.</summary>
+    public string PenaltyPeriod { get; set; } = "DAILY";
 }
 
 public class InterestType : TenantScopedEntity
@@ -148,6 +151,9 @@ public class LoanDetail : TenantScopedEntity
     /// <summary>Penalty rate (%) applied to the outstanding defaulted amount each penalty
     /// period — snapshot of the product's rate (or the payload override) at capture.</summary>
     public decimal? PenaltyPercentage { get; set; }
+    /// <summary>DAILY | WEEKLY | MONTHLY — the penalty period, snapshot of the product's
+    /// (or the payload override) at capture.</summary>
+    public string PenaltyPeriod { get; set; } = "DAILY";
 }
 
 public class LoanCalculation

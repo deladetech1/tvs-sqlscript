@@ -12,7 +12,7 @@ CREATE VIEW loandrift.ld_loan_details_view AS
 SELECT
     ld.id, ld.loan_reference, ld.client_id, ld.tenant_id, ld.org_id, ld.bus_id, ld.loc_id,
     ld.loan_type, ld.sector_id, ld.interest_type_id, ld.payment_type, ld.grace_period,
-    ld.penalty_mode, ld.penalty_enabled, ld.penalty_percentage, ld.penalty_terms,
+    ld.penalty_mode, ld.penalty_enabled, ld.penalty_percentage, ld.penalty_period, ld.penalty_terms,
     ld.registration_id, ld.status, ld.is_ready_for_approval, ld.requested_amount,
     ld.currency_id, ld.description, ld.registration_datetime, ld.delete_status, ld.is_active,
     ld.cdate, ld.ctime, ld.cdatetime, ld.created_by, ld.updated_by, ld.deleted_by,
