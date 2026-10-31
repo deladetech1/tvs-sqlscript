@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS sms.sms_calendar_events (
     cdatetime   timestamptz NOT NULL DEFAULT now(),
     CHECK (ends_on >= starts_on)
 );
-ALTER TABLE sms.sms_calendar_events DROP CONSTRAINT IF EXISTS sms_calendar_events_kind_check;
-ALTER TABLE sms.sms_calendar_events ADD CONSTRAINT sms_calendar_events_kind_check
-    CHECK (kind IN ('holiday', 'closure', 'event', 'meeting', 'exam', 'sports'));
+-- Widened later (20261030-35 adds PTA meetings, parents' evenings and trips): never narrowed here.
+SELECT sms.widen_check('sms.sms_calendar_events', 'sms_calendar_events_kind_check', $q$'sports'$q$,
+    $q$CHECK (kind IN ('holiday', 'closure', 'event', 'meeting', 'exam', 'sports'))$q$);
 CREATE INDEX IF NOT EXISTS sms_calendar_events_idx ON sms.sms_calendar_events (profile_id, starts_on);
 
 UPDATE sms.sms_audit_logs SET entity_type = 'structure_class' WHERE entity_type = 'structure_classe';
