@@ -917,6 +917,10 @@ Shared Go reading is `tvs-shared-apps-bk internal/platform/connections`.
 | `mystoreguard-crm` | lookup | CRM `sync.go` (`runSync`, the 5-minute sweep, settings, `/connections`), `deals.go` `msgLinePrice` | the sweep passes it by; the CRM's stored prices stand |
 | `loandrift-crm` | lookup | CRM `sync.go` | the sweep passes it by |
 | `zeloshr-projects` | lookup | Projects `zhrConnected`, `lineManagerOf` | no leave, holidays, attendance or line managers in Projects |
+| `scm-mystoreguard` | sync; OFF / ALWAYS (2026-11-02, `20261102-50`) | MyStoreGuard's link inbox worker (`scm_link_inbox_service.py`) for `scm.*` events; SCM's inbox worker (`links.go`) for MyStoreGuard's replies | events sent while off are REFUSED ("Not connected: …") in the receiver's inbox; ones sent before it went off still complete. No row is written for anyone: every business starts OFF |
+| `mystoreguard-scm` | sync; OFF / ALWAYS (`20261102-50`) | SCM's inbox worker for `msg.*` events; MyStoreGuard's for SCM's replies | as above |
+
+**MyStoreGuard ⇄ SCM events** (`20261102-50`): outbox `cp_events`, kinds and versioned JSON schemas in `core_platform.cp_event_schemas`; one inbox per receiver (`scm.scm_link_inbox`, `mystoreguard.msg_link_inbox`), unique on `(tenant_id, source_app, idempotency_key)` so a repeated event is taken in once; statuses PENDING / RETRY (backoff) / DONE / REFUSED / DEAD; `<schema>.<inbox>_retry(tenant, bus, ids)` sends dead letters back. Mapping of warehouses to MyStoreGuard places: `scm.scm_branch_supply` (one supplier per place).
 
 What was brought in stays in every case: it is the receiving app's own. A saved invoice keeps the expenses and time it
 already bills; re-saving it is never refused.
