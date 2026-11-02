@@ -9,6 +9,6 @@ ALTER TABLE scm.scm_lots ADD CONSTRAINT scm_lots_quality_status_check CHECK (qua
 
 ALTER TABLE scm.scm_serials DROP CONSTRAINT IF EXISTS scm_serials_status_check;
 ALTER TABLE scm.scm_serials ADD CONSTRAINT scm_serials_status_check CHECK (status IN
-    ('in_stock', 'consumed', 'shipped', 'scrapped', 'returned'));
+    ('in_stock', 'in_transit', 'consumed', 'shipped', 'scrapped', 'returned'));
 
 COMMIT;
