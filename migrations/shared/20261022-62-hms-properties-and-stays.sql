@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS hms.hms_settings (
 ALTER TABLE hms.hms_settings DROP CONSTRAINT IF EXISTS hms_settings_business_type_check;
 ALTER TABLE hms.hms_settings ADD CONSTRAINT hms_settings_business_type_check CHECK (business_type IS NULL OR business_type IN
     ('hotel', 'guest_house', 'resort', 'hostel', 'short_stay', 'serviced_apartment', 'restaurant',
-     'landlord', 'property_manager', 'event_venue'));
+     'landlord', 'property_manager', 'event_venue', 'spa', 'club', 'members_club', 'coworking', 'tours', 'caterer'));
 
 CREATE TABLE IF NOT EXISTS hms.hms_properties (
     id              text PRIMARY KEY DEFAULT gen_random_uuid()::text,
