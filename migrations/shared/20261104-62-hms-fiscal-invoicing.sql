@@ -1,18 +1,15 @@
--- HMS fiscal invoicing: receipts and invoices reported to the tax authority, in any country.
+-- HMS tax receipts: every receipt and invoice numbered and kept as issued.
 --
---   hms_fiscal_profiles   how a business (or one of its properties) fiscalises: the
---                         country and its scheme (Ghana's GRA E-VAT, Kenya's KRA eTIMS, or
---                         an accredited provider through a webhook for the rest: Uganda
---                         EFRIS, Tanzania VFD, Zambia Smart Invoice, Nigeria, Rwanda EBM,
---                         Saudi ZATCA, EU e-invoicing...), the tax numbers, the credentials,
---                         and which documents it covers. "local" keeps a numbered,
---                         hash-chained register with a QR code to check each receipt where no
---                         authority asks for more.
+--   hms_fiscal_profiles   a business's (or one property's) settings: on or off, the number
+--                         prefix, what gets a tax receipt, the Core Platform taxes in ticket,
+--                         appointment and dues prices, a line for the foot of each receipt.
+--                         The taxes and the seller's details are Core Platform's; reporting
+--                         to a tax authority is Core Platform's too, so the connection columns
+--                         (api_url, api_key...) are unused and provider is always 'local'.
 --   hms_fiscal_documents  every receipt, invoice and credit note issued: its own number
---                         (gapless, per profile and kind), what it said (lines, taxes,
---                         totals, the buyer's tax number), the hash chained to the one
---                         before, and what the authority answered (its number, signature, QR).
---                         Sent in the background, retried until accepted.
+--                         (gapless, per profile and kind), what it said (lines, taxes, totals,
+--                         the buyer's tax number), the hash chained to the one before, and the
+--                         QR code that checks it against the register.
 --   hms_fiscal_counters   the last number issued, per profile and kind.
 --   hms_orders.buyer_tin, hms_invoices.buyer_tin   a business customer's tax number.
 --
@@ -49,7 +46,9 @@ CREATE TABLE IF NOT EXISTS hms.hms_fiscal_profiles (
     updated_by       text
 );
 ALTER TABLE hms.hms_fiscal_profiles DROP CONSTRAINT IF EXISTS hms_fiscal_profiles_provider_check;
-ALTER TABLE hms.hms_fiscal_profiles ADD CONSTRAINT hms_fiscal_profiles_provider_check CHECK (provider IN ('local', 'gra_evat', 'kra_etims', 'webhook'));
+UPDATE hms.hms_fiscal_profiles SET provider = 'local', api_key = NULL, api_secret = NULL WHERE provider <> 'local' OR api_key IS NOT NULL OR api_secret IS NOT NULL;
+UPDATE hms.hms_fiscal_documents SET provider = 'local', status = 'accepted' WHERE provider <> 'local' OR status <> 'accepted';
+ALTER TABLE hms.hms_fiscal_profiles ADD CONSTRAINT hms_fiscal_profiles_provider_check CHECK (provider = 'local');
 ALTER TABLE hms.hms_fiscal_profiles DROP CONSTRAINT IF EXISTS hms_fiscal_profiles_environment_check;
 ALTER TABLE hms.hms_fiscal_profiles ADD CONSTRAINT hms_fiscal_profiles_environment_check CHECK (environment IN ('sandbox', 'live'));
 CREATE UNIQUE INDEX IF NOT EXISTS hms_fiscal_profiles_scope_uq ON hms.hms_fiscal_profiles (bus_id, coalesce(property_id, ''));
@@ -111,7 +110,7 @@ ALTER TABLE hms.hms_orders ADD COLUMN IF NOT EXISTS buyer_tin text;
 ALTER TABLE hms.hms_invoices ADD COLUMN IF NOT EXISTS buyer_tin text;
 
 INSERT INTO core_platform.cp_app_feature_catalog (feature_key, app_id, title, min_tier_rank, description) VALUES
-('hms.fiscal', 'app-hms', 'Fiscal Invoicing', 1, 'Receipts and invoices reported to the tax authority (GRA E-VAT, KRA eTIMS and others), numbered and signed')
+('hms.fiscal', 'app-hms', 'Tax Receipts', 1, 'Every receipt and invoice numbered, chained and checkable by QR, with the taxes from Core Platform')
 ON CONFLICT (feature_key) DO UPDATE SET
     app_id        = EXCLUDED.app_id,
     title         = EXCLUDED.title,
