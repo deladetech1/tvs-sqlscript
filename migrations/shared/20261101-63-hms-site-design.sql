@@ -6,7 +6,8 @@
 --                      of the page's sections. Pictures are hms_files rows (entity 'site'),
 --                      named by id.
 --
--- Six more templates: noir, palace, riviera, safari, emerald, boutique.
+-- Six more templates: noir, palace, riviera, safari, emerald, boutique; then ten more: sunset,
+-- tropic, nordic, urban, skyline, heritage, zen, kente, cafe, lounge.
 --
 -- Idempotent; safe to re-run on every deploy.
 
@@ -16,6 +17,7 @@ ALTER TABLE hms.hms_sites ADD COLUMN IF NOT EXISTS design jsonb NOT NULL DEFAULT
 
 ALTER TABLE hms.hms_sites DROP CONSTRAINT IF EXISTS hms_sites_template_check;
 ALTER TABLE hms.hms_sites ADD CONSTRAINT hms_sites_template_check CHECK (template IN ('classic', 'modern', 'minimal', 'bistro', 'resort',
-    'noir', 'palace', 'riviera', 'safari', 'emerald', 'boutique'));
+    'noir', 'palace', 'riviera', 'safari', 'emerald', 'boutique',
+    'sunset', 'tropic', 'nordic', 'urban', 'skyline', 'heritage', 'zen', 'kente', 'cafe', 'lounge'));
 
 COMMIT;

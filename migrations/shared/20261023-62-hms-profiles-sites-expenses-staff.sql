@@ -92,7 +92,8 @@ CREATE TABLE IF NOT EXISTS hms.hms_sites (
 );
 ALTER TABLE hms.hms_sites DROP CONSTRAINT IF EXISTS hms_sites_template_check;
 ALTER TABLE hms.hms_sites ADD CONSTRAINT hms_sites_template_check CHECK (template IN ('classic', 'modern', 'minimal', 'bistro', 'resort',
-    'noir', 'palace', 'riviera', 'safari', 'emerald', 'boutique'));
+    'noir', 'palace', 'riviera', 'safari', 'emerald', 'boutique',
+    'sunset', 'tropic', 'nordic', 'urban', 'skyline', 'heritage', 'zen', 'kente', 'cafe', 'lounge'));
 CREATE UNIQUE INDEX IF NOT EXISTS hms_sites_property_uq ON hms.hms_sites (property_id);
 CREATE UNIQUE INDEX IF NOT EXISTS hms_sites_slug_uq ON hms.hms_sites (lower(slug));
 
