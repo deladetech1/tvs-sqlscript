@@ -13,8 +13,6 @@
 --                          when one comes free
 --   hms_membership_plans.event_access  members' and season-ticket plans that let the member
 --                          into events at the door; hms_member_visits.event_id the event
---   hms_lock_settings, hms_locks, hms_lock_codes   smart locks (TTLock, Nuki, or a webhook):
---                          each unit's lock, and the door code made on it for each stay
 --   hms_properties.kiosk_token   the self-service kiosk's link (ordering at the counter, and
 --                          finding a booking to check in)
 --
@@ -124,65 +122,12 @@ CREATE INDEX IF NOT EXISTS hms_waitlist_open_idx ON hms.hms_waitlist (bus_id, st
 ALTER TABLE hms.hms_membership_plans ADD COLUMN IF NOT EXISTS event_access boolean NOT NULL DEFAULT false;
 ALTER TABLE hms.hms_member_visits ADD COLUMN IF NOT EXISTS event_id text REFERENCES hms.hms_ticket_events (id);
 
--- ================================================================ smart locks
-CREATE TABLE IF NOT EXISTS hms.hms_lock_settings (
-    bus_id           text PRIMARY KEY,
-    tenant_id        text NOT NULL,
-    provider         text NOT NULL DEFAULT 'ttlock',
-    client_id        text,
-    client_secret    text,
-    username         text,
-    password_md5     text,
-    api_token        text,
-    webhook_url      text,
-    webhook_secret   text,
-    access_token     text,
-    token_expires_at timestamptz,
-    enabled          boolean NOT NULL DEFAULT false,
-    last_error       text,
-    updated_at       timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE hms.hms_lock_settings DROP CONSTRAINT IF EXISTS hms_lock_settings_provider_check;
-ALTER TABLE hms.hms_lock_settings ADD CONSTRAINT hms_lock_settings_provider_check CHECK (provider IN ('ttlock', 'nuki', 'webhook'));
-
-CREATE TABLE IF NOT EXISTS hms.hms_locks (
-    id               text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    tenant_id        text NOT NULL,
-    bus_id           text NOT NULL,
-    property_id      text NOT NULL REFERENCES hms.hms_properties (id),
-    unit_id          text REFERENCES hms.hms_units (id),
-    name             text NOT NULL,
-    external_id      text NOT NULL,
-    active           boolean NOT NULL DEFAULT true,
-    archived_at      timestamptz,
-    cdatetime        timestamptz NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS hms.hms_lock_codes (
-    id               text PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    tenant_id        text NOT NULL,
-    bus_id           text NOT NULL,
-    reservation_id   text NOT NULL REFERENCES hms.hms_reservations (id),
-    lock_id          text NOT NULL REFERENCES hms.hms_locks (id),
-    code             text NOT NULL,
-    valid_from       timestamptz NOT NULL,
-    valid_to         timestamptz NOT NULL,
-    external_ref     text,
-    status           text NOT NULL DEFAULT 'pending',
-    error            text,
-    cdatetime        timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE hms.hms_lock_codes DROP CONSTRAINT IF EXISTS hms_lock_codes_status_check;
-ALTER TABLE hms.hms_lock_codes ADD CONSTRAINT hms_lock_codes_status_check CHECK (status IN ('pending', 'set', 'failed', 'removed'));
-CREATE UNIQUE INDEX IF NOT EXISTS hms_lock_codes_uq ON hms.hms_lock_codes (reservation_id, lock_id);
-
 -- ===================================================================== kiosk
 ALTER TABLE hms.hms_properties ADD COLUMN IF NOT EXISTS kiosk_token text;
 CREATE UNIQUE INDEX IF NOT EXISTS hms_properties_kiosk_uq ON hms.hms_properties (kiosk_token) WHERE kiosk_token IS NOT NULL;
 
 INSERT INTO core_platform.cp_app_feature_catalog (feature_key, app_id, title, min_tier_rank, description) VALUES
 ('hms.dynamic-pricing', 'app-hms', 'Rates by Demand',  3, 'Room rates that rise as you fill and fall when you are empty, and last-minute prices'),
-('hms.smart-locks',     'app-hms', 'Smart Locks',      2, 'A door code made on the lock (TTLock, Nuki) for each stay, valid from check-in to check-out'),
 ('hms.kiosk',           'app-hms', 'Self-service Kiosk', 2, 'Guests order at the counter and find their booking on a tablet')
 ON CONFLICT (feature_key) DO UPDATE SET
     app_id        = EXCLUDED.app_id,
