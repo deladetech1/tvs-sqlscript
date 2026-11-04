@@ -12,8 +12,8 @@
 --   sms_duties               the duties staff share (gate, dining hall, prep, assembly, break),
 --   sms_duty_assignments     and who is on each, day by day
 --
--- Certificates and testimonials are issued documents (kind 'certificate'); the generator, lesson
--- note vetting, continuous assessment sheets and drafted comments keep nothing of their own.
+-- Certificates and testimonials are issued documents (kind 'certificate'); lesson note vetting and
+-- continuous assessment sheets keep nothing of their own.
 -- Idempotent; safe to re-run.
 
 BEGIN;
@@ -178,10 +178,12 @@ INSERT INTO core_platform.cp_app_feature_catalog (feature_key, app_id, title, mi
 ('sms.certificates',    'app-sms', 'Certificates & Testimonials',    1, 'Leaving certificates, testimonials and letters, checkable by their QR code'),
 ('sms.online-orders',   'app-sms', 'Uniform & Book Orders',          2, 'Families order from the school shop online'),
 ('sms.scholarships',    'app-sms', 'Scholarships & Bursaries',       2, 'Applications, scoring and awards that reduce fees'),
-('sms.ai-comments',     'app-sms', 'Drafted Report Comments',        3, 'Report card comments drafted from the term''s results for the teacher to edit'),
 ('sms.duty-roster',     'app-sms', 'Staff Duty Roster',              2, 'Gate, dining hall, prep and break duties shared out fairly')
 ON CONFLICT (feature_key) DO UPDATE SET
     app_id = EXCLUDED.app_id, title = EXCLUDED.title, min_tier_rank = EXCLUDED.min_tier_rank,
     description = EXCLUDED.description, is_active = true;
+
+-- Drafted report comments were taken out (2026-11-04).
+UPDATE core_platform.cp_app_feature_catalog SET is_active = false WHERE feature_key = 'sms.ai-comments';
 
 COMMIT;
