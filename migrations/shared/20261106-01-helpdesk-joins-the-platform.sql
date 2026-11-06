@@ -163,7 +163,9 @@ ON CONFLICT (id) DO UPDATE SET role_name        = EXCLUDED.role_name,
                                is_system        = EXCLUDED.is_system,
                                is_active        = EXCLUDED.is_active;
 
--- The grant matrix of R0.md §4.
+-- The grant matrix of R0.md §4. The Service Manager and Viewer rows are derived from R0's own
+-- resources only, never from every helpdesk pair that exists: each later release grants its own
+-- pairs explicitly (20261106-05, 20261106-10, ...).
 INSERT INTO core_platform.cp_role_permissions (tenant_id, role_id, permission_id, description, cdate, ctime, cdatetime)
 SELECT 'system-tenant-id', spec.role_id, p.id, r.role_name || ' can ' || lower(p.description),
        CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP
@@ -171,6 +173,7 @@ SELECT 'system-tenant-id', spec.role_id, p.id, r.role_name || ' can ' || lower(p
     SELECT 'role-helpdesk-service-manager' AS role_id, p1.resource_key, p1.action
       FROM core_platform.cp_permissions p1
      WHERE p1.app_prefix = 'helpdesk'
+       AND p1.resource_key IN ('tickets', 'conversations', 'notes', 'portal', 'queues', 'teams', 'sla', 'settings', 'reports', 'logs')
        AND NOT (p1.resource_key = 'tickets' AND p1.action = 'delete')
     UNION ALL
     SELECT 'role-helpdesk-agent', k, a FROM (VALUES
@@ -190,7 +193,8 @@ SELECT 'system-tenant-id', spec.role_id, p.id, r.role_name || ' can ' || lower(p
     SELECT 'role-helpdesk-viewer', p3.resource_key, p3.action
       FROM core_platform.cp_permissions p3
       JOIN core_platform.cp_actions a ON a.action = p3.action AND a.is_read_only AND p3.action <> 'export'
-     WHERE p3.app_prefix = 'helpdesk' AND p3.resource_key <> 'settings'
+     WHERE p3.app_prefix = 'helpdesk' AND p3.resource_key IN ('tickets', 'conversations', 'notes', 'portal', 'queues', 'teams', 'sla', 'settings', 'reports', 'logs')
+       AND p3.resource_key <> 'settings'
   ) AS spec
   JOIN core_platform.cp_roles r ON r.id = spec.role_id
   JOIN core_platform.cp_permissions p

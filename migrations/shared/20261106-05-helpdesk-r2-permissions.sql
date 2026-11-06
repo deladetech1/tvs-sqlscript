@@ -4,15 +4,9 @@
 --   * five resource types under rt-subscribed-app-helpdesk;
 --   * 15 pairs helpdesk|<resource>|<action>||any;
 --   * grants per R2.md §1. Help Desk Admin still holds no rows: it is allowed by being the role;
---   * the R0 invariants re-asserted over every helpdesk pair. This file is the newest one that
---     touches the Requester rule, so it owns it: the Requester holds only portal, approvals (get,
---     approve) and knowledge.get. 20261106-01 checks only R0's own resources, so both files hold
---     on every re-run.
---
--- 20261106-01 derives two of its grants from whatever helpdesk pairs exist (the Service Manager
--- gets every pair but tickets.delete, the Viewer every read-only pair but export and settings), so
--- on re-run it gives those two roles these pairs too. That matches §1; the explicit grants below
--- make this file stand on its own.
+--   * the R0 invariants re-asserted over every helpdesk pair. The full Requester rule is owned by
+--     the newest file that touches it (20261106-10 since R3); this file checks the Requester only
+--     on R0 and R2 resources, so every file holds on every re-run.
 --
 -- `approve` alone never lets anyone decide: the code also requires being the task's approver or
 -- their active delegate (R2.md §4).
@@ -121,9 +115,11 @@ BEGIN
     IF n > 0 THEN
         RAISE EXCEPTION 'role-helpdesk-viewer holds % Help Desk permission(s) that change data', n;
     END IF;
-    -- The Requester rule, owned by this file (it replaces R0's "nothing outside the portal").
+    -- The Requester on R0 and R2 resources. The full rule is owned by 20261106-10.
     IF EXISTS (SELECT 1 FROM core_platform.cp_role_permissions rp JOIN core_platform.cp_permissions p ON p.id = rp.permission_id
                 WHERE rp.role_id = 'role-helpdesk-requester' AND p.app_prefix = 'helpdesk'
+                  AND p.resource_key IN ('tickets', 'conversations', 'notes', 'portal', 'queues', 'teams', 'sla', 'settings',
+                                         'reports', 'logs', 'catalog', 'approvals', 'tasks', 'knowledge', 'automation')
                   AND NOT (p.resource_key = 'portal'
                            OR (p.resource_key = 'approvals' AND p.action IN ('get', 'approve'))
                            OR (p.resource_key = 'knowledge' AND p.action = 'get'))) THEN
