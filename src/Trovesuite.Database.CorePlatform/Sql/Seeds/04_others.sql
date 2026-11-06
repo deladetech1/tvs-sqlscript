@@ -71,6 +71,7 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-scm-%'
   AND p.id NOT LIKE 'permission-sms-%'
   AND p.id NOT LIKE 'permission-mfg-%'
+  AND p.id NOT LIKE 'permission-helpdesk-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -236,6 +237,11 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- tvs-mfg-ft. Stands alone; SCM is optional and shares its stock ledger. Registration beyond this row is
 -- migrations/shared/20261029-30-mfg-joins-the-platform.sql.
 ('app-mfg', 'Manufacturing', 'BOMs & Routings', 'Production Orders', 'Shop Floor (offline)', 'Finite Scheduling', 'Readiness & Traceability', 'Run production from one place: plants, bills of materials, routings and work instructions, production orders with live material readiness, and an offline tablet shop floor, with SCM optional for purchasing and sales on the same stock', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Help Desk (app-helpdesk): a service desk -- tickets, replies and internal notes, the employee portal,
+-- queues, teams and SLAs, then catalogue, approvals, assets and ITSM -- hosted by the shared apps
+-- backend; frontend tvs-helpdesk-ft. Stands alone, billed per business. Registration beyond this row
+-- is migrations/shared/20261106-01-helpdesk-joins-the-platform.sql.
+('app-helpdesk', 'Help Desk', 'Service Desk', 'Employee Portal', 'SLAs & Business Hours', 'Service Catalogue', 'Knowledge Base', 'Run a service desk from one place: tickets with public replies and internal notes, an employee portal, shared queues and teams, SLAs on business hours, a service catalogue and a knowledge base', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 -- SMS: school management -- creches, primary, basic and high schools, colleges, universities,
 -- technical and vocational institutes -- hosted by the shared apps backend; frontend tvs-sms-ft.
 -- Billed per location (one school profile per location). Registration beyond this row is
@@ -341,6 +347,12 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-mfg-advance',    'app-mfg',          'shared-subscription-advance',   15,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-mfg-premium',    'app-mfg',          'shared-subscription-premium',   40,   180.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-mfg-enterprise', 'app-mfg',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Help Desk: USD per BUSINESS per month like SCM. PLACEHOLDER: these are SCM's numbers copied
+-- (2026-11-06), not a price; the owner sets prices (in the console; see the note below).
+('tier-cfg-helpdesk-basic',      'app-helpdesk', 'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-helpdesk-advance',    'app-helpdesk', 'shared-subscription-advance',   15,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-helpdesk-premium',    'app-helpdesk', 'shared-subscription-premium',   40,   140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-helpdesk-enterprise', 'app-helpdesk', 'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- SMS: USD per location (one school) per month. PLACEHOLDER, owner sets prices (in the
 -- console; see the note below).
 ('tier-cfg-sms-basic',      'app-sms',          'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

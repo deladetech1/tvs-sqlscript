@@ -101,6 +101,7 @@ CREATE INDEX IF NOT EXISTS hms_deposit_movements_deposit_idx ON hms.hms_deposit_
 ALTER TABLE hms.hms_files DROP CONSTRAINT IF EXISTS hms_files_entity_check;
 ALTER TABLE hms.hms_files ADD CONSTRAINT hms_files_entity_check CHECK (entity_type IS NULL OR entity_type IN
     ('property', 'unit_type', 'unit', 'guest', 'reservation', 'lease', 'renter', 'ticket', 'lost_item', 'asset', 'event', 'expense', 'staff',
-     'menu_item', 'menu_category', 'addon', 'activity', 'table', 'stock_item', 'voucher', 'owner', 'site', 'invoice', 'deposit', 'housekeeping_task'));
+     'menu_item', 'menu_category', 'addon', 'activity', 'table', 'stock_item', 'voucher', 'owner', 'site', 'invoice', 'deposit', 'housekeeping_task',
+     'service', 'bookable', 'member', 'ticket_event', 'catering_package'));
 
 COMMIT;

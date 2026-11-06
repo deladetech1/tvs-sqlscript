@@ -189,7 +189,8 @@ equals Σ on hand × cost, per currency.
 | `msg.supplier_payment_made` / `_reversed` | purchase payment | `method`, `amount`, `currency` (the PO items' one currency, else the default), PO and supplier; reversed with `reason` REFUNDED / DELETED / CHANGED |
 | `msg.supplier_return` | purchase return | `lines`[batch, quantity, unit_cost, amount = `line_total` at the batch's cost, currency], PO and supplier |
 
-`credit_to` is SUPPLIER for a delivery (batch_type PURCHASE, or a supplier or delivery ref named), else
+`credit_to` is SCM_TRANSFER for a batch confirmed from an SCM branch shipment (20261102-60: the business's own stock
+handed over from its SCM warehouse — no supplier owed, no profit or loss), else SUPPLIER for a delivery (batch_type PURCHASE, or a supplier or delivery ref named), else
 STOCK_ADJUSTMENT (a split's output, a stock-take surplus): MyStoreGuard records **no payment on a delivery outside a
 purchase order**, so every delivery is owed to the supplier until Accounting records the payment (or a PO payment
 arrives). PO payments made before the goods arrive debit Supplier balances ahead of the receipt (a supplier advance).
@@ -215,6 +216,7 @@ MyStoreGuard's own "owed" figure is ordered qty × ordered cost; the books' is r
 | Supplier payment / refund | `msg_purchase_payments` | supplier_payment_made / _reversed — tested |
 | Purchase return (`create_return`, pool only) | qty_remaining − | supplier_return — tested |
 | Sales, cancels, customer returns, invoices, plan cancels | sale family | their own §1 events only — tested (sale, cancel, return, resale) |
+| Incoming from SCM confirmed (`scm_incoming_service.confirm`, 20261102-60) | ADJUSTMENT (branch shipment) / PURCHASE (SCM PO delivered to the branch), placed | stock_received: shipment `credit_to` SCM_TRANSFER, PO `credit_to` SUPPLIER |
 
 Not covered: a purchase receipt deleted (`delete_purchase_receipt` deletes only the header; the batch and its receipt
 stand), PO line tax/discount (MyStoreGuard records but never charges them), a sale-family movement without a
@@ -276,7 +278,7 @@ reversed by hand (they belong to a document); MyStoreGuard reverses them by void
 | return_processed | SALES_RETURNS (net); each tax; FINANCE_INCOME (plan written off); INVENTORY (restocked cost) | RESTOCKING_FEES; refund method role (cash); STORE_CREDIT_LIABILITY; OTHER_PAYMENTS (trade-in); CUSTOMER_RECEIVABLE (plan settled + owed + against balance + written off); COST_OF_SALES (restocked cost) |
 | gift_card_issued | CASH (sold) or LOYALTY_REWARDS (reward) | GIFT_CARD_LIABILITY |
 | plan_refund_paid | CUSTOMER_DEPOSITS or CUSTOMER_RECEIVABLE | CASH |
-| stock_received | INVENTORY | SUPPLIER_PAYABLE, or STOCK_ADJUSTMENT (credit_to) — in the delivery's currency |
+| stock_received | INVENTORY | SUPPLIER_PAYABLE, STOCK_ADJUSTMENT, or STOCK_TRANSFERS (credit_to SCM_TRANSFER: stock from Supply Chain, a clearing account) — in the delivery's currency |
 | stock_receipt_voided | the reverse | |
 | stock_adjusted (per line, signed) | INVENTORY (gain) / STOCK_WRITE_OFF, STOCK_ADJUSTMENT or COST_OF_SALES (loss) | the other side |
 | supplier_payment_made | SUPPLIER_PAYABLE | method role |
@@ -917,6 +919,12 @@ Shared Go reading is `tvs-shared-apps-bk internal/platform/connections`.
 | `mystoreguard-crm` | lookup | CRM `sync.go` (`runSync`, the 5-minute sweep, settings, `/connections`), `deals.go` `msgLinePrice` | the sweep passes it by; the CRM's stored prices stand |
 | `loandrift-crm` | lookup | CRM `sync.go` | the sweep passes it by |
 | `zeloshr-projects` | lookup | Projects `zhrConnected`, `lineManagerOf` | no leave, holidays, attendance or line managers in Projects |
+| `scm-mystoreguard` | sync; OFF / ALWAYS (2026-11-02, `20261102-50`) | MyStoreGuard's link inbox worker (`scm_link_inbox_service.py`) for `scm.*` events; SCM's inbox worker (`links.go`) for MyStoreGuard's replies | events sent while off are REFUSED ("Not connected: …") in the receiver's inbox; ones sent before it went off still complete. No row is written for anyone: every business starts OFF |
+| `mystoreguard-scm` | sync; OFF / ALWAYS (`20261102-50`) | SCM's inbox worker for `msg.*` events; MyStoreGuard's for SCM's replies | as above |
+
+**SCM → MyStoreGuard documents** (`20261102-60`, phase 3): an SCM branch shipment (`scm.branch_shipment_sent`, one line per lot dispatched, cost in the base currency at the Core Platform rate) or an SCM purchase order delivered straight to a branch (`scm.po_receipt_for_branch`, published when the order is approved) becomes `mystoreguard.msg_incoming_deliveries`, which moves no stock until a person confirms it; confirming makes one batch per line and answers `msg.branch_delivery_received` (received and short per line), which SCM records on the shipment (received / short / rejected) or the order lines. **Books:** SCM posts nothing to Accounting today, so nothing is counted twice: SCM's dispatch writes only SCM's own ledger. MyStoreGuard's confirmation posts the stock in at SCM's cost, credited to STOCK_TRANSFERS (1250 Stock Transfers Clearing) for a shipment and to the supplier for a PO. Until SCM posts its own receipts and dispatches (plan phase 5), the clearing account carries the credit side of every hand-over; phase 5's dispatch posting (Dr STOCK_TRANSFERS / Cr Inventory at SCM) settles it.
+
+**MyStoreGuard ⇄ SCM events** (`20261102-50`): outbox `cp_events`, kinds and versioned JSON schemas in `core_platform.cp_event_schemas`; one inbox per receiver (`scm.scm_link_inbox`, `mystoreguard.msg_link_inbox`), unique on `(tenant_id, source_app, idempotency_key)` so a repeated event is taken in once; statuses PENDING / RETRY (backoff) / DONE / REFUSED / DEAD; `<schema>.<inbox>_retry(tenant, bus, ids)` sends dead letters back. Mapping of warehouses to MyStoreGuard places: `scm.scm_branch_supply` (one supplier per place).
 
 What was brought in stays in every case: it is the receiving app's own. A saved invoice keeps the expenses and time it
 already bills; re-saving it is never refused.
@@ -934,3 +942,41 @@ MyStoreGuard customers / suppliers / products and LoanDrift clients, Invoicing p
 Projects reading MyStoreGuard jobs and workflow templates, Projects' suite links (CRM deals and tickets, MyStoreGuard
 jobs, LoanDrift loans), the CRM ⇄ Projects links, and Expenses reading Projects, Invoicing customers and MyStoreGuard
 spending (budgets).
+
+## 11. SCM (20261102-85): its stock in the books, and the hand-over to MyStoreGuard
+
+MSG-SCM plan phase 5. SCM posts on its own link, **`scm-accounting`** (SCM → Accounting, OFF / ONE_TIME / ALWAYS like
+every other link into Accounting; nobody starts on: SCM never posted before). Enforced by Accounting's `PostingRun`.
+
+**Publishing.** As MyStoreGuard, the database publishes: a DEFERRABLE constraint trigger on
+`scm.scm_inventory_movements` runs at COMMIT and publishes ONE event per document (`reference_type` / `reference_id`)
+per transaction, carrying every movement of it not yet published; `scm.scm_acc_moves` records which movements each
+event carried (a movement is never published twice; the migration's baseline holds every movement before it). Lines
+are per product, movement kind and currency, valued from the cost ledger (`scm_lot_moves`: what each lot gave, at the
+lot's cost, in the lot's currency). An event that cannot be built is `scm.posting_error`; SCM's work never fails for
+the books. Source `scm`, journals `SUPPLY_CHAIN`.
+
+| reference_type | Event | Debit | Credit |
+|---|---|---|---|
+| receipt | scm.goods_received | INVENTORY | GOODS_RECEIVED_NOT_INVOICED (2025): the supplier's bill (Accounting or Expenses) clears it |
+| return | scm.return_posted | customer return restocked: INVENTORY; to a supplier: GRNI | COST_OF_SALES; INVENTORY |
+| shipment (sales) | scm.goods_shipped | COST_OF_SALES | INVENTORY |
+| adjustment, stock_count | scm.stock_adjusted | signed, against STOCK_ADJUSTMENT; STOCK_WRITE_OFF when the reason says damaged, expired, scrap, spoilt, broken, stolen or written off | |
+| branch_shipment | scm.branch_shipment_dispatched | STOCK_TRANSFERS (1250) | INVENTORY — at exactly the cost sent to MyStoreGuard (the shipment's parts, 4-decimal unit cost, base currency) |
+| branch_\* / msg_\* (stock back from a branch, phase 4) | scm.branch_stock_received | INVENTORY | STOCK_TRANSFERS |
+| anything else | scm.stock_posted | by line kind: issue → STOCK_ISSUED (5040 Stock Used), scrap → STOCK_WRITE_OFF, shipment → COST_OF_SALES | |
+| transfer, mfg_\* | nothing | between SCM's own warehouses the stock stays in INVENTORY; Manufacturing's documents are its own to post | |
+
+**The hand-over nets to zero.** SCM's dispatch (Dr 1250 / Cr Inventory at SCM) + MyStoreGuard's confirm
+(`msg.stock_received` credit_to SCM_TRANSFER: Dr Inventory / Cr 1250, received × the unit cost it was sent) +
+`scm.branch_shipment_short` (published once when MyStoreGuard's answer makes the shipment received or short, on
+`scm.scm_branch_shipments`: per part, sent less received, each rounded as its own side rounds it; Dr
+STOCK_TRANSIT_LOSS 5035 Stock Lost in Transit / Cr 1250) leave 1250 at exactly zero per shipment. A **rejected**
+shipment posts no loss: its value stays in 1250 (the goods exist somewhere) and SCM's "In transit to MyStoreGuard"
+report lists it, with every shipment unanswered after N days. Stock coming back (phase 4) mirrors it: MyStoreGuard Cr
+Inventory / Dr 1250, SCM `branch_*` receipt Dr Inventory / Cr 1250, at the batch's cost.
+
+**Combined stock view** (read-only): each app publishes one read function the other calls, never its tables or
+code: `mystoreguard.msg_stock_for_scm(tenant, bus)` (branch stock per product, place and side, valued per batch
+currency) and `scm.scm_stock_for_msg(tenant, bus)` (warehouse stock, in transit, on order to a branch, which
+warehouse supplies which branch). Callers require both subscriptions and `scm-mystoreguard` on.

@@ -14,7 +14,8 @@ BEGIN;
 
 ALTER TABLE hms.hms_payment_attempts DROP CONSTRAINT IF EXISTS hms_payment_attempts_subject_check;
 ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
-    CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking', 'deposit'));
+    CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking', 'deposit',
+                            'ticket_sale', 'appointment', 'member'));
 
 ALTER TABLE hms.hms_stock_items ADD COLUMN IF NOT EXISTS content_size numeric(14,3);
 ALTER TABLE hms.hms_stock_items ADD COLUMN IF NOT EXISTS content_unit text;
