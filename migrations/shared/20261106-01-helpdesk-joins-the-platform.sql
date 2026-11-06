@@ -303,9 +303,12 @@ BEGIN
     IF n > 0 THEN
         RAISE EXCEPTION 'role-helpdesk-viewer holds % Help Desk permission(s) that change data', n;
     END IF;
-    -- 3. The Requester holds nothing outside the portal.
+    -- 3. The Requester holds none of R0's resources but the portal. Checked on R0's resources only:
+    --    the full Requester rule (portal, approvals, knowledge.get) is owned by the newest file
+    --    that touches it, 20261106-05, so this file and that one never contradict on re-run.
     IF EXISTS (SELECT 1 FROM core_platform.cp_role_permissions rp JOIN core_platform.cp_permissions p ON p.id = rp.permission_id
-                WHERE rp.role_id = 'role-helpdesk-requester' AND p.app_prefix = 'helpdesk' AND p.resource_key <> 'portal') THEN
+                WHERE rp.role_id = 'role-helpdesk-requester' AND p.app_prefix = 'helpdesk'
+                  AND p.resource_key IN ('tickets', 'conversations', 'notes', 'queues', 'teams', 'sla', 'settings', 'reports', 'logs')) THEN
         RAISE EXCEPTION 'Help Desk Requester holds a Help Desk permission outside the portal';
     END IF;
     -- 4. The Collaborator never replies to the requester.
