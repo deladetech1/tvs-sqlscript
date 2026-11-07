@@ -6,7 +6,7 @@
 --                           a generated search vector
 --   hd_ticket_events        append-only: every change to a ticket (created, assigned, merged...)
 --   hd_ticket_messages      append-only: public replies and internal notes; a correction is a new
---                           message
+--                           message (only its delivery_status may change, see the trigger)
 --   hd_attachments          files in blob storage, on a ticket or one of its messages
 --   hd_ticket_links         related / duplicate_of / blocks / caused_by
 --   hd_ticket_watchers      who follows a ticket
@@ -120,9 +120,25 @@ CREATE TABLE IF NOT EXISTS helpdesk.hd_ticket_messages (
 );
 CREATE INDEX IF NOT EXISTS hd_ticket_messages_ticket_idx ON helpdesk.hd_ticket_messages (ticket_id, cdatetime);
 CREATE INDEX IF NOT EXISTS hd_ticket_messages_mentions_idx ON helpdesk.hd_ticket_messages USING gin (mentions);
+-- Append-only, with one exception: delivery_status (added by 20261106-18) records what happened to
+-- an outbound reply after it was written, so an UPDATE that changes that column and nothing else
+-- goes through. Every other UPDATE, and every DELETE outside the unsubscribe purge, is refused.
+CREATE OR REPLACE FUNCTION helpdesk.hd_ticket_messages_guard() RETURNS trigger
+LANGUAGE plpgsql AS $f$
+BEGIN
+    IF TG_OP = 'UPDATE' AND (to_jsonb(NEW) - 'delivery_status') = (to_jsonb(OLD) - 'delivery_status') THEN
+        RETURN NEW;
+    END IF;
+    IF TG_OP = 'DELETE' AND helpdesk.hd_purge_allowed(OLD.tenant_id, OLD.bus_id) THEN
+        RETURN OLD;
+    END IF;
+    RAISE EXCEPTION 'hd_ticket_messages is append-only: % is not allowed; write a new message instead', TG_OP
+        USING ERRCODE = 'integrity_constraint_violation';
+END
+$f$;
 DROP TRIGGER IF EXISTS hd_ticket_messages_append_only ON helpdesk.hd_ticket_messages;
 CREATE TRIGGER hd_ticket_messages_append_only BEFORE UPDATE OR DELETE ON helpdesk.hd_ticket_messages
-    FOR EACH ROW EXECUTE FUNCTION helpdesk.hd_refuse_change();
+    FOR EACH ROW EXECUTE FUNCTION helpdesk.hd_ticket_messages_guard();
 
 -- ======================================================================= attachments
 -- ticket_id may be NULL between upload and the ticket it is attached to; confirmed_at marks a
@@ -236,10 +252,11 @@ DECLARE t text;
 BEGIN
     FOREACH t IN ARRAY ARRAY['hd_ticket_events', 'hd_ticket_messages'] LOOP
         IF NOT EXISTS (SELECT 1 FROM pg_trigger g JOIN pg_proc p ON p.oid = g.tgfoid
-                        WHERE g.tgrelid = ('helpdesk.' || t)::regclass AND p.proname = 'hd_refuse_change'
+                        WHERE g.tgrelid = ('helpdesk.' || t)::regclass
+                          AND p.proname IN ('hd_refuse_change', 'hd_ticket_messages_guard')
                           AND NOT g.tgisinternal
                           AND (g.tgtype & 8) <> 0 AND (g.tgtype & 16) <> 0) THEN
-            RAISE EXCEPTION 'helpdesk.% is not append-only: its hd_refuse_change trigger on UPDATE and DELETE is missing', t;
+            RAISE EXCEPTION 'helpdesk.% is not append-only: its trigger on UPDATE and DELETE is missing', t;
         END IF;
     END LOOP;
     IF EXISTS (SELECT 1 FROM helpdesk.hd_tickets k JOIN helpdesk.hd_statuses s ON s.id = k.status_id
