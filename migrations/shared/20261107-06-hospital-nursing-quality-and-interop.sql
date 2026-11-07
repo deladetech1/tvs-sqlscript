@@ -92,8 +92,8 @@ SELECT hospital.widen_check('hospital.hospital_appointments', 'hospital_appointm
 
 -- ======================================================================= permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
-('rt-hospital-quality', 'Hospital Quality & Safety', 'Incidents, infection control, isolation and antibiotic stewardship', 'rt-subscribed-app-hospital'),
-('rt-hospital-rosters', 'Hospital Duty Rosters', 'Shifts and on-call, with licences checked', 'rt-subscribed-app-hospital')
+('rt-hospital-quality', 'CloudHams Quality & Safety', 'Incidents, infection control, isolation and antibiotic stewardship', 'rt-subscribed-app-hospital'),
+('rt-hospital-rosters', 'CloudHams Duty Rosters', 'Shifts and on-call, with licences checked', 'rt-subscribed-app-hospital')
 ON CONFLICT (id) DO UPDATE SET resource_type_name = EXCLUDED.resource_type_name, description = EXCLUDED.description,
                                parent_resource_id = EXCLUDED.parent_resource_id;
 
@@ -105,7 +105,7 @@ WITH spec(resource_key, resource_type_id, action, label) AS (VALUES
 )
 INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime)
 SELECT 'permission-hospital-' || spec.resource_key || '-' || spec.action,
-       'Hospital ' || initcap(spec.resource_key) || ' ' || initcap(spec.action),
+       'CloudHams ' || initcap(spec.resource_key) || ' ' || initcap(spec.action),
        spec.resource_type_id, spec.label, CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP
   FROM spec
 ON CONFLICT (id) DO UPDATE SET permission_name = EXCLUDED.permission_name, resource_type_id = EXCLUDED.resource_type_id,

@@ -38,7 +38,7 @@ END
 $f$;
 
 INSERT INTO core_platform.cp_app_schemas (app_id, schema_name, description)
-VALUES ('app-hospital', 'hospital', 'Hospital (clinic and hospital management) audit logs')
+VALUES ('app-hospital', 'hospital', 'CloudHams (clinic and hospital management) audit logs')
 ON CONFLICT (app_id) DO UPDATE SET schema_name = EXCLUDED.schema_name,
                                    description = EXCLUDED.description;
 
@@ -62,24 +62,24 @@ CREATE INDEX IF NOT EXISTS hospital_audit_business_idx
 
 -- ======================================================================= permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
-('rt-subscribed-app-hospital', 'HOSPITAL APP', 'Hospital (clinic and hospital management) Subscribed APP', NULL)
+('rt-subscribed-app-hospital', 'HOSPITAL APP', 'CloudHams (clinic and hospital management) Subscribed APP', NULL)
 ON CONFLICT (id) DO UPDATE SET resource_type_name = EXCLUDED.resource_type_name,
                                description        = EXCLUDED.description;
 
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
-('rt-hospital-profiles',     'Hospital Facilities',    'Each facility''s identity, type, location, licences and contacts',             'rt-subscribed-app-hospital'),
-('rt-hospital-settings',     'Hospital Settings',      'How the hospital system is set up: modules, numbering, identifiers',            'rt-subscribed-app-hospital'),
-('rt-hospital-logs',         'Hospital Logs',          'The audit trail of the hospital system',                                        'rt-subscribed-app-hospital'),
-('rt-hospital-patients',     'Hospital Patients',      'Registration, the master patient index, identifiers, allergies and documents',  'rt-subscribed-app-hospital'),
-('rt-hospital-appointments', 'Hospital Appointments',  'Booking and running appointments',                                              'rt-subscribed-app-hospital'),
-('rt-hospital-queue',        'Hospital Queues',        'Tokens and service points',                                                     'rt-subscribed-app-hospital'),
-('rt-hospital-clinical',     'Hospital Clinical',      'Visits, triage and vitals, notes, diagnoses and orders',                        'rt-subscribed-app-hospital'),
-('rt-hospital-lab',          'Hospital Laboratory',    'Tests, samples, results and their release',                                     'rt-subscribed-app-hospital'),
-('rt-hospital-pharmacy',     'Hospital Pharmacy',      'Medicines, stock and dispensing',                                               'rt-subscribed-app-hospital'),
-('rt-hospital-wards',        'Hospital Wards',         'Wards, beds, admissions, transfers and discharges',                             'rt-subscribed-app-hospital'),
-('rt-hospital-billing',      'Hospital Billing',       'Prices, charges, bills, payments, waivers and refunds',                         'rt-subscribed-app-hospital'),
-('rt-hospital-claims',       'Hospital Claims',        'Payers, insurance policies and claims',                                         'rt-subscribed-app-hospital'),
-('rt-hospital-reports',      'Hospital Reports',       'Dashboards and reports',                                                        'rt-subscribed-app-hospital')
+('rt-hospital-profiles',     'CloudHams Facilities',    'Each facility''s identity, type, location, licences and contacts',             'rt-subscribed-app-hospital'),
+('rt-hospital-settings',     'CloudHams Settings',      'How the hospital system is set up: modules, numbering, identifiers',            'rt-subscribed-app-hospital'),
+('rt-hospital-logs',         'CloudHams Logs',          'The audit trail of the hospital system',                                        'rt-subscribed-app-hospital'),
+('rt-hospital-patients',     'CloudHams Patients',      'Registration, the master patient index, identifiers, allergies and documents',  'rt-subscribed-app-hospital'),
+('rt-hospital-appointments', 'CloudHams Appointments',  'Booking and running appointments',                                              'rt-subscribed-app-hospital'),
+('rt-hospital-queue',        'CloudHams Queues',        'Tokens and service points',                                                     'rt-subscribed-app-hospital'),
+('rt-hospital-clinical',     'CloudHams Clinical',      'Visits, triage and vitals, notes, diagnoses and orders',                        'rt-subscribed-app-hospital'),
+('rt-hospital-lab',          'CloudHams Laboratory',    'Tests, samples, results and their release',                                     'rt-subscribed-app-hospital'),
+('rt-hospital-pharmacy',     'CloudHams Pharmacy',      'Medicines, stock and dispensing',                                               'rt-subscribed-app-hospital'),
+('rt-hospital-wards',        'CloudHams Wards',         'Wards, beds, admissions, transfers and discharges',                             'rt-subscribed-app-hospital'),
+('rt-hospital-billing',      'CloudHams Billing',       'Prices, charges, bills, payments, waivers and refunds',                         'rt-subscribed-app-hospital'),
+('rt-hospital-claims',       'CloudHams Claims',        'Payers, insurance policies and claims',                                         'rt-subscribed-app-hospital'),
+('rt-hospital-reports',      'CloudHams Reports',       'Dashboards and reports',                                                        'rt-subscribed-app-hospital')
 ON CONFLICT (id) DO UPDATE SET resource_type_name = EXCLUDED.resource_type_name,
                                description        = EXCLUDED.description,
                                parent_resource_id = EXCLUDED.parent_resource_id;
@@ -122,7 +122,7 @@ WITH spec(resource_key, resource_type_id, action, label) AS (VALUES
 )
 INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime)
 SELECT 'permission-hospital-' || spec.resource_key || '-' || spec.action,
-       'Hospital ' || initcap(spec.resource_key) || ' ' || initcap(spec.action),
+       'CloudHams ' || initcap(spec.resource_key) || ' ' || initcap(spec.action),
        spec.resource_type_id, spec.label, CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP
   FROM spec
 ON CONFLICT (id) DO UPDATE SET permission_name  = EXCLUDED.permission_name,
@@ -140,16 +140,16 @@ UPDATE core_platform.cp_permissions p
 
 -- ============================================================================ roles
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
-('role-subscribed-app-hospital-admin', 'system-tenant-id', 'Hospital Admin', 'Administrator of the hospital system: every Hospital permission', 'rt-subscribed-app-hospital', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-director',   'system-tenant-id', 'Hospital Medical Director',    'Runs the facility: every Hospital permission',                                              'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-doctor',     'system-tenant-id', 'Hospital Doctor',              'Consults, diagnoses, orders and prescribes, admits and discharges',                          'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-nurse',      'system-tenant-id', 'Hospital Nurse',               'Triage and vitals, nursing notes, the ward and its beds',                                    'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-records',    'system-tenant-id', 'Hospital Front Desk',          'Registers patients, books appointments, runs the queues and keeps records',                 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-cashier',    'system-tenant-id', 'Hospital Cashier',             'Takes payments and issues receipts',                                                        'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-billing',    'system-tenant-id', 'Hospital Billing Officer',     'Prices, bills, waivers and insurance claims',                                               'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-lab',        'system-tenant-id', 'Hospital Laboratory Scientist','Samples, results and their release, and the test catalogue',                                'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-pharmacist', 'system-tenant-id', 'Hospital Pharmacist',          'Dispensing, stock and the medicines list',                                                  'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-viewer',     'system-tenant-id', 'Hospital Viewer',              'Reads everything outside the clinical record; changes nothing',                             'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('role-subscribed-app-hospital-admin', 'system-tenant-id', 'CloudHams Admin', 'Administrator of the hospital system: every CloudHams permission', 'rt-subscribed-app-hospital', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-director',   'system-tenant-id', 'CloudHams Medical Director',    'Runs the facility: every CloudHams permission',                                              'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-doctor',     'system-tenant-id', 'CloudHams Doctor',              'Consults, diagnoses, orders and prescribes, admits and discharges',                          'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-nurse',      'system-tenant-id', 'CloudHams Nurse',               'Triage and vitals, nursing notes, the ward and its beds',                                    'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-records',    'system-tenant-id', 'CloudHams Front Desk',          'Registers patients, books appointments, runs the queues and keeps records',                 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-cashier',    'system-tenant-id', 'CloudHams Cashier',             'Takes payments and issues receipts',                                                        'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-billing',    'system-tenant-id', 'CloudHams Billing Officer',     'Prices, bills, waivers and insurance claims',                                               'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-lab',        'system-tenant-id', 'CloudHams Laboratory Scientist','Samples, results and their release, and the test catalogue',                                'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-pharmacist', 'system-tenant-id', 'CloudHams Pharmacist',          'Dispensing, stock and the medicines list',                                                  'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-viewer',     'system-tenant-id', 'CloudHams Viewer',              'Reads everything outside the clinical record; changes nothing',                             'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET role_name        = EXCLUDED.role_name,
                                description      = EXCLUDED.description,
                                resource_type_id = EXCLUDED.resource_type_id,

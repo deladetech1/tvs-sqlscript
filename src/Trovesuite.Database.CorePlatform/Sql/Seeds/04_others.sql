@@ -255,7 +255,7 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- location (one facility profile per location). Registration beyond this row is
 -- migrations/shared/20261107-01-hospital-joins-the-platform.sql. It replaces the old placeholder
 -- app-hams (coming soon, never sold), which that file removes. Not app-hms, which is hospitality.
-('app-hospital', 'Hospital', 'Patients & Records', 'Appointments & Queues', 'Consultations & Orders', 'Lab & Pharmacy', 'Billing & Insurance Claims', 'Run a clinic, a hospital or a group of them from one place: one record per patient across every branch, appointments and queues, consultations, lab and pharmacy, wards, billing and insurance claims, set up for any country', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true)
+('app-hospital', 'CloudHams', 'Patients & Records', 'Appointments & Queues', 'Consultations & Orders', 'Lab & Pharmacy', 'Billing & Insurance Claims', 'Run a clinic, a hospital or a group of them from one place: one record per patient across every branch, appointments and queues, consultations, lab and pharmacy, wards, billing and insurance claims, set up for any country', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true)
 ON CONFLICT (id) DO UPDATE SET
     app_name    = EXCLUDED.app_name,
     feature1    = EXCLUDED.feature1,

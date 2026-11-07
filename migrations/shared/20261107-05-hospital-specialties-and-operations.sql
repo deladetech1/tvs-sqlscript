@@ -89,9 +89,9 @@ ALTER TABLE hospital.hospital_settings ADD COLUMN IF NOT EXISTS tele_url text;
 
 -- ======================================================================= permissions
 INSERT INTO core_platform.cp_resource_types (id, resource_type_name, description, parent_resource_id) VALUES
-('rt-hospital-operations', 'Hospital Operations', 'Stores, procurement, housekeeping, maintenance, assets, diet, CSSD, mortuary, ambulance, licences', 'rt-subscribed-app-hospital'),
-('rt-hospital-relations',  'Hospital Patient Relations', 'Complaints, surveys and visitors', 'rt-subscribed-app-hospital'),
-('rt-hospital-bloodbank',  'Hospital Blood Bank', 'Donors, blood units, cross-matching and transfusions', 'rt-subscribed-app-hospital')
+('rt-hospital-operations', 'CloudHams Operations', 'Stores, procurement, housekeeping, maintenance, assets, diet, CSSD, mortuary, ambulance, licences', 'rt-subscribed-app-hospital'),
+('rt-hospital-relations',  'CloudHams Patient Relations', 'Complaints, surveys and visitors', 'rt-subscribed-app-hospital'),
+('rt-hospital-bloodbank',  'CloudHams Blood Bank', 'Donors, blood units, cross-matching and transfusions', 'rt-subscribed-app-hospital')
 ON CONFLICT (id) DO UPDATE SET resource_type_name = EXCLUDED.resource_type_name, description = EXCLUDED.description,
                                parent_resource_id = EXCLUDED.parent_resource_id;
 
@@ -106,7 +106,7 @@ WITH spec(resource_key, resource_type_id, action, label) AS (VALUES
 )
 INSERT INTO core_platform.cp_permissions (id, permission_name, resource_type_id, description, cdate, ctime, cdatetime)
 SELECT 'permission-hospital-' || spec.resource_key || '-' || spec.action,
-       'Hospital ' || initcap(spec.resource_key) || ' ' || initcap(spec.action),
+       'CloudHams ' || initcap(spec.resource_key) || ' ' || initcap(spec.action),
        spec.resource_type_id, spec.label, CURRENT_DATE::text, CURRENT_TIME::text, CURRENT_TIMESTAMP
   FROM spec
 ON CONFLICT (id) DO UPDATE SET permission_name = EXCLUDED.permission_name, resource_type_id = EXCLUDED.resource_type_id,
@@ -118,8 +118,8 @@ UPDATE core_platform.cp_permissions p
  WHERE p.id LIKE 'permission-hospital-%' AND (p.app_prefix IS DISTINCT FROM 'hospital' OR p.action IS NULL);
 
 INSERT INTO core_platform.cp_roles (id, tenant_id, role_name, description, resource_type_id, is_system, is_active, cdate, ctime, cdatetime) VALUES
-('role-hospital-operations', 'system-tenant-id', 'Hospital Operations Officer', 'Stores, procurement, housekeeping, maintenance, assets, diet, CSSD, mortuary and ambulances', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
-('role-hospital-relations',  'system-tenant-id', 'Hospital Patient Relations Officer', 'Complaints, surveys, visitors and the patient portal', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+('role-hospital-operations', 'system-tenant-id', 'CloudHams Operations Officer', 'Stores, procurement, housekeeping, maintenance, assets, diet, CSSD, mortuary and ambulances', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('role-hospital-relations',  'system-tenant-id', 'CloudHams Patient Relations Officer', 'Complaints, surveys, visitors and the patient portal', 'rt-system-role', true, true, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET role_name = EXCLUDED.role_name, description = EXCLUDED.description,
                                resource_type_id = EXCLUDED.resource_type_id, is_system = EXCLUDED.is_system, is_active = EXCLUDED.is_active;
 
