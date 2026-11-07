@@ -294,6 +294,8 @@ BEGIN
              WHEN r.id LIKE 'role-mfg%'       THEN 'mfg'
              -- Help Desk's job roles (20261106-01).
              WHEN r.id LIKE 'role-helpdesk%'  THEN 'helpdesk'
+             -- Hospital's job roles (20261107-01).
+             WHEN r.id LIKE 'role-hospital%'  THEN 'hospital'
              -- Accounting's roles, once its permissions carry app_prefix (Accounting 02_permissions.sql).
              WHEN r.id LIKE 'role-accounting%' THEN 'accounting'
              -- QPickStore's roles (20261028-50): the add-on is MyStoreGuard's ecommerce module and
