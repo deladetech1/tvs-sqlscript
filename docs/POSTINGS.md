@@ -266,9 +266,21 @@ first ran are BASELINE and never publish (opening balances).
 - **Link.** Both kinds come from `mystoreguard` and pass the MyStoreGuard → Accounting switch (§10) like every other.
 - **Before Accounting read them.** The cursor moves past kinds it does not ask for, so `cp_events_after` would never
   hand back expenses published before this Accounting release. On its first pass per database each process brings in
-  every `msg.expense_*` event at or before the cursor that the inbox lacks (`PostingRun.CatchUpLateKindsAsync`,
-  `MsgPostingRules.LateKinds`; idempotent by `event_id`). Add a kind there whenever Accounting starts reading a kind
-  an app already publishes.
+  every event of `PostingRules.LateKinds` (`msg.expense_*`, `hms_expense.*`) at or before the cursor that the inbox
+  lacks (`PostingRun.CatchUpLateKindsAsync`; idempotent by `event_id`, as far back as events are kept, 90 days). They
+  then pass the link like any other: a business whose link is off gets them SKIPPED "Not connected" (a one-time run
+  brings back its range). Add a kind there whenever Accounting starts reading a kind an app already publishes.
+
+### HMS expenses (link `hms-accounting`, tvs-sqlscript 20261108-08/-09)
+
+`hms_expense.approved` posts like a MyStoreGuard expense: Dr `EXPENSE_CATEGORY:<core_category_id>` (same account
+lookup, `account_code` from Core; uncategorised to `OTHER_EXPENSES`) with `amount - tax_amount`, Dr reclaimable tax
+(same tax-code rule), Cr what `paid_from` names: `cash`/`petty_cash` (or none) → Cash 1010, `bank`/`card`/`cheque`
+→ Bank 1020, `momo` → Mobile money 1040, `owner`/`other` → Other payment methods 1070 (a clearing account to sort
+or point elsewhere). Dated `spent_on`; the inbox shows its `reference` (else its id). `hms_expense.voided` mirrors the
+journal the latest earlier approval of the same expense (subject, or payload `id`) posted, dated as that journal, under
+the same rules as a MyStoreGuard reversal. Journals are filed as source `HMS`. The inbox keeps the app as `hms`
+(an event published as `app-hms` is stored as `hms`), so the switch read is `app-hms` → Accounting; it starts off.
 
 ## 2. Accounting consumes
 
@@ -474,6 +486,13 @@ Loandrift journal it names, and the published lines give Loans receivable = Loan
 Loandrift collected, fees = the loan's charges.
 
 ### Posting rules and roles
+
+**Expenses on Core categories (20261108-07).** `ld.expense_paid` / `ld.expense_reversed` also carry the expense's
+`category_id`, `category_name`, `category_account_code`, `tax_rate_id` and `tax_amount`. With a category, LoanDrift's
+expense lines (key `OPERATING_EXPENSE`) post to `EXPENSE_CATEGORY:<category_id>` (the MyStoreGuard lookup, §1c), and
+reclaimable tax inside the amount (the tax-code rule, §1c) is split out to Tax on expenses 1400 on the same side; a
+reversal is LoanDrift's mirror entry, so the same happens the other way. Older events without these keys post as
+before (Lending expenses 6240).
 
 `LdPostingRules`: one journal per event, filed under source **LOANS** (shown as LoanDrift), reference = the
 document number, memo "LoanDrift loan repayment RCP-… · loan LN-… · client · branch". Each line posts to its key's
