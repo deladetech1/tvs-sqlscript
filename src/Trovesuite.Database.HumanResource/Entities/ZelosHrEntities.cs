@@ -16,6 +16,12 @@ public class ZhrBranch
     /// <summary>Country name (e.g. Ghana, Nigeria, United Kingdom).</summary>
     public string? Country { get; set; }
     public string? Description { get; set; }
+    /// <summary>
+    /// The Core Platform location this branch is (<c>core_platform.cp_locations.id</c>), when linked. A linked
+    /// branch's address and country are Core's and are shown read-only; <see cref="Address"/> and
+    /// <see cref="Country"/> keep what ZelosHR recorded before, for history and for an unlinked branch.
+    /// </summary>
+    public string? CoreLocId { get; set; }
     public bool IsArchived { get; set; }
     public string CustomFieldsData { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }

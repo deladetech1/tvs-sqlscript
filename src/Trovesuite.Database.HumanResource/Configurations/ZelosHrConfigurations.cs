@@ -24,6 +24,7 @@ public sealed class ZhrBranchConfiguration : IEntityTypeConfiguration<ZhrBranch>
         b.Property(x => x.Address).HasMaxLength(500);
         b.Property(x => x.Country).HasMaxLength(100);
         b.Property(x => x.Description).HasMaxLength(500);
+        b.Property(x => x.CoreLocId).HasColumnType("text");
         b.Property(x => x.IsArchived).HasDefaultValue(false);
         b.Property(x => x.CustomFieldsData).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
@@ -31,6 +32,8 @@ public sealed class ZhrBranchConfiguration : IEntityTypeConfiguration<ZhrBranch>
         b.Property(x => x.CreatedBy).HasColumnType("text");
         b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();
+        // One ZelosHR branch per Core Platform location in an organisation.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.CoreLocId }).IsUnique().HasFilter("core_loc_id IS NOT NULL");
         b.HasIndex(x => x.CustomFieldsData).HasMethod("gin");
     }
 }

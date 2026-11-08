@@ -1190,6 +1190,10 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("address");
 
+                    b.Property<string>("CoreLocId")
+                        .HasColumnType("text")
+                        .HasColumnName("core_loc_id");
+
                     b.Property<string>("Country")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -1258,6 +1262,11 @@ namespace Trovesuite.Database.HumanResource.Migrations
                         .HasDatabaseName("ix_zhr_branches_custom_fields_data");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("CustomFieldsData"), "gin");
+
+                    b.HasIndex("TenantId", "OrgId", "CoreLocId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_zhr_branches_tenant_id_org_id_core_loc_id")
+                        .HasFilter("core_loc_id IS NOT NULL");
 
                     b.HasIndex("TenantId", "OrgId", "Name")
                         .IsUnique()
