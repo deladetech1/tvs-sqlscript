@@ -141,8 +141,8 @@ How figures are worked out:
 | Azure func: `capture_penalties` | penalties accrued | not posted (penalties post when paid) |
 
 Not covered (left for later, listed in the report): gift card expiry/cancellation (breakage), affiliate commissions,
-MSG expenses, loyalty points earned (no liability is booked for unredeemed points), a return's
-`exchange_difference_amount` (MyStoreGuard never settles it). Stock is §1b.
+loyalty points earned (no liability is booked for unredeemed points), a return's
+`exchange_difference_amount` (MyStoreGuard never settles it). Stock is §1b; expenses are §1c.
 
 **Starts from now.** The first run records every existing sale, payment, return and gift card as already published
 (the `BASELINE` marker); history belongs in the books' opening balances. Deposits held on unreleased sales at that
@@ -229,6 +229,46 @@ A delivery costed in USD posts in USD and converts at the books' rate on the eve
 keeping the foreign amount on the line; MyStoreGuard keeps no rate per delivery (`cp_currencies.exchange_rate` is
 today's, not the delivery's). Cost of sales converts at the sale date's rate, so Inventory in base currency can drift
 from receipt-date value by the rate change; revalue it in Currency revaluation if it matters.
+
+## 1c. MyStoreGuard's expenses (20261108-06)
+
+MyStoreGuard's expenses live in Core's `cp_expenses_history` (app `MYSTOREGUARD`). A deferred trigger publishes each
+APPROVED, active, not-deleted expense as `msg.expense_recorded`; one deleted, deactivated or no longer approved as
+`msg.expense_reversed` (the payload last published, `reversal: true`); a change of figures as both, the new recording
+at `revision + 1`. A change to the note or reference alone publishes nothing. Expenses that existed when the migration
+first ran are BASELINE and never publish (opening balances).
+
+| Event | Debit | Credit |
+|---|---|---|
+| `msg.expense_recorded` | the category's account (`EXPENSE_CATEGORY:<cp_expense_categories.id>`) with `amount - tax_amount`; Tax on expenses (`EXPENSE_INPUT_TAX`, 1400) with `tax_amount` when reclaimable | Cash (`CASH`, 1010) with `amount` |
+| `msg.expense_reversed` | the journal the recording of that expense and revision posted, mirrored line for line (same accounts and base amounts); the original is marked REVERSED and the mirror's `reversal_of_id` names it | |
+
+- **The category's account.** The category's role is the same `EXPENSE_CATEGORY:<id>` Expenses uses (§6), so Settings →
+  Posting accounts lists MyStoreGuard's categories beside Expenses' and either can be pointed anywhere. Unmapped, it
+  posts to the expense account whose code is the category's `account_code` in Core when the chart has one (any
+  numbering); else a 5xxx–9xxx code opens that account under 5000/6000; else the account its name suggests (§6's
+  list); else General Expenses (6290). An expense with no category posts to Other expenses (`OTHER_EXPENSES`, 6290).
+- **Tax.** `amount` is what was paid, tax inside. The tax code linked to the expense's Core tax (`core_tax_rate_id =
+  tax_rate_id`) decides: EXEMPT or WITHHOLDING is not input tax, so the expense carries all of it (the row's note says
+  why); any other code reclaims it, to the code's own input account when it names one, else to 1400. No linked code:
+  reclaimed to 1400, as Expenses' postings do. A `tax_amount` outside 0..amount is ignored (all expense).
+- **Money out.** MyStoreGuard records no payment method on an expense (`source` is the funding kind: ALLOCATED came out
+  of the Core budget), so it is Cash (1010), the role MyStoreGuard's cash sales post to; point Cash elsewhere for all of
+  them, there is no per-expense choice.
+- **Supplier.** `supplier_id` is kept on the event; journal lines carry no party, so it is not posted.
+- **Date and currency.** Dated `spent_on` (the payload's `date`), in the expense's currency, converted at the books'
+  rate on that day (Core's rates, §3 Several currencies), like every MyStoreGuard posting. A reversal is dated the
+  original's `spent_on` too: a figure change stays in the period it belongs to, and a locked period holds it (FAILED
+  until reopened) rather than moving it.
+- **A reversal without a posted recording** posts nothing: SKIPPED when the recording never reached or never posted
+  in these books, or its journal was already reversed by hand; when the recording is still PENDING/FAILED, both are
+  SKIPPED ("Reversed in MyStoreGuard before it posted").
+- **Link.** Both kinds come from `mystoreguard` and pass the MyStoreGuard → Accounting switch (§10) like every other.
+- **Before Accounting read them.** The cursor moves past kinds it does not ask for, so `cp_events_after` would never
+  hand back expenses published before this Accounting release. On its first pass per database each process brings in
+  every `msg.expense_*` event at or before the cursor that the inbox lacks (`PostingRun.CatchUpLateKindsAsync`,
+  `MsgPostingRules.LateKinds`; idempotent by `event_id`). Add a kind there whenever Accounting starts reading a kind
+  an app already publishes.
 
 ## 2. Accounting consumes
 
