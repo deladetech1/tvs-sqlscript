@@ -283,13 +283,23 @@ the same rules as a MyStoreGuard reversal (so not on the void's own `date`). Jou
 publishes as `hms`; the inbox keeps an app without Core's `app-` (an event published as `app-hms` is stored as `hms`),
 and the switch read is always `app-<app>`, never `app-app-…`. The link starts off.
 
+**Expenses lite (20261108-15).** HMS now tells the books when the money left: `hms_expense.paid` posts (the rule
+above, dated `date`, the day it was paid) and `hms_expense.voided`, sent only for a paid expense, mirrors that payment's
+journal dated `date`, the day it was voided (never before the payment). `hms_expense.approved` is no longer sent; rows of
+it already in an inbox still post (dated `spent_on`). The expense is in the books once: a `.paid` is SKIPPED ("Already in
+these books") while a journal posted for an earlier `.approved` or `.paid` of the same expense still stands. The key is
+the expense's id, which every one of its events carries (the event subject, payload `id`, or `document_id`), and a
+void takes back the posted one of them.
+
 ### CloudHams expenses (link `hospital-accounting`, tvs-sqlscript 20261108-09)
 
 `hospital_expense.paid` (source `hospital`) posts the same way: Dr `EXPENSE_CATEGORY:<core_category_id>` (or
 `OTHER_EXPENSES`) with `amount - tax_amount`, Dr reclaimable tax, Cr where the money came from, dated `paid_on`.
 `method = payout` (Core Platform's payout gateway) comes out of Card settlements 1060, the role Expenses' gateway payouts
 use (`ForPayoutMethod("GATEWAY")`); `manual` by `payment_method`: cash or unsaid → Cash 1010, mobile money → 1040,
-anything else → Bank 1020. The inbox shows `document_number` (EXP-…). Paid is final in CloudHams: no reversal kind.
+anything else → Bank 1020. The inbox shows `document_number` (EXP-…). Since Expenses lite (20261108-15) a paid expense
+can be voided: `hospital_expense.voided` mirrors the payment's journal, dated `date` (the void day). A `.paid` published
+again for the same expense while its journal stands is SKIPPED.
 Journals are filed as source `HOSPITAL` (shown as CloudHams). The link starts off; caught up like HMS's.
 
 ## 2. Accounting consumes
@@ -606,6 +616,11 @@ invoice; the expense already posted here), expenses in a claim currency other th
 rate (§3), a statement line's own amount (the expense's amount is posted, which is the line's).
 
 ### Posting rules and roles
+
+**Core categories (20261108-12/-13).** A line's role is `EXPENSE_CATEGORY:<core_category_id>`, the same account
+every other app's spending in that Core category posts to; a line without one (an unlinked category, an event from
+before) keeps `EXPENSE_CATEGORY:<category_id>`. A business that had pointed an Expenses category's own role somewhere
+in Settings → Posting accounts must point the Core category's role there too (dev had none, 2026-11-08).
 
 `ExpPostingRules`: source **EXPENSES** (shown as Expenses), reference = the claim / bill / advance number.
 
