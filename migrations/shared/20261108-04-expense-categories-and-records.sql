@@ -56,8 +56,11 @@ ALTER TABLE core_platform.cp_expenses_history ADD COLUMN IF NOT EXISTS approved_
 ALTER TABLE core_platform.cp_expenses_history ADD COLUMN IF NOT EXISTS approved_at     timestamptz;
 
 ALTER TABLE core_platform.cp_expenses_history DROP CONSTRAINT IF EXISTS cp_expenses_history_status_check;
+-- The lite flow's statuses (20261108-10 sets the same list). This file re-runs on every deploy,
+-- BEFORE -10, so it must allow every status a later file lets rows reach (PAID, VOIDED, ...),
+-- or the next deploy fails here once any row is PAID.
 ALTER TABLE core_platform.cp_expenses_history ADD CONSTRAINT cp_expenses_history_status_check
-    CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'));
+    CHECK (status IN ('SUBMITTED', 'PENDING', 'APPROVED', 'PAID', 'REJECTED', 'VOIDED'));
 
 CREATE INDEX IF NOT EXISTS ix_cp_expenses_history_category
     ON core_platform.cp_expenses_history (tenant_id, category_id);
