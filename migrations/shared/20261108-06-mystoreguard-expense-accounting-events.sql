@@ -80,6 +80,11 @@ RETURNS jsonb LANGUAGE sql STABLE AS $f$
         'reference', e.reference,
         'receipt_file_id', e.receipt_file_id,
         'description', coalesce(nullif(trim(e.used_for), ''), nullif(trim(e.description), '')),
+        -- 20261108-10's columns, read through the row so this file still creates on a database
+        -- that has not reached -10 yet (files apply in name order).
+        'paid_from', to_jsonb(e) -> 'paid_from',
+        'payee', to_jsonb(e) -> 'payee',
+        'paid_at', to_jsonb(e) -> 'paid_at',
         'document_type', 'EXPENSE', 'document_id', e.id, 'document_number', coalesce(nullif(trim(e.reference), ''), e.id),
         'date', coalesce(e.spent_on, e.cdatetime::date))
       FROM (SELECT 1) one
@@ -91,7 +96,7 @@ $f$;
 CREATE OR REPLACE FUNCTION core_platform.cp_expense_acc_figures(p jsonb) RETURNS jsonb
 LANGUAGE sql IMMUTABLE AS $f$
     SELECT p - ARRAY['version', 'description', 'reference', 'document_number', 'receipt_file_id',
-                     'category_name', 'revision', 'reversal']
+                     'category_name', 'revision', 'reversal', 'paid_from', 'payee', 'paid_at']
 $f$;
 
 -- ===================================================================== one expense
@@ -109,7 +114,10 @@ BEGIN
 
     SELECT * INTO e FROM core_platform.cp_expenses_history WHERE tenant_id = p_tenant AND id = p_id LIMIT 1;
     IF FOUND THEN
-        live := e.app = 'MYSTOREGUARD' AND e.status = 'APPROVED'
+        -- PAID since 20261108-14 (Expenses lite: the books hear when the money left). Kept the
+        -- same here because this file re-runs before -14 on every deploy: an APPROVED rule
+        -- would be live in between.
+        live := e.app = 'MYSTOREGUARD' AND e.status = 'PAID'
                 AND e.delete_status = 'NOT_DELETED' AND e.is_active;
     END IF;
     IF live THEN v_payload := core_platform.cp_expense_acc_payload(e); END IF;
@@ -226,12 +234,16 @@ BEGIN
                    'reference', jsonb_build_object('type', jsonb_build_array('string', 'null')),
                    'receipt_file_id', jsonb_build_object('type', jsonb_build_array('string', 'null')),
                    'description', jsonb_build_object('type', jsonb_build_array('string', 'null')),
+                   'paid_from', jsonb_build_object('type', jsonb_build_array('string', 'null'),
+                       'enum', jsonb_build_array('cash', 'bank', 'mobile_money', 'card', 'petty_cash', 'other', null)),
+                   'payee', jsonb_build_object('type', jsonb_build_array('string', 'null')),
+                   'paid_at', jsonb_build_object('type', jsonb_build_array('string', 'null')),
                    'revision', jsonb_build_object('type', 'integer', 'minimum', 1),
                    'reversal', jsonb_build_object('type', 'boolean'))),
            now()
       FROM (VALUES
-        ('msg.expense_recorded', 'A MyStoreGuard expense the books should post: amount paid (tax inside), category and its account code, supplier, date.'),
-        ('msg.expense_reversed', 'A published MyStoreGuard expense to take back out of the books: deleted, no longer approved, or changed (the new figures follow as msg.expense_recorded).')
+        ('msg.expense_recorded', 'A MyStoreGuard expense PAID (money left the business): amount paid (tax inside), category and its account code, supplier or payee, date, paid from.'),
+        ('msg.expense_reversed', 'A published (paid) MyStoreGuard expense to take back out of the books: voided, deleted, or its figures changed (the new figures follow as msg.expense_recorded).')
       ) AS k(kind, description)
     ON CONFLICT (kind, version) DO UPDATE SET
         link_key = EXCLUDED.link_key, source_app = EXCLUDED.source_app, target_app = EXCLUDED.target_app,
