@@ -266,7 +266,7 @@ first ran are BASELINE and never publish (opening balances).
 - **Link.** Both kinds come from `mystoreguard` and pass the MyStoreGuard → Accounting switch (§10) like every other.
 - **Before Accounting read them.** The cursor moves past kinds it does not ask for, so `cp_events_after` would never
   hand back expenses published before this Accounting release. On its first pass per database each process brings in
-  every event of `PostingRules.LateKinds` (`msg.expense_*`, `hms_expense.*`) at or before the cursor that the inbox
+  every event of `PostingRules.LateKinds` (`msg.expense_*`, `hms_expense.*`, `hospital_expense.*`) at or before the cursor that the inbox
   lacks (`PostingRun.CatchUpLateKindsAsync`; idempotent by `event_id`, as far back as events are kept, 90 days). They
   then pass the link like any other: a business whose link is off gets them SKIPPED "Not connected" (a one-time run
   brings back its range). Add a kind there whenever Accounting starts reading a kind an app already publishes.
@@ -279,8 +279,18 @@ lookup, `account_code` from Core; uncategorised to `OTHER_EXPENSES`) with `amoun
 → Bank 1020, `momo` → Mobile money 1040, `owner`/`other` → Other payment methods 1070 (a clearing account to sort
 or point elsewhere). Dated `spent_on`; the inbox shows its `reference` (else its id). `hms_expense.voided` mirrors the
 journal the latest earlier approval of the same expense (subject, or payload `id`) posted, dated as that journal, under
-the same rules as a MyStoreGuard reversal. Journals are filed as source `HMS`. The inbox keeps the app as `hms`
-(an event published as `app-hms` is stored as `hms`), so the switch read is `app-hms` → Accounting; it starts off.
+the same rules as a MyStoreGuard reversal (so not on the void's own `date`). Journals are filed as source `HMS`. HMS
+publishes as `hms`; the inbox keeps an app without Core's `app-` (an event published as `app-hms` is stored as `hms`),
+and the switch read is always `app-<app>`, never `app-app-…`. The link starts off.
+
+### CloudHams expenses (link `hospital-accounting`, tvs-sqlscript 20261108-09)
+
+`hospital_expense.paid` (source `hospital`) posts the same way: Dr `EXPENSE_CATEGORY:<core_category_id>` (or
+`OTHER_EXPENSES`) with `amount - tax_amount`, Dr reclaimable tax, Cr where the money came from, dated `paid_on`.
+`method = payout` (Core Platform's payout gateway) comes out of Card settlements 1060, the role Expenses' gateway payouts
+use (`ForPayoutMethod("GATEWAY")`); `manual` by `payment_method`: cash or unsaid → Cash 1010, mobile money → 1040,
+anything else → Bank 1020. The inbox shows `document_number` (EXP-…). Paid is final in CloudHams: no reversal kind.
+Journals are filed as source `HOSPITAL` (shown as CloudHams). The link starts off; caught up like HMS's.
 
 ## 2. Accounting consumes
 
