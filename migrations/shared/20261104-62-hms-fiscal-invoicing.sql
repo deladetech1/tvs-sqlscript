@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS hms.hms_fiscal_profiles (
 );
 ALTER TABLE hms.hms_fiscal_profiles DROP CONSTRAINT IF EXISTS hms_fiscal_profiles_provider_check;
 UPDATE hms.hms_fiscal_profiles SET provider = 'local', api_key = NULL, api_secret = NULL WHERE provider <> 'local' OR api_key IS NOT NULL OR api_secret IS NOT NULL;
-UPDATE hms.hms_fiscal_documents SET provider = 'local', status = 'accepted' WHERE provider <> 'local' OR status <> 'accepted';
 ALTER TABLE hms.hms_fiscal_profiles ADD CONSTRAINT hms_fiscal_profiles_provider_check CHECK (provider = 'local');
 ALTER TABLE hms.hms_fiscal_profiles DROP CONSTRAINT IF EXISTS hms_fiscal_profiles_environment_check;
 ALTER TABLE hms.hms_fiscal_profiles ADD CONSTRAINT hms_fiscal_profiles_environment_check CHECK (environment IN ('sandbox', 'live'));
@@ -97,6 +96,9 @@ CREATE TABLE IF NOT EXISTS hms.hms_fiscal_documents (
     submitted_at     timestamptz,
     cdatetime        timestamptz NOT NULL DEFAULT now()
 );
+-- After the CREATE, not before it: on a NEW database (a silo being registered) the table
+-- does not exist yet at the profiles' UPDATE above, and the deploy stopped here (42P01).
+UPDATE hms.hms_fiscal_documents SET provider = 'local', status = 'accepted' WHERE provider <> 'local' OR status <> 'accepted';
 ALTER TABLE hms.hms_fiscal_documents DROP CONSTRAINT IF EXISTS hms_fiscal_documents_status_check;
 ALTER TABLE hms.hms_fiscal_documents ADD CONSTRAINT hms_fiscal_documents_status_check CHECK (status IN ('pending', 'accepted', 'failed'));
 ALTER TABLE hms.hms_fiscal_documents DROP CONSTRAINT IF EXISTS hms_fiscal_documents_kind_check;

@@ -39,6 +39,20 @@
 -- after every single deploy. Now they are written only where they are true: the dev
 -- control plane and the two silo databases they name. 20261006-04 stays as the cleanup
 -- for any database that already holds them.
+--
+-- UPDATE ONLY, NEVER INSERT (2026-11-09).
+-- Both clients were OFFBOARDED on 2026-10-23 (tvs-iac offboard-silo-client: databases
+-- dropped, server destroyed, secrets purged, route rows deleted). This seed then put the
+-- two rows back, ACTIVE and naming placeholder tenants, on the very next saas-dev deploy
+-- (cdatetime 2026-10-23 02:32 and 16:30) -- an INSERT ... ON CONFLICT cannot tell "never
+-- registered" from "deliberately removed". From then on every dev fan-out job, every
+-- request from those Origins and every push to the `silo` branch reached for databases
+-- that no longer exist (silos run 42715439143: migrator-db-url-itech /
+-- migrator-db-url-accesspoint not found). Registering a silo is tvs-iac
+-- register-silo-client's job now, which writes the row itself. So this seed only keeps
+-- the infrastructure columns of rows that already exist, and leaves `status` alone too:
+-- restating ACTIVE undid an offboarding LOCK (SUSPENDED) on every deploy.
+-- 20261109-97 removes the two rows this seed resurrected.
 DO $seed$
 BEGIN
     IF current_database() NOT IN ('dev-db', 'silo-itech-dev', 'silo-accesspoint-dev') THEN
@@ -47,65 +61,51 @@ BEGIN
         RETURN;
     END IF;
 
-    INSERT INTO control_plane.ctl_tenant_routes
-        (host, tenant_id, tier, cell_key,
-         db_server_fqdn, db_name, silo_key, db_secret_uri,
-         storage_account, container_prefix, storage_secret_uri,
-         status, is_wildcard, route_kind, cdate, ctime, cdatetime, created_by)
-    VALUES
-        ('itech.dev.trovesuite.com',
-         'tnt_itech', 'SILO_SHARED', 'uksouth-dev',
-         'tvs-shared-sql.postgres.database.azure.com', 'silo-itech-dev', 'itech', NULL,
-         -- A shared silo names NO storage account: storage is per app, so it keeps each
-         -- app's own and prefixes its containers inside them. The prefix is the silo key,
-         -- which is why it is this tenant's and nobody else's.
-         NULL, 'itech', NULL,
-         'ACTIVE', false, 'TENANT',
-         CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261004-02'),
-
-        ('accesspoint.dev.trovesuite.com',
-         'tnt_accesspoint', 'SILO_DEDICATED', 'uksouth-dev',
-         'tvs-dev-silo-accesspoint-sql.postgres.database.azure.com', 'silo-accesspoint-dev',
-         'accesspoint', NULL,
-         -- Its own account, so its containers need no prefix to stay apart.
-         'tvsdevaccesspointsa', NULL, NULL,
-         'ACTIVE', false, 'TENANT',
-         CURRENT_DATE::text, CURRENT_TIME::text, now(), 'migration 20261004-02')
-    ON CONFLICT (host) DO UPDATE
-       -- tenant_id is NOT in this list.
-       --
-       -- Both of these clients have been cleared and set up again through the console, which
-       -- writes the real tenant id through control_plane.reconcile_route_tenant. Restating
-       -- 'tnt_itech' here on every deploy would point a live address back at a placeholder
-       -- tenant that no longer exists -- signing a customer out of their own system until
-       -- somebody noticed. The seed's job is the infrastructure columns; who is behind the
-       -- address is the console's.
-       SET tier             = EXCLUDED.tier,
-           route_kind       = EXCLUDED.route_kind,
-           db_server_fqdn   = EXCLUDED.db_server_fqdn,
-           db_name          = EXCLUDED.db_name,
-           silo_key         = EXCLUDED.silo_key,
-           storage_account  = EXCLUDED.storage_account,
-           container_prefix = EXCLUDED.container_prefix,
-           status           = EXCLUDED.status,
+    -- tenant_id is NOT set here: the console writes the real tenant id through
+    -- control_plane.reconcile_route_tenant, and restating 'tnt_itech' on every deploy
+    -- would point a live address back at a placeholder tenant. Nor is status.
+    UPDATE control_plane.ctl_tenant_routes AS r
+       SET tier             = v.tier,
+           route_kind       = 'TENANT',
+           db_server_fqdn   = v.db_server_fqdn,
+           db_name          = v.db_name,
+           silo_key         = v.silo_key,
+           -- A shared silo names NO storage account: storage is per app, so it keeps
+           -- each app's own and prefixes its containers with the silo key. A dedicated
+           -- one has its own account, so its containers need no prefix.
+           storage_account  = v.storage_account,
+           container_prefix = v.container_prefix,
            udatetime        = now(),
-           updated_by       = 'migration 20261004-02';
+           updated_by       = 'migration 20261004-02'
+      FROM (VALUES
+            ('itech.dev.trovesuite.com', 'SILO_SHARED',
+             'tvs-shared-sql.postgres.database.azure.com', 'silo-itech-dev', 'itech',
+             NULL::text, 'itech'),
+            ('accesspoint.dev.trovesuite.com', 'SILO_DEDICATED',
+             'tvs-dev-silo-accesspoint-sql.postgres.database.azure.com', 'silo-accesspoint-dev',
+             'accesspoint', 'tvsdevaccesspointsa', NULL::text)
+           ) AS v (host, tier, db_server_fqdn, db_name, silo_key, storage_account, container_prefix)
+     WHERE r.host = v.host
+       AND (r.tier, r.route_kind, r.db_server_fqdn, r.db_name, r.silo_key,
+            r.storage_account, r.container_prefix)
+           IS DISTINCT FROM
+           (v.tier, 'TENANT', v.db_server_fqdn, v.db_name, v.silo_key,
+            v.storage_account, v.container_prefix);
 END $seed$;
 
 -- ----------------------------------------------------------------------------- checks
 DO $$
 DECLARE n integer; k text;
 BEGIN
-    -- Both addresses exist and both say they belong to a customer -- in dev's own
-    -- databases, the only place they are seeded.
+    -- Where either address is still registered, it says it belongs to a customer. Its
+    -- ABSENCE is not an error any more: an offboarded client has no row.
     FOR k IN SELECT unnest(ARRAY['itech.dev.trovesuite.com',
                                  'accesspoint.dev.trovesuite.com'])
-             WHERE current_database() IN ('dev-db', 'silo-itech-dev', 'silo-accesspoint-dev')
     LOOP
         SELECT count(*) INTO n FROM control_plane.ctl_tenant_routes
-         WHERE host = k AND route_kind = 'TENANT' AND tier <> 'POOLED';
-        IF n <> 1 THEN
-            RAISE EXCEPTION '% is not registered as a tenant address', k;
+         WHERE host = k AND (route_kind <> 'TENANT' OR tier = 'POOLED');
+        IF n > 0 THEN
+            RAISE EXCEPTION '% is registered but not as a tenant address', k;
         END IF;
     END LOOP;
 
