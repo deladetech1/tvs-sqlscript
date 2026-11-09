@@ -393,6 +393,65 @@ BEGIN
     $v$;
 END $$;
 
+-- ===================================================================== Projects never reads an HR case
+-- 20261109-31's two views over Help Desk's tickets, restated with confidential cases left out (that
+-- file re-runs first on every deploy; this one wins). Linking an HR case to Projects is refused in
+-- the app; this keeps a case that became confidential after it was linked out of Projects too.
+DO $$
+BEGIN
+    IF to_regclass('helpdesk.hd_work_links') IS NULL OR to_regclass('projects.prj_tasks') IS NULL
+       OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'helpdesk' AND table_name = 'hd_tickets'
+                       AND column_name = 'confidentiality') THEN
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW projects.src_helpdesk_links AS
+    SELECT l.tenant_id, l.bus_id, l.id AS link_id, l.task_id, l.record_type, l.record_id, l.origin, l.cdatetime,
+           r.number, r.title, r.priority, r.state, r.is_open, r.is_restricted, r.client_account_id
+      FROM helpdesk.hd_work_links l
+      JOIN LATERAL (
+            SELECT k.number, k.subject AS title, k.priority, k.status_category AS state,
+                   k.status_category NOT IN ('resolved', 'closed', 'cancelled') AS is_open, k.is_restricted, k.client_account_id
+              FROM helpdesk.hd_tickets k
+             WHERE l.record_type = 'ticket' AND k.id = l.record_id AND k.tenant_id = l.tenant_id AND k.deleted_at IS NULL AND k.merged_into_id IS NULL AND k.confidentiality = 'none'
+            UNION ALL
+            SELECT pr.number, pr.title, pr.priority, pr.state, pr.state NOT IN ('resolved', 'closed'), false, pr.client_account_id
+              FROM helpdesk.hd_problems pr
+             WHERE l.record_type = 'problem' AND pr.id = l.record_id AND pr.tenant_id = l.tenant_id
+            UNION ALL
+            SELECT c.number, c.title, CASE c.impact WHEN 'high' THEN 'high' WHEN 'low' THEN 'low' ELSE 'medium' END, c.state,
+                   c.state NOT IN ('closed', 'rejected', 'cancelled'), false, c.client_account_id
+              FROM helpdesk.hd_changes c
+             WHERE l.record_type = 'change' AND c.id = l.record_id AND c.tenant_id = l.tenant_id) r ON true
+     WHERE l.task_id IS NOT NULL
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW projects.src_helpdesk_tickets AS
+    WITH via AS (
+        SELECT l.tenant_id, l.bus_id, l.task_id, l.record_id AS ticket_id, 'ticket'::text AS via
+          FROM helpdesk.hd_work_links l WHERE l.task_id IS NOT NULL AND l.record_type = 'ticket'
+        UNION
+        SELECT l.tenant_id, l.bus_id, l.task_id, pt.ticket_id, 'problem'
+          FROM helpdesk.hd_work_links l JOIN helpdesk.hd_problem_tickets pt ON pt.problem_id = l.record_id
+         WHERE l.task_id IS NOT NULL AND l.record_type = 'problem'
+        UNION
+        SELECT l.tenant_id, l.bus_id, l.task_id, ct.ticket_id, 'change'
+          FROM helpdesk.hd_work_links l JOIN helpdesk.hd_change_tickets ct ON ct.change_id = l.record_id
+         WHERE l.task_id IS NOT NULL AND l.record_type = 'change'
+    )
+    SELECT v.tenant_id, v.bus_id, v.task_id, v.via, k.id AS ticket_id, k.number, k.subject, k.priority, k.status_category,
+           k.status_category NOT IN ('resolved', 'closed', 'cancelled') AS is_open, k.is_restricted, k.client_account_id,
+           coalesce(k.customer_party_id, k.requester_user_id, lower(k.requester_email)) AS customer_key,
+           coalesce(cp.name, k.requester_name, ru.fullname, k.requester_email) AS customer_name,
+           EXISTS (SELECT 1 FROM helpdesk.hd_sla_clocks c WHERE c.ticket_id = k.id AND c.state = 'breached') AS sla_breached,
+           (SELECT min(c.due_at) FROM helpdesk.hd_sla_clocks c WHERE c.ticket_id = k.id AND c.state = 'running') AS sla_due_at
+      FROM via v
+      JOIN helpdesk.hd_tickets k ON k.id = v.ticket_id AND k.tenant_id = v.tenant_id AND k.deleted_at IS NULL AND k.merged_into_id IS NULL AND k.confidentiality = 'none'
+      LEFT JOIN core_platform.cp_parties cp ON cp.id = k.customer_party_id AND cp.tenant_id = k.tenant_id
+      LEFT JOIN core_platform.cp_users ru ON ru.id = k.requester_user_id AND ru.tenant_id = k.tenant_id
+    $v$;
+END $$;
+
 -- ===================================================================== checks (invariants, not counts)
 DO $$
 DECLARE bad text;
