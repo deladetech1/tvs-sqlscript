@@ -256,15 +256,16 @@ SELECT v.id, 'bundle-finance', v.sub, v.price, v.rate
                ('bundle-cfg-finance-enterprise', 'shared-subscription-enterprise', NULL::numeric,  12.0::numeric))
        AS v(id, sub, price, rate)
  WHERE EXISTS (SELECT 1 FROM core_platform.cp_subscriptions s WHERE s.id = v.sub)
+-- Starting prices only (2026-10-23): an existing row keeps its price and rate,
+-- which the Deladetech console owns from here (Billing > Price list, recorded in
+-- cp_price_list_changes, shared/20261023-30). Re-running this file must not put
+-- a price the console changed back.
 ON CONFLICT (id) DO UPDATE
-   SET price = EXCLUDED.price,
-       rate = EXCLUDED.rate,
-       is_active = true,
+   SET is_active = true,
        delete_status = 'NOT_DELETED',
        updated_at = now()
- WHERE (core_platform.cp_bundle_tier_configs.price, core_platform.cp_bundle_tier_configs.rate,
-        core_platform.cp_bundle_tier_configs.is_active, core_platform.cp_bundle_tier_configs.delete_status)
-       IS DISTINCT FROM (EXCLUDED.price, EXCLUDED.rate, true, 'NOT_DELETED');
+ WHERE (core_platform.cp_bundle_tier_configs.is_active, core_platform.cp_bundle_tier_configs.delete_status)
+       IS DISTINCT FROM (true, 'NOT_DELETED');
 
 -- ----------------------------------------------------------- invariants
 -- Structural: about this file's own work, at any row count.

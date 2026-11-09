@@ -68,6 +68,14 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-accounting-%'
   AND p.id NOT LIKE 'permission-expenses-%'
   AND p.id NOT LIKE 'permission-hms-%'
+  AND p.id NOT LIKE 'permission-scm-%'
+  AND p.id NOT LIKE 'permission-sms-%'
+  AND p.id NOT LIKE 'permission-mfg-%'
+  AND p.id NOT LIKE 'permission-helpdesk-%'
+  AND p.id NOT LIKE 'permission-docs-%'
+  AND p.id NOT LIKE 'permission-sheets-%'
+  AND p.id NOT LIKE 'permission-slides-%'
+  AND p.id NOT LIKE 'permission-hospital-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
@@ -223,9 +231,57 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- Registration beyond this row is migrations/shared/20261022-61-hms-joins-the-platform.sql.
 -- Not app-hams below, which is a hospital system.
 ('app-hms', 'HMS', 'Reservations & Front Desk', 'Housekeeping & Maintenance', 'Restaurant & Bar POS', 'Rentals & Leases', 'Occupancy & Revenue Reports', 'Run hotels, guest houses, short stays, restaurants and rentals from one place: reservations, check-in, guest bills, housekeeping, POS, leases and rent, set up for your kind of business', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- SCM: supply chain management -- items, suppliers, purchasing and receiving, the inventory
+-- ledger, sales orders, shipments and an exceptions control tower -- hosted by the shared apps
+-- backend; frontend tvs-scm-ft. Billed once per business (shared/20261022-70).
+-- Registration beyond this row is migrations/shared/20261026-01-scm-joins-the-platform.sql.
+('app-scm', 'SCM', 'Items & Suppliers', 'Purchasing & Receiving', 'Inventory Ledger', 'Orders & Shipments', 'Control Tower', 'Run purchasing, stock and fulfilment from one place: items, suppliers, requisitions, purchase orders, receiving, a full inventory ledger, sales orders, shipments and an exceptions control tower', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Manufacturing: plants, BOMs and routings, production orders and an offline shop floor, then
+-- MRP, quality, traceability, maintenance and OEE -- hosted by the shared apps backend; frontend
+-- tvs-mfg-ft. Stands alone; SCM is optional and shares its stock ledger. Registration beyond this row is
+-- migrations/shared/20261029-30-mfg-joins-the-platform.sql.
+('app-mfg', 'Manufacturing', 'BOMs & Routings', 'Production Orders', 'Shop Floor (offline)', 'Finite Scheduling', 'Readiness & Traceability', 'Run production from one place: plants, bills of materials, routings and work instructions, production orders with live material readiness, and an offline tablet shop floor, with SCM optional for purchasing and sales on the same stock', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Help Desk (app-helpdesk): a service desk -- tickets, replies and internal notes, the employee portal,
+-- queues, teams and SLAs, then catalogue, approvals, assets and ITSM -- hosted by the shared apps
+-- backend; frontend tvs-helpdesk-ft. Stands alone, billed per business. Registration beyond this row
+-- is migrations/shared/20261106-01-helpdesk-joins-the-platform.sql.
+('app-helpdesk', 'Help Desk', 'Service Desk', 'Employee Portal', 'SLAs & Business Hours', 'Service Catalogue', 'Knowledge Base', 'Run a service desk from one place: tickets with public replies and internal notes, an employee portal, shared queues and teams, SLAs on business hours, a service catalogue and a knowledge base', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Docs (app-docs): the word processor -- a document library with a browser editor, one editor at a
+-- time behind a lock, versions and sharing -- hosted by the shared apps backend (module "docs");
+-- frontend tvs-docs-ft. Stands alone, billed per business. Never "Word" (a trademark). Registration
+-- beyond this row is migrations/shared/20261109-01-docs-joins-the-platform.sql.
+('app-docs', 'Docs', 'Document Library', 'Browser Editor', 'Versions', 'Sharing', 'Audit Export', 'Write, edit and keep your business documents in one place: a library of folders, an editor in the browser for Word and OpenDocument files, every save kept as a version, and sharing with the people you choose', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Sheets (app-sheets): the spreadsheet app -- a library of workbooks with a browser editor (a
+-- GridCraft fork), one editor at a time behind a lock, versions and sharing -- hosted by the shared
+-- apps backend (module "sheets"); frontend tvs-sheets-ft. Stands alone, billed per business. Never
+-- "Excel" (a trademark). Registration beyond this row is
+-- migrations/shared/20261109-03-sheets-joins-the-platform.sql.
+('app-sheets', 'Sheets', 'Workbook Library', 'Browser Editor', 'Versions', 'Sharing', 'Audit Export', 'Build, edit and keep your business spreadsheets in one place: a library of folders, an editor in the browser for Excel, OpenDocument and CSV files, every save kept as a version, and sharing with the people you choose', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Slides (app-slides): the presentation app -- a library of presentations with a browser editor (a
+-- DeckCraft fork), one editor at a time behind a lock, versions and sharing -- hosted by the shared
+-- apps backend (module "slides"); frontend tvs-slides-ft. Stands alone, billed per business. Never
+-- "PowerPoint" (a trademark). Registration beyond this row is
+-- migrations/shared/20261109-05-slides-joins-the-platform.sql.
+('app-slides', 'Slides', 'Presentation Library', 'Browser Editor', 'Versions', 'Sharing', 'Audit Export', 'Make, edit and keep your business presentations in one place: a library of folders, an editor in the browser for PowerPoint and OpenDocument decks, every save kept as a version, and sharing with the people you choose', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- SMS: school management -- creches, primary, basic and high schools, colleges, universities,
+-- technical and vocational institutes -- hosted by the shared apps backend; frontend tvs-sms-ft.
+-- Billed per location (one school profile per location). Registration beyond this row is
+-- migrations/shared/20261028-01-sms-joins-the-platform.sql. Not SMS the text message.
+('app-sms', 'MyEduGuard', 'School Profile & Setup', 'Academic Structure', 'Students & Classes', 'Fees & Billing', 'Report Cards', 'Run a creche, a school, a college or a university from one place: its profile and levels, academic structure, students and classes, fees and report cards, set up for your kind of institution', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- QPickStore: MyStoreGuard's ecommerce sold as its own app, standalone or beside MyStoreGuard (owner,
+-- 2026-10-28) -- served by the MyStoreGuard API and frontend, billed per business. Registration
+-- beyond this row is
+-- migrations/shared/20261028-50-qpickstore-joins-the-platform.sql.
+('app-qpickstore', 'QPICKSTORE', 'Online Storefront', 'Pages & Appearance', 'Products & Stock', 'Offers & Online Prices', 'Orders & Deliveries', 'Sell online: your own storefront and pages, your products and stock, offers and online prices, orders and deliveries -- on its own, or inside MyStoreGuard when you have both', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'live', true),
 ('app-accounting', 'ACCOUNTING', 'General Ledger & Journals', 'Receivables & Payables', 'Bank Reconciliation', 'Multi-Currency', 'Financial Reports', 'Double-entry books for every organisation: chart of accounts, journals with approvals, invoices and bills, bank reconciliation, multi-currency and financial statements', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 ('app-payroll', 'PAYROLL', 'Employee Payroll', 'Salary Processing', 'Tax Deductions', 'Payslip Generation', 'Compliance Management', 'Complete payroll management system for salary computation, payslip generation, tax deductions, and statutory compliance tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false),
-('app-hams', 'HAMS', 'Hospital Management', 'Patient Records', 'Appointment Scheduling', 'Billing System', 'Inventory Control', 'Comprehensive hospital management system for patient care, appointments, billing, and medical inventory tracking', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'coming_soon', false)
+-- Hospital: hospital and clinic management for any country -- clinics, maternity homes, health
+-- centres, district and private hospitals, teaching hospitals and hospital groups -- hosted by the
+-- shared apps backend (module "hospital"); frontend tvs-hospital-management-system-ft. Billed per
+-- location (one facility profile per location). Registration beyond this row is
+-- migrations/shared/20261107-01-hospital-joins-the-platform.sql. It replaces the old placeholder
+-- app-hams (coming soon, never sold), which that file removes. Not app-hms, which is hospitality.
+('app-hospital', 'CloudHams', 'Patients & Records', 'Appointments & Queues', 'Consultations & Orders', 'Lab & Pharmacy', 'Billing & Insurance Claims', 'Run a clinic, a hospital or a group of them from one place: one record per patient across every branch, appointments and queues, consultations, lab and pharmacy, wards, billing and insurance claims, set up for any country', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true)
 ON CONFLICT (id) DO UPDATE SET
     app_name    = EXCLUDED.app_name,
     feature1    = EXCLUDED.feature1,
@@ -306,17 +362,75 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-hms-advance',    'app-hms',          'shared-subscription-advance',   15,    80.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-hms-premium',    'app-hms',          'shared-subscription-premium',   40,   150.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-hms-enterprise', 'app-hms',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- SCM: USD per BUSINESS per month like the five business apps (billing_unit BUSINESS,
+-- shared/20261022-70). PLACEHOLDER, owner sets prices (in the console; see the note below).
+('tier-cfg-scm-basic',      'app-scm',          'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-scm-advance',    'app-scm',          'shared-subscription-advance',   15,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-scm-premium',    'app-scm',          'shared-subscription-premium',   40,   140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-scm-enterprise', 'app-scm',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Manufacturing: USD per BUSINESS per month like SCM. PLACEHOLDER, owner sets
+-- prices (in the console; see the note below); the design proposes plant and station tiers.
+('tier-cfg-mfg-basic',      'app-mfg',          'shared-subscription-basic',      5,    40.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-mfg-advance',    'app-mfg',          'shared-subscription-advance',   15,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-mfg-premium',    'app-mfg',          'shared-subscription-premium',   40,   180.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-mfg-enterprise', 'app-mfg',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Help Desk: USD per BUSINESS per month like SCM. PLACEHOLDER: these are SCM's numbers copied
+-- (2026-11-06), not a price; the owner sets prices (in the console; see the note below).
+('tier-cfg-helpdesk-basic',      'app-helpdesk', 'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-helpdesk-advance',    'app-helpdesk', 'shared-subscription-advance',   15,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-helpdesk-premium',    'app-helpdesk', 'shared-subscription-premium',   40,   140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-helpdesk-enterprise', 'app-helpdesk', 'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Docs: USD per BUSINESS per month like Help Desk. PROVISIONAL PLACEHOLDER: Help Desk's numbers
+-- copied (2026-11-09), not a price; the owner sets prices (in the console; see the note below).
+('tier-cfg-docs-basic',      'app-docs',         'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-docs-advance',    'app-docs',         'shared-subscription-advance',   15,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-docs-premium',    'app-docs',         'shared-subscription-premium',   40,   140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-docs-enterprise', 'app-docs',         'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Sheets: as Docs. PROVISIONAL PLACEHOLDER: Help Desk's numbers copied (2026-11-09), not a price.
+('tier-cfg-sheets-basic',      'app-sheets',      'shared-subscription-basic',      5,      30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sheets-advance',    'app-sheets',      'shared-subscription-advance',    15,     70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sheets-premium',    'app-sheets',      'shared-subscription-premium',    40,    140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sheets-enterprise', 'app-sheets',      'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Slides: as Docs. PROVISIONAL PLACEHOLDER: Help Desk's numbers copied (2026-11-09), not a price.
+('tier-cfg-slides-basic',      'app-slides',      'shared-subscription-basic',      5,      30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-slides-advance',    'app-slides',      'shared-subscription-advance',    15,     70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-slides-premium',    'app-slides',      'shared-subscription-premium',    40,    140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-slides-enterprise', 'app-slides',      'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- SMS: USD per location (one school) per month. PLACEHOLDER, owner sets prices (in the
+-- console; see the note below).
+('tier-cfg-sms-basic',      'app-sms',          'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sms-advance',    'app-sms',          'shared-subscription-advance',   15,    60.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sms-premium',    'app-sms',          'shared-subscription-premium',   40,   120.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sms-enterprise', 'app-sms',          'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Hospital: USD per location (one facility) per month. PLACEHOLDER, owner sets prices (in the
+-- console; see the note below).
+('tier-cfg-hospital-basic',      'app-hospital', 'shared-subscription-basic',      5,    45.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-hospital-advance',    'app-hospital', 'shared-subscription-advance',   15,   110.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-hospital-premium',    'app-hospital', 'shared-subscription-premium',   40,   220.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-hospital-enterprise', 'app-hospital', 'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- Accounting (TapantaBooks), decided 2026-10-22. Per business, like the four above.
+-- QPickStore, per business. PLACEHOLDER, the console owns the price.
+('tier-cfg-qps-basic',      'app-qpickstore',   'shared-subscription-basic',      3,    20.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-qps-advance',    'app-qpickstore',   'shared-subscription-advance',   10,    45.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-qps-premium',    'app-qpickstore',   'shared-subscription-premium',   25,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-qps-enterprise', 'app-qpickstore',   'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-basic',      'app-accounting',   'shared-subscription-basic',      2,    25.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-advance',    'app-accounting',   'shared-subscription-advance',    5,    50.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-premium',    'app-accounting',   'shared-subscription-premium',   15,    90.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-acc-enterprise', 'app-accounting',   'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP)
+-- THE PRICES ABOVE ARE STARTING VALUES, NOT THE PRICE LIST (2026-10-23).
+-- A row that does not exist yet is created with them; a row that exists keeps
+-- its price, rate and max_login_users. The price list belongs to the Deladetech
+-- console (Billing > Price list), which fans a change out to every database and
+-- records it in core_platform.cp_price_list_changes. Before this, the upsert
+-- overwrote price and rate on every deploy, so a console change "succeeded" and
+-- was silently reverted by the next tvs-sqlscript run. Changing a number here
+-- changes nothing on an existing database; a price decision is made in the
+-- console. (The 2026-10-22 decision was applied once, recorded, by
+-- migrations/shared/20261023-30.)
 ON CONFLICT (id) DO UPDATE SET
     app_id          = EXCLUDED.app_id,
-    subscription_id = EXCLUDED.subscription_id,
-    max_login_users = EXCLUDED.max_login_users,
-    price           = EXCLUDED.price,
-    rate            = EXCLUDED.rate;
+    subscription_id = EXCLUDED.subscription_id;
 
 INSERT INTO cp_app_features (id, feature_type, title, description) VALUES
 ('upcoming-01', 'upcoming', 'Attendance Tracking', 'Enable employees or users to check in and out, track presence, and generate attendance logs.'),

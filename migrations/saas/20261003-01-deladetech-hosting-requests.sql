@@ -136,15 +136,20 @@ BEGIN
     FOR grp IN SELECT control_plane.app_groups_here(true)   -- the pool's own group(s)
     LOOP
         EXECUTE format('GRANT USAGE ON SCHEMA deladetech TO %I', grp);
+        -- The hosting requests ONLY, and only what the signup page does with them:
+        -- record one and read it back. This was ON ALL TABLES IN SCHEMA, plus a default
+        -- privilege, which handed every application login the console's staff
+        -- accounts and sessions once they joined this schema (CONSOLE-GAPS gap 1).
+        -- The console has its own login now (20261023-20); 20261023-21 enforces this.
         EXECUTE format(
-            'GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA deladetech TO %I', grp);
+            'GRANT SELECT, INSERT ON deladetech.dlt_hosting_requests TO %I', grp);
         EXECUTE format(
             'ALTER DEFAULT PRIVILEGES IN SCHEMA deladetech '
-            'GRANT SELECT, INSERT, UPDATE ON TABLES TO %I', grp);
+            'GRANT SELECT, INSERT ON TABLES TO %I', grp);
         -- No DELETE. A request is evidence of a conversation; closing one is a
         -- status change, and the delete_status column is how it disappears from a
         -- list without leaving the table.
-        RAISE NOTICE 'deladetech: granted select/insert/update to %', grp;
+        RAISE NOTICE 'deladetech: hosting requests select/insert granted to %', grp;
     END LOOP;
 END $$;
 

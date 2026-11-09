@@ -1,7 +1,14 @@
 # Called by each backend's deploy pipeline to apply that backend's schema BEFORE
 # the new image rolls out. The input contract is unchanged -- scope, environment,
-# module, command -- because app repos pin this file by name at @dev and breaking
-# it would break their deploys.
+# module, command -- because app repos pin this file by name and breaking it would
+# break their deploys.
+#
+# PRODUCTION IS MASTER. App pipelines call this file @dev from their dev branch
+# and @master from main. Whichever they call, a prod target runs master's
+# apply.yml (the apply-prod job below) and apply.yml checks out master's SQL, so
+# nothing merged to tvs-sqlscript dev reaches a production database until it has
+# been rehearsed and promoted to master. Before 20261020 this applied DEV to
+# saas-prod on every Accounting/ZelosHR production deploy.
 #
 # It used to carry its own copy of the build, the DATABASE_URL parser and the
 # module mapping. All of that now lives in apply.yml, and this only resolves
@@ -97,15 +104,35 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "::notice title=Target::scope=$SCOPE env=$ENVN KV=$KV class=$CLASS"
 
-  apply:
+  # Two jobs because `uses:` cannot take an expression: exactly one runs.
+  #
+  # The FULL path, not ./.github/workflows/apply.yml. This workflow is called
+  # from other repositories, and a relative `uses:` in a called workflow can
+  # resolve against the CALLER's repository -- which has no apply.yml.
+  apply-dev:
     needs: resolve
-    # The FULL path, not ./.github/workflows/apply.yml. This workflow is called
-    # from other repositories, and a relative `uses:` in a called workflow can
-    # resolve against the CALLER's repository -- which has no apply.yml. Pinned
-    # @dev to match how the app pipelines pin this file.
+    if: inputs.environment != 'prod'
     uses: deladetech1/tvs-sqlscript/.github/workflows/apply.yml@dev
     with:
       label: ${{ inputs.scope }}-${{ inputs.environment }}
+      target_env: ${{ inputs.environment }}
+      module: ${{ inputs.module }}
+      command: ${{ inputs.command }}
+      target_class: ${{ needs.resolve.outputs.target_class }}
+      enterprise_slug: ${{ needs.resolve.outputs.slug }}
+      source: keyvault
+      secret_uri: ${{ needs.resolve.outputs.secret_uri }}
+      subscription_id: ${{ needs.resolve.outputs.subscription }}
+      azure_client_id: ${{ needs.resolve.outputs.client_id }}
+      azure_tenant_id: ${{ vars.TVS_TENANT_ID }}
+
+  apply-prod:
+    needs: resolve
+    if: inputs.environment == 'prod'
+    uses: deladetech1/tvs-sqlscript/.github/workflows/apply.yml@master
+    with:
+      label: ${{ inputs.scope }}-${{ inputs.environment }}
+      target_env: prod
       module: ${{ inputs.module }}
       command: ${{ inputs.command }}
       target_class: ${{ needs.resolve.outputs.target_class }}

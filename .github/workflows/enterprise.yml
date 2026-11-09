@@ -106,6 +106,7 @@ jobs:
       module: ${{ inputs.module }}
       command: ${{ inputs.command }}
       destructive_ack: ${{ inputs.destructive_ack }}
+      target_env: ${{ inputs.environment }}
       target_class: enterprise
       enterprise_slug: ${{ inputs.target }}
       # AZURE IS ONLY HOW THE CONNECTION STRING IS FETCHED.

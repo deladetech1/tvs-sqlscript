@@ -286,8 +286,26 @@ BEGIN
              WHEN r.id LIKE 'role-expenses%'  THEN 'expenses'
              -- HMS' job roles (20261022-61).
              WHEN r.id LIKE 'role-hms%'       THEN 'hms'
+             -- SCM's job roles (20261026-01).
+             WHEN r.id LIKE 'role-scm%'       THEN 'scm'
+             -- SMS' job roles (20261028-01).
+             WHEN r.id LIKE 'role-sms%'       THEN 'sms'
+             -- Manufacturing's job roles (20261029-30).
+             WHEN r.id LIKE 'role-mfg%'       THEN 'mfg'
+             -- Help Desk's job roles (20261106-01).
+             WHEN r.id LIKE 'role-helpdesk%'  THEN 'helpdesk'
+             -- Docs' job roles (20261109-01).
+             WHEN r.id LIKE 'role-docs%'      THEN 'docs'
+             -- Sheets' and Slides' job roles (20261109-03, 20261109-05).
+             WHEN r.id LIKE 'role-sheets%'    THEN 'sheets'
+             WHEN r.id LIKE 'role-slides%'    THEN 'slides'
+             -- Hospital's job roles (20261107-01).
+             WHEN r.id LIKE 'role-hospital%'  THEN 'hospital'
              -- Accounting's roles, once its permissions carry app_prefix (Accounting 02_permissions.sql).
              WHEN r.id LIKE 'role-accounting%' THEN 'accounting'
+             -- QPickStore's roles (20261028-50): the add-on is MyStoreGuard's ecommerce module and
+             -- is guarded by msg|ecommerce|*, so its roles hold MyStoreGuard permissions.
+             WHEN r.id LIKE 'role-qpickstore%' THEN 'msg'
              ELSE '-' END;
 
     IF leftover > 0 THEN

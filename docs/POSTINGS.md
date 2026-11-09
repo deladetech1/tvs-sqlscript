@@ -141,8 +141,8 @@ How figures are worked out:
 | Azure func: `capture_penalties` | penalties accrued | not posted (penalties post when paid) |
 
 Not covered (left for later, listed in the report): gift card expiry/cancellation (breakage), affiliate commissions,
-MSG expenses, loyalty points earned (no liability is booked for unredeemed points), a return's
-`exchange_difference_amount` (MyStoreGuard never settles it). Stock is §1b.
+loyalty points earned (no liability is booked for unredeemed points), a return's
+`exchange_difference_amount` (MyStoreGuard never settles it). Stock is §1b; expenses are §1c.
 
 **Starts from now.** The first run records every existing sale, payment, return and gift card as already published
 (the `BASELINE` marker); history belongs in the books' opening balances. Deposits held on unreleased sales at that
@@ -189,7 +189,8 @@ equals Σ on hand × cost, per currency.
 | `msg.supplier_payment_made` / `_reversed` | purchase payment | `method`, `amount`, `currency` (the PO items' one currency, else the default), PO and supplier; reversed with `reason` REFUNDED / DELETED / CHANGED |
 | `msg.supplier_return` | purchase return | `lines`[batch, quantity, unit_cost, amount = `line_total` at the batch's cost, currency], PO and supplier |
 
-`credit_to` is SUPPLIER for a delivery (batch_type PURCHASE, or a supplier or delivery ref named), else
+`credit_to` is SCM_TRANSFER for a batch confirmed from an SCM branch shipment (20261102-60: the business's own stock
+handed over from its SCM warehouse — no supplier owed, no profit or loss), else SUPPLIER for a delivery (batch_type PURCHASE, or a supplier or delivery ref named), else
 STOCK_ADJUSTMENT (a split's output, a stock-take surplus): MyStoreGuard records **no payment on a delivery outside a
 purchase order**, so every delivery is owed to the supplier until Accounting records the payment (or a PO payment
 arrives). PO payments made before the goods arrive debit Supplier balances ahead of the receipt (a supplier advance).
@@ -215,6 +216,7 @@ MyStoreGuard's own "owed" figure is ordered qty × ordered cost; the books' is r
 | Supplier payment / refund | `msg_purchase_payments` | supplier_payment_made / _reversed — tested |
 | Purchase return (`create_return`, pool only) | qty_remaining − | supplier_return — tested |
 | Sales, cancels, customer returns, invoices, plan cancels | sale family | their own §1 events only — tested (sale, cancel, return, resale) |
+| Incoming from SCM confirmed (`scm_incoming_service.confirm`, 20261102-60) | ADJUSTMENT (branch shipment) / PURCHASE (SCM PO delivered to the branch), placed | stock_received: shipment `credit_to` SCM_TRANSFER, PO `credit_to` SUPPLIER |
 
 Not covered: a purchase receipt deleted (`delete_purchase_receipt` deletes only the header; the batch and its receipt
 stand), PO line tax/discount (MyStoreGuard records but never charges them), a sale-family movement without a
@@ -227,6 +229,78 @@ A delivery costed in USD posts in USD and converts at the books' rate on the eve
 keeping the foreign amount on the line; MyStoreGuard keeps no rate per delivery (`cp_currencies.exchange_rate` is
 today's, not the delivery's). Cost of sales converts at the sale date's rate, so Inventory in base currency can drift
 from receipt-date value by the rate change; revalue it in Currency revaluation if it matters.
+
+## 1c. MyStoreGuard's expenses (20261108-06)
+
+MyStoreGuard's expenses live in Core's `cp_expenses_history` (app `MYSTOREGUARD`). A deferred trigger publishes each
+APPROVED, active, not-deleted expense as `msg.expense_recorded`; one deleted, deactivated or no longer approved as
+`msg.expense_reversed` (the payload last published, `reversal: true`); a change of figures as both, the new recording
+at `revision + 1`. A change to the note or reference alone publishes nothing. Expenses that existed when the migration
+first ran are BASELINE and never publish (opening balances).
+
+| Event | Debit | Credit |
+|---|---|---|
+| `msg.expense_recorded` | the category's account (`EXPENSE_CATEGORY:<cp_expense_categories.id>`) with `amount - tax_amount`; Tax on expenses (`EXPENSE_INPUT_TAX`, 1400) with `tax_amount` when reclaimable | Cash (`CASH`, 1010) with `amount` |
+| `msg.expense_reversed` | the journal the recording of that expense and revision posted, mirrored line for line (same accounts and base amounts); the original is marked REVERSED and the mirror's `reversal_of_id` names it | |
+
+- **The category's account.** The category's role is the same `EXPENSE_CATEGORY:<id>` Expenses uses (§6), so Settings →
+  Posting accounts lists MyStoreGuard's categories beside Expenses' and either can be pointed anywhere. Unmapped, it
+  posts to the expense account whose code is the category's `account_code` in Core when the chart has one (any
+  numbering); else a 5xxx–9xxx code opens that account under 5000/6000; else the account its name suggests (§6's
+  list); else General Expenses (6290). An expense with no category posts to Other expenses (`OTHER_EXPENSES`, 6290).
+- **Tax.** `amount` is what was paid, tax inside. The tax code linked to the expense's Core tax (`core_tax_rate_id =
+  tax_rate_id`) decides: EXEMPT or WITHHOLDING is not input tax, so the expense carries all of it (the row's note says
+  why); any other code reclaims it, to the code's own input account when it names one, else to 1400. No linked code:
+  reclaimed to 1400, as Expenses' postings do. A `tax_amount` outside 0..amount is ignored (all expense).
+- **Money out.** MyStoreGuard records no payment method on an expense (`source` is the funding kind: ALLOCATED came out
+  of the Core budget), so it is Cash (1010), the role MyStoreGuard's cash sales post to; point Cash elsewhere for all of
+  them, there is no per-expense choice.
+- **Supplier.** `supplier_id` is kept on the event; journal lines carry no party, so it is not posted.
+- **Date and currency.** Dated `spent_on` (the payload's `date`), in the expense's currency, converted at the books'
+  rate on that day (Core's rates, §3 Several currencies), like every MyStoreGuard posting. A reversal is dated the
+  original's `spent_on` too: a figure change stays in the period it belongs to, and a locked period holds it (FAILED
+  until reopened) rather than moving it.
+- **A reversal without a posted recording** posts nothing: SKIPPED when the recording never reached or never posted
+  in these books, or its journal was already reversed by hand; when the recording is still PENDING/FAILED, both are
+  SKIPPED ("Reversed in MyStoreGuard before it posted").
+- **Link.** Both kinds come from `mystoreguard` and pass the MyStoreGuard → Accounting switch (§10) like every other.
+- **Before Accounting read them.** The cursor moves past kinds it does not ask for, so `cp_events_after` would never
+  hand back expenses published before this Accounting release. On its first pass per database each process brings in
+  every event of `PostingRules.LateKinds` (`msg.expense_*`, `hms_expense.*`, `hospital_expense.*`) at or before the cursor that the inbox
+  lacks (`PostingRun.CatchUpLateKindsAsync`; idempotent by `event_id`, as far back as events are kept, 90 days). They
+  then pass the link like any other: a business whose link is off gets them SKIPPED "Not connected" (a one-time run
+  brings back its range). Add a kind there whenever Accounting starts reading a kind an app already publishes.
+
+### HMS expenses (link `hms-accounting`, tvs-sqlscript 20261108-08/-09)
+
+`hms_expense.approved` posts like a MyStoreGuard expense: Dr `EXPENSE_CATEGORY:<core_category_id>` (same account
+lookup, `account_code` from Core; uncategorised to `OTHER_EXPENSES`) with `amount - tax_amount`, Dr reclaimable tax
+(same tax-code rule), Cr what `paid_from` names: `cash`/`petty_cash` (or none) → Cash 1010, `bank`/`card`/`cheque`
+→ Bank 1020, `momo` → Mobile money 1040, `owner`/`other` → Other payment methods 1070 (a clearing account to sort
+or point elsewhere). Dated `spent_on`; the inbox shows its `reference` (else its id). `hms_expense.voided` mirrors the
+journal the latest earlier approval of the same expense (subject, or payload `id`) posted, dated as that journal, under
+the same rules as a MyStoreGuard reversal (so not on the void's own `date`). Journals are filed as source `HMS`. HMS
+publishes as `hms`; the inbox keeps an app without Core's `app-` (an event published as `app-hms` is stored as `hms`),
+and the switch read is always `app-<app>`, never `app-app-…`. The link starts off.
+
+**Expenses lite (20261108-15).** HMS now tells the books when the money left: `hms_expense.paid` posts (the rule
+above, dated `date`, the day it was paid) and `hms_expense.voided`, sent only for a paid expense, mirrors that payment's
+journal dated `date`, the day it was voided (never before the payment). `hms_expense.approved` is no longer sent; rows of
+it already in an inbox still post (dated `spent_on`). The expense is in the books once: a `.paid` is SKIPPED ("Already in
+these books") while a journal posted for an earlier `.approved` or `.paid` of the same expense still stands. The key is
+the expense's id, which every one of its events carries (the event subject, payload `id`, or `document_id`), and a
+void takes back the posted one of them.
+
+### CloudHams expenses (link `hospital-accounting`, tvs-sqlscript 20261108-09)
+
+`hospital_expense.paid` (source `hospital`) posts the same way: Dr `EXPENSE_CATEGORY:<core_category_id>` (or
+`OTHER_EXPENSES`) with `amount - tax_amount`, Dr reclaimable tax, Cr where the money came from, dated `paid_on`.
+`method = payout` (Core Platform's payout gateway) comes out of Card settlements 1060, the role Expenses' gateway payouts
+use (`ForPayoutMethod("GATEWAY")`); `manual` by `payment_method`: cash or unsaid → Cash 1010, mobile money → 1040,
+anything else → Bank 1020. The inbox shows `document_number` (EXP-…). Since Expenses lite (20261108-15) a paid expense
+can be voided: `hospital_expense.voided` mirrors the payment's journal, dated `date` (the void day). A `.paid` published
+again for the same expense while its journal stands is SKIPPED.
+Journals are filed as source `HOSPITAL` (shown as CloudHams). The link starts off; caught up like HMS's.
 
 ## 2. Accounting consumes
 
@@ -276,7 +350,7 @@ reversed by hand (they belong to a document); MyStoreGuard reverses them by void
 | return_processed | SALES_RETURNS (net); each tax; FINANCE_INCOME (plan written off); INVENTORY (restocked cost) | RESTOCKING_FEES; refund method role (cash); STORE_CREDIT_LIABILITY; OTHER_PAYMENTS (trade-in); CUSTOMER_RECEIVABLE (plan settled + owed + against balance + written off); COST_OF_SALES (restocked cost) |
 | gift_card_issued | CASH (sold) or LOYALTY_REWARDS (reward) | GIFT_CARD_LIABILITY |
 | plan_refund_paid | CUSTOMER_DEPOSITS or CUSTOMER_RECEIVABLE | CASH |
-| stock_received | INVENTORY | SUPPLIER_PAYABLE, or STOCK_ADJUSTMENT (credit_to) — in the delivery's currency |
+| stock_received | INVENTORY | SUPPLIER_PAYABLE, STOCK_ADJUSTMENT, or STOCK_TRANSFERS (credit_to SCM_TRANSFER: stock from Supply Chain, a clearing account) — in the delivery's currency |
 | stock_receipt_voided | the reverse | |
 | stock_adjusted (per line, signed) | INVENTORY (gain) / STOCK_WRITE_OFF, STOCK_ADJUSTMENT or COST_OF_SALES (loss) | the other side |
 | supplier_payment_made | SUPPLIER_PAYABLE | method role |
@@ -433,6 +507,13 @@ Loandrift collected, fees = the loan's charges.
 
 ### Posting rules and roles
 
+**Expenses on Core categories (20261108-07).** `ld.expense_paid` / `ld.expense_reversed` also carry the expense's
+`category_id`, `category_name`, `category_account_code`, `tax_rate_id` and `tax_amount`. With a category, LoanDrift's
+expense lines (key `OPERATING_EXPENSE`) post to `EXPENSE_CATEGORY:<category_id>` (the MyStoreGuard lookup, §1c), and
+reclaimable tax inside the amount (the tax-code rule, §1c) is split out to Tax on expenses 1400 on the same side; a
+reversal is LoanDrift's mirror entry, so the same happens the other way. Older events without these keys post as
+before (Lending expenses 6240).
+
 `LdPostingRules`: one journal per event, filed under source **LOANS** (shown as LoanDrift), reference = the
 document number, memo "LoanDrift loan repayment RCP-… · loan LN-… · client · branch". Each line posts to its key's
 role, as Loandrift wrote it; a key the books do not take from Loandrift (e.g. FIXED_ASSETS) fails the posting with what
@@ -535,6 +616,11 @@ invoice; the expense already posted here), expenses in a claim currency other th
 rate (§3), a statement line's own amount (the expense's amount is posted, which is the line's).
 
 ### Posting rules and roles
+
+**Core categories (20261108-12/-13).** A line's role is `EXPENSE_CATEGORY:<core_category_id>`, the same account
+every other app's spending in that Core category posts to; a line without one (an unlinked category, an event from
+before) keeps `EXPENSE_CATEGORY:<category_id>`. A business that had pointed an Expenses category's own role somewhere
+in Settings → Posting accounts must point the Core category's role there too (dev had none, 2026-11-08).
 
 `ExpPostingRules`: source **EXPENSES** (shown as Expenses), reference = the claim / bill / advance number.
 
@@ -917,6 +1003,16 @@ Shared Go reading is `tvs-shared-apps-bk internal/platform/connections`.
 | `mystoreguard-crm` | lookup | CRM `sync.go` (`runSync`, the 5-minute sweep, settings, `/connections`), `deals.go` `msgLinePrice` | the sweep passes it by; the CRM's stored prices stand |
 | `loandrift-crm` | lookup | CRM `sync.go` | the sweep passes it by |
 | `zeloshr-projects` | lookup | Projects `zhrConnected`, `lineManagerOf` | no leave, holidays, attendance or line managers in Projects |
+| `scm-mystoreguard` | sync; OFF / ALWAYS (2026-11-02, `20261102-50`) | MyStoreGuard's link inbox worker (`scm_link_inbox_service.py`) for `scm.*` events; SCM's inbox worker (`links.go`) for MyStoreGuard's replies | events sent while off are REFUSED ("Not connected: …") in the receiver's inbox; ones sent before it went off still complete. No row is written for anyone: every business starts OFF |
+| `mystoreguard-scm` | sync; OFF / ALWAYS (`20261102-50`) | SCM's inbox worker for `msg.*` events; MyStoreGuard's for SCM's replies | as above |
+| `helpdesk-projects` | sync; OFF / ALWAYS (2026-11-09, `20261109-31`) | Projects' inbox (`projects.prj_link_inbox`, `helpdesk_link.go` `takeWorkRequest`) for `helpdesk.work_requested`; Projects `helpdeskReadable` for the tickets behind a work item (`projects.src_helpdesk_links`, `src_helpdesk_tickets`) | Projects refuses work asked for from Help Desk ("Not connected: …"; ones sent while on still complete) and shows no linked tickets or impact; work already made stays |
+| `projects-helpdesk` | sync; OFF / ALWAYS (`20261109-31`) | Help Desk's inbox (`helpdesk.hd_link_inbox`, `projects_link_jobs.go` `hdpTakeKnownError`) for `projects.known_error_raised`; Help Desk `hdpReadable` (linked work on tickets, problems and changes, through `helpdesk.src_projects_work`) and `hdpFollows` (the Done follow-up and a change's plan dates) | Help Desk refuses known errors from Projects, shows no linked work, and makes no Done follow-up or plan-date change; links and problems already made stay |
+
+**SCM → MyStoreGuard documents** (`20261102-60`, phase 3): an SCM branch shipment (`scm.branch_shipment_sent`, one line per lot dispatched, cost in the base currency at the Core Platform rate) or an SCM purchase order delivered straight to a branch (`scm.po_receipt_for_branch`, published when the order is approved) becomes `mystoreguard.msg_incoming_deliveries`, which moves no stock until a person confirms it; confirming makes one batch per line and answers `msg.branch_delivery_received` (received and short per line), which SCM records on the shipment (received / short / rejected) or the order lines. **Books:** SCM posts nothing to Accounting today, so nothing is counted twice: SCM's dispatch writes only SCM's own ledger. MyStoreGuard's confirmation posts the stock in at SCM's cost, credited to STOCK_TRANSFERS (1250 Stock Transfers Clearing) for a shipment and to the supplier for a PO. Until SCM posts its own receipts and dispatches (plan phase 5), the clearing account carries the credit side of every hand-over; phase 5's dispatch posting (Dr STOCK_TRANSFERS / Cr Inventory at SCM) settles it.
+
+**Help Desk ⇄ Projects** (`20261109-31`): the links between records live in Help Desk (`helpdesk.hd_work_links`: a ticket, problem or change and a Projects work item; several records may share one item). New work is made by Projects from `helpdesk.work_requested` as the person who asked, with their own Projects permissions; a known error is made by Help Desk from `projects.known_error_raised` as the person who raised it. Neither app writes the other's tables: each reads the other through `src_*` views and its own inbox's results. Both links need both subscriptions; Help Desk's routes need `helpdesk.projects` and Projects' `projects.suite-links` (both PREMIUM). Nobody starts on.
+
+**MyStoreGuard ⇄ SCM events** (`20261102-50`): outbox `cp_events`, kinds and versioned JSON schemas in `core_platform.cp_event_schemas`; one inbox per receiver (`scm.scm_link_inbox`, `mystoreguard.msg_link_inbox`), unique on `(tenant_id, source_app, idempotency_key)` so a repeated event is taken in once; statuses PENDING / RETRY (backoff) / DONE / REFUSED / DEAD; `<schema>.<inbox>_retry(tenant, bus, ids)` sends dead letters back. Mapping of warehouses to MyStoreGuard places: `scm.scm_branch_supply` (one supplier per place).
 
 What was brought in stays in every case: it is the receiving app's own. A saved invoice keeps the expenses and time it
 already bills; re-saving it is never refused.
@@ -934,3 +1030,41 @@ MyStoreGuard customers / suppliers / products and LoanDrift clients, Invoicing p
 Projects reading MyStoreGuard jobs and workflow templates, Projects' suite links (CRM deals and tickets, MyStoreGuard
 jobs, LoanDrift loans), the CRM ⇄ Projects links, and Expenses reading Projects, Invoicing customers and MyStoreGuard
 spending (budgets).
+
+## 11. SCM (20261102-85): its stock in the books, and the hand-over to MyStoreGuard
+
+MSG-SCM plan phase 5. SCM posts on its own link, **`scm-accounting`** (SCM → Accounting, OFF / ONE_TIME / ALWAYS like
+every other link into Accounting; nobody starts on: SCM never posted before). Enforced by Accounting's `PostingRun`.
+
+**Publishing.** As MyStoreGuard, the database publishes: a DEFERRABLE constraint trigger on
+`scm.scm_inventory_movements` runs at COMMIT and publishes ONE event per document (`reference_type` / `reference_id`)
+per transaction, carrying every movement of it not yet published; `scm.scm_acc_moves` records which movements each
+event carried (a movement is never published twice; the migration's baseline holds every movement before it). Lines
+are per product, movement kind and currency, valued from the cost ledger (`scm_lot_moves`: what each lot gave, at the
+lot's cost, in the lot's currency). An event that cannot be built is `scm.posting_error`; SCM's work never fails for
+the books. Source `scm`, journals `SUPPLY_CHAIN`.
+
+| reference_type | Event | Debit | Credit |
+|---|---|---|---|
+| receipt | scm.goods_received | INVENTORY | GOODS_RECEIVED_NOT_INVOICED (2025): the supplier's bill (Accounting or Expenses) clears it |
+| return | scm.return_posted | customer return restocked: INVENTORY; to a supplier: GRNI | COST_OF_SALES; INVENTORY |
+| shipment (sales) | scm.goods_shipped | COST_OF_SALES | INVENTORY |
+| adjustment, stock_count | scm.stock_adjusted | signed, against STOCK_ADJUSTMENT; STOCK_WRITE_OFF when the reason says damaged, expired, scrap, spoilt, broken, stolen or written off | |
+| branch_shipment | scm.branch_shipment_dispatched | STOCK_TRANSFERS (1250) | INVENTORY — at exactly the cost sent to MyStoreGuard (the shipment's parts, 4-decimal unit cost, base currency) |
+| branch_\* / msg_\* (stock back from a branch, phase 4) | scm.branch_stock_received | INVENTORY | STOCK_TRANSFERS |
+| anything else | scm.stock_posted | by line kind: issue → STOCK_ISSUED (5040 Stock Used), scrap → STOCK_WRITE_OFF, shipment → COST_OF_SALES | |
+| transfer, mfg_\* | nothing | between SCM's own warehouses the stock stays in INVENTORY; Manufacturing's documents are its own to post | |
+
+**The hand-over nets to zero.** SCM's dispatch (Dr 1250 / Cr Inventory at SCM) + MyStoreGuard's confirm
+(`msg.stock_received` credit_to SCM_TRANSFER: Dr Inventory / Cr 1250, received × the unit cost it was sent) +
+`scm.branch_shipment_short` (published once when MyStoreGuard's answer makes the shipment received or short, on
+`scm.scm_branch_shipments`: per part, sent less received, each rounded as its own side rounds it; Dr
+STOCK_TRANSIT_LOSS 5035 Stock Lost in Transit / Cr 1250) leave 1250 at exactly zero per shipment. A **rejected**
+shipment posts no loss: its value stays in 1250 (the goods exist somewhere) and SCM's "In transit to MyStoreGuard"
+report lists it, with every shipment unanswered after N days. Stock coming back (phase 4) mirrors it: MyStoreGuard Cr
+Inventory / Dr 1250, SCM `branch_*` receipt Dr Inventory / Cr 1250, at the batch's cost.
+
+**Combined stock view** (read-only): each app publishes one read function the other calls, never its tables or
+code: `mystoreguard.msg_stock_for_scm(tenant, bus)` (branch stock per product, place and side, valued per batch
+currency) and `scm.scm_stock_for_msg(tenant, bus)` (warehouse stock, in transit, on order to a branch, which
+warehouse supplies which branch). Callers require both subscriptions and `scm-mystoreguard` on.

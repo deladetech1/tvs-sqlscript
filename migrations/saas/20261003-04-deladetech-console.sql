@@ -157,28 +157,12 @@ COMMENT ON TABLE deladetech.dlt_client_setups IS
     'setup got when it did not finish.';
 
 -- -------------------------------------------------------------------------- grants
--- Same narrow shape as the hosting-requests grant: the pooled app group only.
---
--- NOT a loop over every tvs_app_% group. That is what control_plane does, and it
--- means a retired tenant's group keeps accruing privileges in objects created after
--- it. These tables hold staff credentials and a cross-tenant audit trail, which is
--- the last thing that should be handed out by a wildcard.
-DO $$
-DECLARE grp text;
-BEGIN
-    FOR grp IN SELECT control_plane.app_groups_here(true)   -- the pool's own group(s)
-    LOOP
-        EXECUTE format('GRANT USAGE ON SCHEMA deladetech TO %I', grp);
-        EXECUTE format(
-            'GRANT SELECT, INSERT, UPDATE ON deladetech.dlt_operators, '
-            'deladetech.dlt_operator_sessions, deladetech.dlt_client_setups TO %I', grp);
-        -- Sessions are the one thing the console genuinely deletes: an expired
-        -- session row has no evidentiary value and they accumulate forever.
-        EXECUTE format(
-            'GRANT DELETE ON deladetech.dlt_operator_sessions TO %I', grp);
-        RAISE NOTICE 'deladetech console tables: granted to %', grp;
-    END LOOP;
-END $$;
+-- None to the application group any more. These were granted to the pooled app group
+-- (SELECT, INSERT, UPDATE on all three, DELETE on sessions) while the console ran on
+-- core-platform's login -- and every application login is a member of that group, so
+-- any of them could mint a console OWNER session (CONSOLE-GAPS gap 1). The console's
+-- own login, deladetech_<env>, is granted in 20261023-20; 20261023-21 takes these
+-- tables from the group every deploy and asserts it.
 
 -- ----------------------------------------------------------------------------- checks
 DO $$

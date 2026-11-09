@@ -26,14 +26,24 @@
 # longer needs an edit to this file.
 #
 # Also a REUSABLE workflow (workflow_call): tvs-iac's onboard-silo-app calls it
-# for step 4 -- `uses: deladetech1/tvs-sqlscript/.github/workflows/silos.yml@silo`
-# for dev, `@master` for prod -- instead of dispatching it with a personal access
+# for step 4 -- `uses: deladetech1/tvs-sqlscript/.github/workflows/silos.yml@master`
+# for prod (`@silo` for dev) -- instead of dispatching it with a personal access
 # token and polling (that token expired on 20261022 and step 4 401'd). Called, the
 # jobs run in the CALLER's context: its org variables, and an OIDC subject of the
 # caller's repo. gh_environment binds the Azure-login jobs to one of the caller's
 # GitHub Environments (tvs-iac: platform-dev / platform-prod) so the subject is
 # repo:deladetech1/tvs-iac:environment:platform-<env>, which tvs-oidc-auth-01
 # already trusts. Dispatched or pushed here it is empty and nothing changes.
+# Production SQL is still master whatever calls this: apply.yml decides it from
+# target_env.
+#
+# BYOD servers: apply.yml opens a firewall rule for its own runner's address
+# (trovesuite-ci-<run_id>-..., /32) as the client's app registration, whose ids
+# are our vault's byod-access-<silo>, and removes it in an always() step. The
+# app registration needs a federated credential for whichever subject this run
+# has: repo:deladetech1/tvs-sqlscript:ref:refs/heads/master (prod dispatch),
+# ...:refs/heads/silo (dev push), or tvs-iac's environment:platform-<env> when
+# called from onboard-silo-app. docs: tvs-iac docs/byod-client-setup.sh.
 #
 # Everything here only decides WHICH databases. apply.yml does the work, and
 # refuses outright if a silo's secret resolves to the pooled database.
@@ -209,13 +219,23 @@ jobs:
           # Terraform writes to migrator-db-url-<silo>, so the key is what this
           # needs and the name is derived from it below.
           #
-          # SILO_BYOD IS THE OPPOSITE, which is why db_secret_uri is selected
-          # too. Nothing of ours built that database: there is no Terraform, no
-          # per-app role and no migrator-db-url-<silo> to compose. The single
-          # credential the client gave us IS the route's db_secret_uri, and for
-          # that tier it is the only thing that can run a migration.
+          # SILO_BYOD can be either, which is why db_secret_uri is selected
+          # too. Nothing of ours built that database, so there is no Terraform
+          # writing migrator-db-url-<silo> for it. Two shapes:
+          #   * one credential the client gave us, on the row as db_secret_uri
+          #     -- that is the only thing that can run a migration;
+          #   * per-app logins (db-url-<app>-<silo>, as BGCLT has) with the row
+          #     naming only its silo_key and db_secret_uri NULL, so the apps do
+          #     NOT connect as the owner -- then we put the client's migrator
+          #     credential in our vault as migrator-db-url-<silo> by hand and
+          #     migrate with that, exactly as for our own silos.
+          #
+          # db_server_fqdn is selected only to run each DATABASE once: a silo
+          # with several hosts (BGCLT has six) is one database, and running the
+          # same migrations into it in parallel jobs would race.
           export ROWS="$(psql "$CP_URL" -At -F'|' -c "
-            SELECT host, tier, db_name, silo_key, coalesce(db_secret_uri, '')
+            SELECT host, tier, db_name, silo_key, coalesce(db_secret_uri, ''),
+                   coalesce(db_server_fqdn, '')
               FROM control_plane.ctl_tenant_routes
              WHERE status = 'ACTIVE'
                AND tier IN ('SILO_SHARED','SILO_DEDICATED','SILO_BYOD')
@@ -232,28 +252,25 @@ jobs:
           for line in os.environ["ROWS"].strip().splitlines():
               if not line.strip():
                   continue
-              host, tier, db, silo_key, db_secret_uri = line.split("|")
+              host, tier, db, silo_key, db_secret_uri, server = line.split("|")
               if not silo_key:
                   print(f"::error::{host} is {tier} but names no silo_key, so its "
                         f"migrator credential cannot be found. Refusing.", file=sys.stderr)
                   sys.exit(1)
 
               if tier == "SILO_BYOD":
-                  # THEIR credential, named on the row. There is no
-                  # migrator-db-url-<silo> for a database we did not build, and
-                  # composing that name would point at a secret that does not
-                  # exist -- so this refuses rather than letting the run fail
-                  # later with a vault 404 that reads like a permissions problem.
+                  # THEIR credential. With db_secret_uri on the row, that one
+                  # login is everything we have, so it has to be allowed to run
+                  # migrations: a client who hands us a login that cannot create
+                  # tables has handed us a database we cannot use, and that is a
+                  # conversation to have at onboarding.
                   #
-                  # It is also the one credential we have for them, so it has to
-                  # be allowed to run migrations: a client who hands us a login
-                  # that cannot create tables has handed us a database we cannot
-                  # use, and that is a conversation to have at onboarding.
                   # With only a silo_key (per-app logins, db_secret_uri NULL) the
                   # apps compose db-url-<app>-<silo>, and migrations use
-                  # migrator-db-url-<silo> -- the client's migrator credential in
-                  # our vault (written by tvs-iac onboard-silo-app, or by hand at
-                  # handover). Same rule as master since 20261020.
+                  # migrator-db-url-<silo> -- the client's owner credential,
+                  # copied into our vault at onboarding (no Terraform writes it
+                  # for a database we did not build). The silo_key check above
+                  # has already refused a row with neither.
                   secret_uri = (db_secret_uri
                                 or f"{VAULT}/secrets/migrator-db-url-{silo_key}")
                   # NOT `kind`: that name holds the FILTER the dispatch asked
@@ -273,6 +290,14 @@ jobs:
                   "host": host, "tier": tier, "db": db, "silo_key": silo_key,
                   "secret_uri": secret_uri,
                   "kind": silo_kind,
+                  "server": server,
+                  # BYOD: the ids (no secret) apply.yml needs to open a firewall
+                  # rule for its own runner on THEIR server -- Blacksmith runners
+                  # are not Azure, so "allow Azure services" does not admit them.
+                  # Missing in the vault = apply.yml warns and relies on a rule the
+                  # client already has (bgclt's allow-internet).
+                  "byod_access_uri": (f"{VAULT}/secrets/byod-access-{silo_key}"
+                                      if silo_kind == "byod" else ""),
               }
 
           picked = list(live.values())
@@ -289,6 +314,18 @@ jobs:
                   print(f"::error::'{target}' exists but is not kind='{kind}' "
                         f"(it is {live[target]['kind']}).", file=sys.stderr)
                   raise SystemExit(1)
+
+          # ONE job per database: the first host (rows are ordered) stands for
+          # the rest. Hosts sharing a database share its credential by
+          # construction, so which one is chosen does not change what runs.
+          once, seen = [], set()
+          for s in picked:
+              k = (s["server"], s["db"])
+              if k in seen:
+                  continue
+              seen.add(k)
+              once.append(s)
+          picked = once
 
           print("matrix=" + json.dumps({"include": picked}))
           print(f"count={len(picked)}")
@@ -319,16 +356,14 @@ jobs:
       max-parallel: 4
       matrix: ${{ fromJson(needs.select.outputs.matrix) }}
     # The FULL path: called from another repository, a relative `uses:` can
-    # resolve against the caller (see migrate.yml). sql_ref keeps a cross-repo
-    # call on THIS branch's SQL (apply.yml defaults a cross-repo caller to dev);
-    # a push or dispatch here checks out its own commit as before.
-    uses: deladetech1/tvs-sqlscript/.github/workflows/apply.yml@silo
+    # resolve against the caller (see migrate.yml).
+    uses: deladetech1/tvs-sqlscript/.github/workflows/apply.yml@master
     with:
-      sql_ref: silo
       environment: ${{ inputs.gh_environment || '' }}
       label: ${{ matrix.kind }} · ${{ matrix.host }}
       module: ${{ needs.select.outputs.module }}
       command: ${{ needs.select.outputs.command }}
+      target_env: ${{ needs.select.outputs.environment }}
       target_class: silo
       silo_host: ${{ matrix.host }}
       source: keyvault
@@ -337,3 +372,4 @@ jobs:
       azure_client_id: ${{ vars.TVS_AZURE_CLIENT_ID }}
       azure_tenant_id: ${{ vars.TVS_TENANT_ID }}
       refuse_pooled_database: true
+      byod_access_uri: ${{ matrix.byod_access_uri }}

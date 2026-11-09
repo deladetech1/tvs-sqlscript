@@ -145,7 +145,9 @@ public sealed class LoanTypeConfiguration : IEntityTypeConfiguration<LoanType>
         b.Property(x => x.IsSystem).HasDefaultValue(true);
         b.Property(x => x.PenaltyMode).HasDefaultValue("NONE");
         b.Property(x => x.PenaltyPercentage).HasColumnType("numeric(7,4)");
+        b.Property(x => x.PenaltyPeriod).HasDefaultValue("DAILY");
         b.HasInCheck("penalty_mode", "NONE", "OPTIONAL", "COMPULSORY");
+        b.HasInCheck("penalty_period", "DAILY", "WEEKLY", "MONTHLY");
         b.ApplyAuditDefaults();
         b.HasDeleteStatusCheck();
         b.WithTenantFk();
@@ -185,6 +187,7 @@ public sealed class LoanDetailConfiguration : IEntityTypeConfiguration<LoanDetai
         b.Property(x => x.PenaltyEnabled).HasDefaultValue(false);
         b.Property(x => x.PenaltyTerms).HasColumnType("jsonb");
         b.Property(x => x.PenaltyPercentage).HasColumnType("numeric(7,4)");
+        b.Property(x => x.PenaltyPeriod).HasDefaultValue("DAILY");
         // Every loan row gets a unique reference from the column default — the app never
         // supplies one, so registration/capture/import paths all stay covered.
         b.Property(x => x.LoanReference)
@@ -192,6 +195,7 @@ public sealed class LoanDetailConfiguration : IEntityTypeConfiguration<LoanDetai
         b.HasIndex(x => x.LoanReference).IsUnique();
         b.ApplyAuditDefaults();
         b.HasInCheck("penalty_mode", "NONE", "OPTIONAL", "COMPULSORY");
+        b.HasInCheck("penalty_period", "DAILY", "WEEKLY", "MONTHLY");
         b.HasInCheck("payment_type", "DAILY", "WEEKLY", "BI_WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", null!);
         b.HasInCheck("status", "REGISTERED", "CAPTURED", "APPROVED", "REJECTED", "DISBURSED",
                               "CLOSED", "DEFAULTED", "WRITTEN_OFF", "ACTIVE", "COMPLETED");

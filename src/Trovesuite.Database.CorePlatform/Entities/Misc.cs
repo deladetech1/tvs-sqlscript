@@ -72,6 +72,11 @@ public class Theme : TenantScopedEntity
     /// <summary>The accent, which applies in light and dark alike — so it is not
     /// part of the dark palette.</summary>
     public string AccentColor { get; set; } = "ORANGE";
+
+    /// <summary>Whether apps that support it give each sidebar section its own
+    /// colour. On by default because the coloured sidebar is the live look;
+    /// off brings back the plain sidebar.</summary>
+    public bool ColoredSidebar { get; set; } = true;
 }
 
 public class Expense : TenantScopedEntity

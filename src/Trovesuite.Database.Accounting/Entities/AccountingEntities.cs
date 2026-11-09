@@ -14,7 +14,7 @@ public class AccOrgSettings
     public string? TradingName { get; set; }
     public string Tin { get; set; } = "";
     public string? Country { get; set; }
-    public string BaseCurrency { get; set; } = "GHS";
+    public string BaseCurrency { get; set; } = "";
     public int FiscalYearStartMonth { get; set; } = 1;
     public string FiscalYearStart { get; set; } = "01-01";
     public string? Address { get; set; }
@@ -265,7 +265,7 @@ public class AccCustomer
     public string Status { get; set; } = "ACTIVE";
     public string? ExternalReference { get; set; }
     public string Source { get; set; } = "MANUAL";
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public string CustomFieldsJson { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -292,7 +292,7 @@ public class AccSupplier
     public string Status { get; set; } = "ACTIVE";
     public string? ExternalReference { get; set; }
     public string Source { get; set; } = "MANUAL";
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public string CustomFieldsJson { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -313,7 +313,7 @@ public class AccSalesInvoice
     public DateOnly IssueDate { get; set; }
     public DateOnly DueDate { get; set; }
     public string State { get; set; } = "DRAFT";
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public decimal ExchangeRate { get; set; } = 1;
     public decimal AmountPaid { get; set; }
     public decimal AmountPaidBase { get; set; }
@@ -363,7 +363,7 @@ public class AccPurchaseBill
     public DateOnly IssueDate { get; set; }
     public DateOnly DueDate { get; set; }
     public string State { get; set; } = "DRAFT";
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public decimal ExchangeRate { get; set; } = 1;
     public decimal AmountPaid { get; set; }
     public decimal AmountPaidBase { get; set; }
@@ -413,7 +413,7 @@ public class AccCreditNote
     public DateOnly Date { get; set; }
     public string State { get; set; } = "APPROVED";
     public string Reason { get; set; } = default!;
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public decimal ExchangeRate { get; set; } = 1;
     public decimal BaseAmount { get; set; }
     public string? JournalId { get; set; }
@@ -458,7 +458,7 @@ public class AccSupplierCredit
     public string State { get; set; } = "APPROVED";
     public string Reason { get; set; } = default!;
     public string? SupplierReference { get; set; }
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public decimal ExchangeRate { get; set; } = 1;
     public decimal BaseAmount { get; set; }
     public string? JournalId { get; set; }
@@ -503,7 +503,7 @@ public class AccPayment
     public string DocumentId { get; set; } = default!;
     public DateOnly Date { get; set; }
     public decimal Amount { get; set; }
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public decimal ExchangeRate { get; set; } = 1;
     public decimal BaseAmount { get; set; }
     public decimal FxGainLoss { get; set; }
@@ -530,7 +530,7 @@ public class AccBankAccount
     public string Bank { get; set; } = default!;
     public string AccountNumber { get; set; } = default!;
     public string GlAccountId { get; set; } = default!;
-    public string Currency { get; set; } = "GHS";
+    public string Currency { get; set; } = "";
     public decimal StatementBalance { get; set; }
     public DateOnly StatementDate { get; set; }
     public DateTimeOffset? LastReconciledAt { get; set; }

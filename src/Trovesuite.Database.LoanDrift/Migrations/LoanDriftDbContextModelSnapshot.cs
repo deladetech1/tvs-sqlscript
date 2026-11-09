@@ -3723,6 +3723,13 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("numeric(7,4)")
                         .HasColumnName("penalty_percentage");
 
+                    b.Property<string>("PenaltyPeriod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DAILY")
+                        .HasColumnName("penalty_period");
+
                     b.Property<string>("PenaltySettingsVersionId")
                         .HasColumnType("text")
                         .HasColumnName("penalty_settings_version_id");
@@ -3805,6 +3812,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                             t.HasCheckConstraint("ck_ld_loan_details_payment_type", "payment_type IN ('DAILY','WEEKLY','BI_WEEKLY','MONTHLY','QUARTERLY','YEARLY',NULL)");
 
                             t.HasCheckConstraint("ck_ld_loan_details_penalty_mode", "penalty_mode IN ('NONE','OPTIONAL','COMPULSORY')");
+
+                            t.HasCheckConstraint("ck_ld_loan_details_penalty_period", "penalty_period IN ('DAILY','WEEKLY','MONTHLY')");
 
                             t.HasCheckConstraint("ck_ld_loan_details_status", "status IN ('REGISTERED','CAPTURED','APPROVED','REJECTED','DISBURSED','CLOSED','DEFAULTED','WRITTEN_OFF','ACTIVE','COMPLETED')");
                         });
@@ -4273,6 +4282,13 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                         .HasColumnType("numeric(7,4)")
                         .HasColumnName("penalty_percentage");
 
+                    b.Property<string>("PenaltyPeriod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("DAILY")
+                        .HasColumnName("penalty_period");
+
                     b.Property<string>("TenantId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -4307,6 +4323,8 @@ namespace Trovesuite.Database.LoanDrift.Migrations
                             t.HasCheckConstraint("ck_ld_loan_types_delete_status", "delete_status IN ('PENDING','DELETED','NOT_DELETED')");
 
                             t.HasCheckConstraint("ck_ld_loan_types_penalty_mode", "penalty_mode IN ('NONE','OPTIONAL','COMPULSORY')");
+
+                            t.HasCheckConstraint("ck_ld_loan_types_penalty_period", "penalty_period IN ('DAILY','WEEKLY','MONTHLY')");
                         });
                 });
 
