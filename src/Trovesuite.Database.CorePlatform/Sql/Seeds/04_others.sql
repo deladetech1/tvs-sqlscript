@@ -73,6 +73,8 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-mfg-%'
   AND p.id NOT LIKE 'permission-helpdesk-%'
   AND p.id NOT LIKE 'permission-docs-%'
+  AND p.id NOT LIKE 'permission-sheets-%'
+  AND p.id NOT LIKE 'permission-slides-%'
   AND p.id NOT LIKE 'permission-hospital-%'
   AND p.id <> 'permission-cp-logs-delete'
 ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
@@ -249,6 +251,18 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- frontend tvs-docs-ft. Stands alone, billed per business. Never "Word" (a trademark). Registration
 -- beyond this row is migrations/shared/20261109-01-docs-joins-the-platform.sql.
 ('app-docs', 'Docs', 'Document Library', 'Browser Editor', 'Versions', 'Sharing', 'Audit Export', 'Write, edit and keep your business documents in one place: a library of folders, an editor in the browser for Word and OpenDocument files, every save kept as a version, and sharing with the people you choose', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Sheets (app-sheets): the spreadsheet app -- a library of workbooks with a browser editor (a
+-- GridCraft fork), one editor at a time behind a lock, versions and sharing -- hosted by the shared
+-- apps backend (module "sheets"); frontend tvs-sheets-ft. Stands alone, billed per business. Never
+-- "Excel" (a trademark). Registration beyond this row is
+-- migrations/shared/20261109-03-sheets-joins-the-platform.sql.
+('app-sheets', 'Sheets', 'Workbook Library', 'Browser Editor', 'Versions', 'Sharing', 'Audit Export', 'Build, edit and keep your business spreadsheets in one place: a library of folders, an editor in the browser for Excel, OpenDocument and CSV files, every save kept as a version, and sharing with the people you choose', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Slides (app-slides): the presentation app -- a library of presentations with a browser editor (a
+-- DeckCraft fork), one editor at a time behind a lock, versions and sharing -- hosted by the shared
+-- apps backend (module "slides"); frontend tvs-slides-ft. Stands alone, billed per business. Never
+-- "PowerPoint" (a trademark). Registration beyond this row is
+-- migrations/shared/20261109-05-slides-joins-the-platform.sql.
+('app-slides', 'Slides', 'Presentation Library', 'Browser Editor', 'Versions', 'Sharing', 'Audit Export', 'Make, edit and keep your business presentations in one place: a library of folders, an editor in the browser for PowerPoint and OpenDocument decks, every save kept as a version, and sharing with the people you choose', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 -- SMS: school management -- creches, primary, basic and high schools, colleges, universities,
 -- technical and vocational institutes -- hosted by the shared apps backend; frontend tvs-sms-ft.
 -- Billed per location (one school profile per location). Registration beyond this row is
@@ -372,6 +386,16 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-docs-advance',    'app-docs',         'shared-subscription-advance',   15,    70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-docs-premium',    'app-docs',         'shared-subscription-premium',   40,   140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-docs-enterprise', 'app-docs',         'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Sheets: as Docs. PROVISIONAL PLACEHOLDER: Help Desk's numbers copied (2026-11-09), not a price.
+('tier-cfg-sheets-basic',      'app-sheets',      'shared-subscription-basic',      5,      30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sheets-advance',    'app-sheets',      'shared-subscription-advance',    15,     70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sheets-premium',    'app-sheets',      'shared-subscription-premium',    40,    140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-sheets-enterprise', 'app-sheets',      'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Slides: as Docs. PROVISIONAL PLACEHOLDER: Help Desk's numbers copied (2026-11-09), not a price.
+('tier-cfg-slides-basic',      'app-slides',      'shared-subscription-basic',      5,      30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-slides-advance',    'app-slides',      'shared-subscription-advance',    15,     70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-slides-premium',    'app-slides',      'shared-subscription-premium',    40,    140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-slides-enterprise', 'app-slides',      'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- SMS: USD per location (one school) per month. PLACEHOLDER, owner sets prices (in the
 -- console; see the note below).
 ('tier-cfg-sms-basic',      'app-sms',          'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
