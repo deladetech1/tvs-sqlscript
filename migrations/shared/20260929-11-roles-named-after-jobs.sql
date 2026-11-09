@@ -294,6 +294,11 @@ BEGIN
              WHEN r.id LIKE 'role-mfg%'       THEN 'mfg'
              -- Help Desk's job roles (20261106-01).
              WHEN r.id LIKE 'role-helpdesk%'  THEN 'helpdesk'
+             -- Docs' job roles (20261109-01).
+             WHEN r.id LIKE 'role-docs%'      THEN 'docs'
+             -- Sheets' and Slides' job roles (20261109-03, 20261109-05).
+             WHEN r.id LIKE 'role-sheets%'    THEN 'sheets'
+             WHEN r.id LIKE 'role-slides%'    THEN 'slides'
              -- Hospital's job roles (20261107-01).
              WHEN r.id LIKE 'role-hospital%'  THEN 'hospital'
              -- Accounting's roles, once its permissions carry app_prefix (Accounting 02_permissions.sql).
