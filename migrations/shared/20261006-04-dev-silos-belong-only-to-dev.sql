@@ -93,10 +93,10 @@ BEGIN
 
     IF me = 'dev-db' OR EXISTS (SELECT 1 FROM control_plane.ctl_tenant_routes
                                  WHERE cell_key = 'uksouth-dev' AND db_name = me) THEN
-        -- Dev keeps them, and must: 20261004-02 asserts both rows exist there.
-        IF n = 0 THEN
-            RAISE EXCEPTION 'dev silos: % is a dev database but has no silo routes left', me;
-        END IF;
+        -- Dev keeps whichever dev silos are still onboarded. None is a valid state since
+        -- itech and accesspoint were offboarded (2026-10-23): 20261004-02 now accepts an
+        -- absent row and 20261109-97 removes the rows it used to resurrect, so asserting
+        -- "at least one" here failed every dev deploy after dd0b8f6.
         RAISE NOTICE 'dev silos: % keeps % silo route(s)', me, n;
     ELSE
         IF n <> 0 THEN
