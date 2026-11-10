@@ -629,6 +629,7 @@ public sealed class ZhrLeaveTypeConfiguration : IEntityTypeConfiguration<ZhrLeav
         b.Property(x => x.CarryOverAllowed).HasDefaultValue(false);
         b.Property(x => x.AppliesToEmploymentTypes).HasColumnType("jsonb");
         b.Property(x => x.RequiresSupportingDocument).HasDefaultValue(false);
+        b.Property(x => x.IsAnnualEntitlement).HasDefaultValue(false);
         b.Property(x => x.CreatedBy).HasColumnType("text");
         b.Property(x => x.UpdatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.Name }).IsUnique();

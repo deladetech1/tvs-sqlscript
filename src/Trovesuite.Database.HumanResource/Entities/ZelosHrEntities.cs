@@ -613,6 +613,8 @@ public class ZhrLeaveType
     public int? MinNoticeWorkingDays { get; set; }
     public int? MaxConsecutiveDays { get; set; }
     public bool RequiresSupportingDocument { get; set; }
+    /// <summary>The statutory annual entitlement: what leave owed, final settlements and liability are read from.</summary>
+    public bool IsAnnualEntitlement { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }
