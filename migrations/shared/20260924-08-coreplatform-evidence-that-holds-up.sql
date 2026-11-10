@@ -1,3 +1,11 @@
+-- RETIRED (20260930-04/-05 retired the Evidence feature and drop chain_seq, prev_hash and
+-- row_hash). Every statement below that touches the chain now runs only while those columns
+-- exist, i.e. on a database that has not reached 20260930-04 yet. Before this guard, each
+-- deploy re-added the three columns here and 20260930-05 dropped them again; Postgres never
+-- reuses a dropped column's number, so cp_security_events reached its 1600-column limit
+-- ("54011: tables can have at most 1600 columns") and every saas deploy failed from there on.
+-- The marker is cp_security_events.seq, which 20260930-04 adds and nothing drops.
+
 -- Evidence that holds up, somewhere else to send it, and a key to fetch it with.
 --
 -- The three things an enterprise buyer asks for that the rest of this section
@@ -30,6 +38,11 @@ BEGIN
          WHERE table_schema = 'core_platform'
            AND table_name = 'cp_security_events'
            AND column_name = 'row_hash'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+         WHERE table_schema = 'core_platform'
+           AND table_name = 'cp_security_events'
+           AND column_name = 'seq'
     ) THEN
         ALTER TABLE core_platform.cp_security_events
             -- Per tenant, so a chain can be verified on its own and one
@@ -41,9 +54,16 @@ BEGIN
 END $$;
 
 -- The order the chain is walked in, and the lookup for "the previous row".
-CREATE UNIQUE INDEX IF NOT EXISTS ux_cp_security_events_chain
-    ON core_platform.cp_security_events (tenant_id, chain_seq)
-    WHERE chain_seq IS NOT NULL;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'core_platform' AND table_name = 'cp_security_events'
+                  AND column_name = 'chain_seq') THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_cp_security_events_chain
+            ON core_platform.cp_security_events (tenant_id, chain_seq)
+            WHERE chain_seq IS NOT NULL;
+    END IF;
+END $$;
 
 
 -- What the hash covers, and — just as importantly — what it does not.
@@ -132,9 +152,18 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_cp_security_events_chain
     ON core_platform.cp_security_events;
-CREATE TRIGGER trg_cp_security_events_chain
-    BEFORE INSERT ON core_platform.cp_security_events
-    FOR EACH ROW EXECUTE FUNCTION core_platform.cp_chain_security_event();
+DO $$
+BEGIN
+    -- Only while the chain columns exist: a trigger that writes NEW.chain_seq on a table
+    -- without it would make every insert fail until 20260930-05 drops the trigger again.
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'core_platform' AND table_name = 'cp_security_events'
+                  AND column_name = 'chain_seq') THEN
+        CREATE TRIGGER trg_cp_security_events_chain
+            BEFORE INSERT ON core_platform.cp_security_events
+            FOR EACH ROW EXECUTE FUNCTION core_platform.cp_chain_security_event();
+    END IF;
+END $$;
 
 -- The chain verifier USED to be defined here.
 --
@@ -339,6 +368,11 @@ DECLARE
     v_seq  bigint;
     v_tenant text := NULL;
 BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                WHERE table_schema = 'core_platform' AND table_name = 'cp_security_events'
+                  AND column_name = 'chain_seq') THEN
+        RETURN;  -- retired by 20260930-05: nothing to backfill
+    END IF;
     FOR r IN
         SELECT * FROM core_platform.cp_security_events
          WHERE chain_seq IS NULL
