@@ -47,6 +47,9 @@ public class HumanResourceDbContext : DbContext
     public DbSet<ZhrCountryCoverage> ZhrCountryCoverage => Set<ZhrCountryCoverage>();
     public DbSet<ZhrPaymentBatch> ZhrPaymentBatches => Set<ZhrPaymentBatch>();
     public DbSet<ZhrAlertAcknowledgement> ZhrAlertAcknowledgements => Set<ZhrAlertAcknowledgement>();
+    public DbSet<ZhrSavedReport> ZhrSavedReports => Set<ZhrSavedReport>();
+    public DbSet<ZhrAlertSetting> ZhrAlertSettings => Set<ZhrAlertSetting>();
+    public DbSet<ZhrExternalReturnFile> ZhrExternalReturnFiles => Set<ZhrExternalReturnFile>();
     public DbSet<ZhrCandidate> ZhrCandidates => Set<ZhrCandidate>();
     public DbSet<ZhrCoachingNote> ZhrCoachingNotes => Set<ZhrCoachingNote>();
     public DbSet<ZhrAttendanceCorrection> ZhrAttendanceCorrections => Set<ZhrAttendanceCorrection>();

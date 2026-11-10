@@ -681,6 +681,8 @@ public class ZhrJobPosting
 /// <summary>Someone applying for a requisition, moved through the hiring stages.</summary>
 public class ZhrCandidate
 {
+    /// <summary>The working detail of the record as JSON (interviews and offer; review steps; hearing, appeal and files; settlement breakdown).</summary>
+    public string Details { get; set; } = "{}";
     public Guid Id { get; set; }
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
@@ -722,6 +724,8 @@ public class ZhrOnboardingTask
 
 public class ZhrPerformanceReview
 {
+    /// <summary>The working detail of the record as JSON (interviews and offer; review steps; hearing, appeal and files; settlement breakdown).</summary>
+    public string Details { get; set; } = "{}";
     public Guid Id { get; set; }
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
@@ -763,6 +767,8 @@ public class ZhrCoachingNote
 
 public class ZhrDisciplinaryCase
 {
+    /// <summary>The working detail of the record as JSON (interviews and offer; review steps; hearing, appeal and files; settlement breakdown).</summary>
+    public string Details { get; set; } = "{}";
     public Guid Id { get; set; }
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
@@ -1065,6 +1071,8 @@ public class ZhrEmployeeStatusChange
 /// <summary>One person leaving: clearance and final settlement. Opened from an exit event.</summary>
 public class ZhrOffboardingCase
 {
+    /// <summary>The working detail of the record as JSON (interviews and offer; review steps; hearing, appeal and files; settlement breakdown).</summary>
+    public string Details { get; set; } = "{}";
     public Guid Id { get; set; }
     public string TenantId { get; set; } = default!;
     public string OrgId { get; set; } = default!;
@@ -1460,4 +1468,47 @@ public class ZhrCountryCoverage
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }
     public string? UpdatedBy { get; set; }
+}
+
+/// <summary>A report saved with its choices, optionally sent on a schedule.</summary>
+public class ZhrSavedReport
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string ReportId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string Options { get; set; } = "{}";
+    /// <summary>none · weekly · monthly</summary>
+    public string Schedule { get; set; } = "none";
+    public DateOnly? LastRunOn { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+/// <summary>How far ahead each kind of alert appears, per organisation, and when managers were last chased.</summary>
+public class ZhrAlertSetting
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string LeadDays { get; set; } = "{}";
+    public DateOnly? LastEmailedOn { get; set; }
+    public string? UpdatedBy { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+/// <summary>A return a local provider produced outside ZelosHR, kept with its pay group.</summary>
+public class ZhrExternalReturnFile
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid PayGroupId { get; set; }
+    public string DocumentId { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public int SizeKb { get; set; }
+    public string? UploadedBy { get; set; }
+    public DateTimeOffset UploadedAt { get; set; }
 }
