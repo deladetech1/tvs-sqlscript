@@ -179,7 +179,9 @@ ALTER TABLE helpdesk.hd_sla_policies ADD COLUMN IF NOT EXISTS match_customer_gro
 -- ===================================================================== number series
 ALTER TABLE helpdesk.hd_number_series DROP CONSTRAINT IF EXISTS hd_number_series_kind_check;
 ALTER TABLE helpdesk.hd_number_series ADD CONSTRAINT hd_number_series_kind_check
-    CHECK (kind IN ('problem', 'change', 'asset', 'contract'));
+    -- 'work_order' (WO-) and 'disposal' (DSP-) since 20261110-61/-62: this file owns the list, edited in place,
+    -- because a narrower list re-added here on a later deploy would fail on rows of the newer kinds.
+    CHECK (kind IN ('problem', 'change', 'asset', 'contract', 'work_order', 'disposal'));
 
 -- ==================================================================== party columns
 INSERT INTO core_platform.cp_party_references (table_name, column_name, is_extension) VALUES

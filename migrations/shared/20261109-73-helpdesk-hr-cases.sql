@@ -264,7 +264,8 @@ BEGIN
        AND NOT (p.app_prefix = 'helpdesk' AND (
                 (p.resource_key = 'tickets' AND p.action IN ('merge', 'delete', 'export'))
              OR p.resource_key IN ('workflows', 'incidents', 'problems', 'changes', 'assets', 'cmdb', 'vendors', 'status',
-                                   'customers', 'contracts', 'chat', 'channels', 'clients', 'integrations', 'imports', 'ai')
+                                   'customers', 'contracts', 'chat', 'channels', 'clients', 'integrations', 'imports', 'ai',
+                                   'workorders', 'technicians')
              OR p.action IN ('manage', 'publish', 'export')))
     ON CONFLICT (tenant_id, role_id, permission_id) DO NOTHING;
 
