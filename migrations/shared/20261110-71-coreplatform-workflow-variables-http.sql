@@ -35,16 +35,12 @@ BEGIN
     ALTER TABLE core_platform.cp_workflows ADD COLUMN IF NOT EXISTS hook_secret text;
 
     -- ================================================================= versions: the webhook trigger
+    -- The CHECK list moved to 20261112-51 (a widened list lives in one file, the newest).
     ALTER TABLE core_platform.cp_workflow_versions DROP CONSTRAINT IF EXISTS cp_workflow_versions_trigger_type_check;
-    ALTER TABLE core_platform.cp_workflow_versions DROP CONSTRAINT IF EXISTS cp_workflow_versions_trigger_type_ck;
-    ALTER TABLE core_platform.cp_workflow_versions ADD CONSTRAINT cp_workflow_versions_trigger_type_ck
-        CHECK (trigger_type IN ('event', 'schedule', 'manual', 'webhook'));
 
     -- ================================================================= runs
+    -- The CHECK list moved to 20261112-51.
     ALTER TABLE core_platform.cp_workflow_runs DROP CONSTRAINT IF EXISTS cp_workflow_runs_trigger_type_check;
-    ALTER TABLE core_platform.cp_workflow_runs DROP CONSTRAINT IF EXISTS cp_workflow_runs_trigger_type_ck;
-    ALTER TABLE core_platform.cp_workflow_runs ADD CONSTRAINT cp_workflow_runs_trigger_type_ck
-        CHECK (trigger_type IN ('event', 'schedule', 'manual', 'webhook', 'list', 'sub', 'replay'));
     ALTER TABLE core_platform.cp_workflow_runs ADD COLUMN IF NOT EXISTS vars jsonb NOT NULL DEFAULT '{}'::jsonb;
     ALTER TABLE core_platform.cp_workflow_runs ADD COLUMN IF NOT EXISTS frames jsonb NOT NULL DEFAULT '{}'::jsonb;
     ALTER TABLE core_platform.cp_workflow_runs ADD COLUMN IF NOT EXISTS parent_run_id text;
