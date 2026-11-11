@@ -148,7 +148,8 @@ def main():
                  "20261110-01-office-joins-the-platform.sql",
                  # Retiring the R0 office apps deletes core_platform rows too. (The R0
                  # files 20261109-01/-03/-05 are no-ops now and are not selected here.)
-                 "20261110-03-office-retires-docs-sheets-slides.sql"}
+                 "20261110-03-office-retires-docs-sheets-slides.sql",
+                 "20261111-41-workflows-joins-the-platform.sql"}
         unexpected = [f for f in failures if f[0] not in known]
         check("the migrations apply", not unexpected,
               "; ".join(f"{n} -> {e}" for n, e in unexpected))

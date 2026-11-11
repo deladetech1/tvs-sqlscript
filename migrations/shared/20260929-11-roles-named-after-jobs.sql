@@ -296,6 +296,8 @@ BEGIN
              WHEN r.id LIKE 'role-helpdesk%'  THEN 'helpdesk'
              -- Office's job roles (20261110-01).
              WHEN r.id LIKE 'role-office%'    THEN 'office'
+             -- Workflows' job roles (20261111-41).
+             WHEN r.id LIKE 'role-workflows%' THEN 'workflows'
              -- The retired R0 apps Docs, Sheets and Slides (20261109-01/-03/-05, dev only). Kept:
              -- this file runs before 20261110-03 removes their roles, so on the deploy that
              -- retires them their grants must still read as their own, not as leaks.

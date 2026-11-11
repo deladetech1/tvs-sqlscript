@@ -73,6 +73,7 @@ WHERE p.id NOT LIKE 'permission-msg-%'
   AND p.id NOT LIKE 'permission-mfg-%'
   AND p.id NOT LIKE 'permission-helpdesk-%'
   AND p.id NOT LIKE 'permission-office-%'
+  AND p.id NOT LIKE 'permission-workflows-%'
   -- The retired R0 apps (dev only): kept so the deploy that retires them (20261110-03, which runs
   -- after this seed) does not first hand their permissions to role-cp-admin.
   AND p.id NOT LIKE 'permission-docs-%'
@@ -257,6 +258,14 @@ INSERT INTO core_platform.cp_apps (id, app_name, feature1, feature2, feature3, f
 -- migrations/shared/20261110-01-office-joins-the-platform.sql. It replaces the R0 apps app-docs,
 -- app-sheets and app-slides (dev only, never prod), retired by 20261110-03.
 ('app-office', 'Office', 'One Library', 'Docs, Sheets & Slides', 'Versions', 'Sharing', 'Audit Export', 'Write documents, build spreadsheets and make presentations in one place: one library of folders, editors in the browser for Word, Excel, PowerPoint, OpenDocument and CSV files, every save kept as a version, and sharing with the people you choose', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
+-- Workflows (app-workflows): automations across the suite -- triggers on any app's events, on a
+-- schedule or by hand; conditions, approvals, waits, App actions into the other apps, connectors,
+-- AI and webhooks. Its engine and API are Core Platform's (tvs-coreplatform-bk
+-- src/entities/workflows); its screens are served by the hub at /workflows until it has its own
+-- frontend. Stands alone, billed per business. Registration beyond this row is
+-- migrations/shared/20261111-41-workflows-joins-the-platform.sql. It was Settings > Workflows
+-- before (2026-11-09..11, dev only, nobody subscribed).
+('app-workflows', 'Workflows', 'Event, Schedule & Manual Triggers', 'Approvals & Waits', 'App Actions Across the Suite', 'Connectors & AI', 'Run History & Retries', 'Automate the work between your apps: start on any event, on a schedule or by hand, check conditions, ask for approval, act in the other apps, call outside services and AI, and see every run step by step', CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP, 'beta', true),
 -- SMS: school management -- creches, primary, basic and high schools, colleges, universities,
 -- technical and vocational institutes -- hosted by the shared apps backend; frontend tvs-sms-ft.
 -- Billed per location (one school profile per location). Registration beyond this row is
@@ -381,6 +390,13 @@ INSERT INTO core_platform.cp_app_tier_configs (id, app_id, subscription_id, max_
 ('tier-cfg-office-advance',    'app-office',      'shared-subscription-advance',    15,     70.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-office-premium',    'app-office',      'shared-subscription-premium',    40,    140.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 ('tier-cfg-office-enterprise', 'app-office',      'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+-- Workflows: USD per BUSINESS per month like Help Desk. PLACEHOLDER (2026-11-11), not a price;
+-- the owner sets prices (in the console; see the note below). What each tier includes is
+-- cp_app_feature_catalog (20261111-41); its run limits are in tvs-coreplatform-bk wf_plan.LIMITS.
+('tier-cfg-workflows-basic',      'app-workflows', 'shared-subscription-basic',      5,    15.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-workflows-advance',    'app-workflows', 'shared-subscription-advance',   15,    35.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-workflows-premium',    'app-workflows', 'shared-subscription-premium',   40,    75.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
+('tier-cfg-workflows-enterprise', 'app-workflows', 'shared-subscription-enterprise', NULL, 3000.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),
 -- SMS: USD per location (one school) per month. PLACEHOLDER, owner sets prices (in the
 -- console; see the note below).
 ('tier-cfg-sms-basic',      'app-sms',          'shared-subscription-basic',      5,    30.00, 12.0, CURRENT_DATE::TEXT, CURRENT_TIME::TEXT, CURRENT_TIMESTAMP),

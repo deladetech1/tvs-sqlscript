@@ -14,8 +14,9 @@ Usage:
     scripts/gen_permissions_module.py --app msg \
         --out ../../mystoreguard/tvs-mystoreguard-bk/app/src/utils/permissions.py
 
-    # Core Platform owns two prefixes: its own ('') and the 'cp' ones.
-    scripts/gen_permissions_module.py --app '' --app cp \
+    # Core Platform owns two prefixes: its own ('') and the 'cp' ones -- and serves Workflows
+    # (app-workflows, 'workflows', 20261111-41), whose engine and API are Core's.
+    scripts/gen_permissions_module.py --app '' --app cp --app workflows \
         --out ../../coreplatform/tvs-coreplatform-bk/app/src/utils/permissions.py
 
     # A .NET app: nested classes per resource, because its call sites are attributes.

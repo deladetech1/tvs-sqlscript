@@ -347,11 +347,12 @@ BEGIN
             RAISE EXCEPTION 'workflows-apps: lifecycle rows whose prefix does not name the sender, or not versioned: %', bad;
         END IF;
     END IF;
+    -- Rows, not live ones: 20261111-41 retires these three when Workflows becomes its own app
+    -- (workflows|*), and this file re-runs before it on every deploy.
     SELECT string_agg(v, ', ') INTO bad
       FROM (VALUES ('get'), ('update'), ('run')) AS w(v)
      WHERE NOT EXISTS (SELECT 1 FROM core_platform.cp_permissions p
-                        WHERE p.app_prefix = '' AND p.resource_key = 'workflow' AND p.action = w.v
-                          AND coalesce(p.delete_status, 'NOT_DELETED') = 'NOT_DELETED');
+                        WHERE p.app_prefix = '' AND p.resource_key = 'workflow' AND p.action = w.v);
     IF bad IS NOT NULL THEN
         RAISE EXCEPTION 'workflows-apps: the workflow permission is missing verb(s): %', bad;
     END IF;
