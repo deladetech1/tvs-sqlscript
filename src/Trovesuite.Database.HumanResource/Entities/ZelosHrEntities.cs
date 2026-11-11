@@ -674,6 +674,8 @@ public class ZhrJobPosting
     public decimal? BudgetMonthly { get; set; }
     public Guid? HiringManagerId { get; set; }
     public DateOnly? TargetStartDate { get; set; }
+    /// <summary>What the public careers page shows for this role: published, summary, lists, questions, closes_on.</summary>
+    public string Careers { get; set; } = "{}";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public string? CreatedBy { get; set; }
@@ -1484,6 +1486,10 @@ public class ZhrSavedReport
     /// <summary>none · weekly · monthly</summary>
     public string Schedule { get; set; } = "none";
     public DateOnly? LastRunOn { get; set; }
+    /// <summary>Email addresses a scheduled report goes to.</summary>
+    public string Recipients { get; set; } = "[]";
+    /// <summary>The access of whoever saved it, so a scheduled run holds what they would have seen: hr_admin, payroll.</summary>
+    public string RunAs { get; set; } = "{}";
     public string? CreatedBy { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -1513,4 +1519,227 @@ public class ZhrExternalReturnFile
     public int SizeKb { get; set; }
     public string? UploadedBy { get; set; }
     public DateTimeOffset UploadedAt { get; set; }
+}
+
+/// <summary>Hiring set-up kept as one row per item: booking_page · availability · question · test · offer_template.</summary>
+public class ZhrHiringRecord
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Kind { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public Guid? JobPostingId { get; set; }
+    public Guid? EmployeeId { get; set; }
+    public bool IsActive { get; set; } = true;
+    public string Details { get; set; } = "{}";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+/// <summary>A private link sent to a candidate: booking · assessment · offer. The token is the key to it.</summary>
+public class ZhrCandidateLink
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Kind { get; set; } = default!;
+    public string Token { get; set; } = default!;
+    public Guid CandidateId { get; set; }
+    /// <summary>The booking page, test or offer template it came from.</summary>
+    public Guid? RecordId { get; set; }
+    public string Status { get; set; } = default!;
+    public DateTimeOffset ExpiresAt { get; set; }
+    /// <summary>The interview slot (booking) or the moment the test was started (assessment).</summary>
+    public DateTimeOffset? StartsAt { get; set; }
+    /// <summary>The end of the slot, or the test's deadline.</summary>
+    public DateTimeOffset? EndsAt { get; set; }
+    /// <summary>The interviewer of a booking.</summary>
+    public Guid? EmployeeId { get; set; }
+    public string Details { get; set; } = "{}";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+}
+
+/// <summary>What a new hire fills in before day one, and HR's review of it.</summary>
+public class ZhrPreHirePortal
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Token { get; set; } = default!;
+    public Guid EmployeeId { get; set; }
+    /// <summary>invited · in_progress · submitted · changes_requested · approved</summary>
+    public string Status { get; set; } = "invited";
+    public DateOnly InvitedOn { get; set; }
+    public DateOnly ExpiresOn { get; set; }
+    public string Data { get; set; } = "{}";
+    public string Review { get; set; } = "{}";
+    public string History { get; set; } = "[]";
+    public DateTimeOffset? SubmittedAt { get; set; }
+    public string? ReviewedBy { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrAnnouncement
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Title { get; set; } = default!;
+    public string Body { get; set; } = default!;
+    /// <summary>all · department · branch</summary>
+    public string AudienceKind { get; set; } = "all";
+    public string? AudienceValue { get; set; }
+    public string? PostedBy { get; set; }
+    public string? PostedByName { get; set; }
+    public DateTimeOffset PostedAt { get; set; }
+    public bool Pinned { get; set; }
+    public bool RequiresAck { get; set; }
+    public bool Archived { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrAnnouncementRead
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid AnnouncementId { get; set; }
+    public Guid EmployeeId { get; set; }
+    public DateTimeOffset ReadAt { get; set; }
+    public DateTimeOffset? AcknowledgedAt { get; set; }
+}
+
+/// <summary>A company asset: what it is, who holds it, and its history.</summary>
+public class ZhrAsset
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Tag { get; set; } = default!;
+    public string Kind { get; set; } = default!;
+    public string Name { get; set; } = default!;
+    public string? Serial { get; set; }
+    /// <summary>in_stock · assigned · repair · retired · lost</summary>
+    public string Status { get; set; } = "in_stock";
+    public Guid? AssignedTo { get; set; }
+    public DateOnly? AssignedOn { get; set; }
+    public string History { get; set; } = "[]";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+
+public class ZhrSurvey
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Title { get; set; } = default!;
+    public string? Intro { get; set; }
+    public string Questions { get; set; } = "[]";
+    public string AudienceKind { get; set; } = "all";
+    public string? AudienceValue { get; set; }
+    /// <summary>draft · open · closed</summary>
+    public string Status { get; set; } = "draft";
+    public string? CreatedBy { get; set; }
+    public DateOnly CreatedOn { get; set; }
+    public DateOnly? ClosesOn { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+/// <summary>An answer with no name on it: only the team it came from, and the day.</summary>
+public class ZhrSurveyResponse
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid SurveyId { get; set; }
+    public string? Department { get; set; }
+    public string Answers { get; set; } = "{}";
+    public DateOnly AnsweredOn { get; set; }
+}
+
+/// <summary>That someone took part in a survey, kept apart from what they said.</summary>
+public class ZhrSurveyParticipation
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid SurveyId { get; set; }
+    public Guid EmployeeId { get; set; }
+}
+
+public class ZhrGoal
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Title { get; set; } = default!;
+    public string? Description { get; set; }
+    /// <summary>company · team · individual</summary>
+    public string Level { get; set; } = default!;
+    public Guid? OwnerId { get; set; }
+    public string? Team { get; set; }
+    public Guid? ParentId { get; set; }
+    public string? Cycle { get; set; }
+    public DateOnly StartOn { get; set; }
+    public DateOnly DueOn { get; set; }
+    /// <summary>draft · proposed · active · done · cancelled</summary>
+    public string Status { get; set; } = default!;
+    public string KeyResults { get; set; } = "[]";
+    public Guid? CreatedByEmployeeId { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? ReturnNote { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public class ZhrGoalCheckIn
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public Guid GoalId { get; set; }
+    public DateTimeOffset At { get; set; }
+    public Guid? ByEmployeeId { get; set; }
+    public string? ByName { get; set; }
+    /// <summary>on_track · at_risk · off_track</summary>
+    public string Confidence { get; set; } = default!;
+    public string? Note { get; set; }
+    public string Values { get; set; } = "{}";
+}
+
+/// <summary>An email ZelosHR sent or will send: the record HR reads, and the queue reminders wait in.</summary>
+public class ZhrEmailMessage
+{
+    public Guid Id { get; set; }
+    public string TenantId { get; set; } = default!;
+    public string OrgId { get; set; } = default!;
+    public string Kind { get; set; } = default!;
+    public string ToEmail { get; set; } = default!;
+    public string? ToName { get; set; }
+    public string Subject { get; set; } = default!;
+    public string Body { get; set; } = default!;
+    public string? CtaLabel { get; set; }
+    public string? CtaUrl { get; set; }
+    public DateTimeOffset SendAt { get; set; }
+    /// <summary>scheduled · sent · cancelled · failed</summary>
+    public string Status { get; set; } = "scheduled";
+    public DateTimeOffset? SentAt { get; set; }
+    public string? Error { get; set; }
+    public string? RelatedId { get; set; }
+    /// <summary>A file that goes with the message (a report's CSV), fetched by its private token.</summary>
+    public string? FileToken { get; set; }
+    public string? FileName { get; set; }
+    public string? FileContent { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public string? CreatedBy { get; set; }
 }

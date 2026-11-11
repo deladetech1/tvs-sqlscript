@@ -660,6 +660,7 @@ public sealed class ZhrJobPostingConfiguration : IEntityTypeConfiguration<ZhrJob
         b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
         b.Property(x => x.Openings).HasDefaultValue(1);
         b.Property(x => x.BudgetMonthly).HasPrecision(14, 2);
+        b.Property(x => x.Careers).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedAt).HasDefaultValueSql("NOW()");
         b.Property(x => x.UpdatedAt).HasDefaultValueSql("NOW()");
         b.Property(x => x.CreatedBy).HasColumnType("text");
@@ -1418,6 +1419,8 @@ public sealed class ZhrSavedReportConfiguration : IEntityTypeConfiguration<ZhrSa
         b.Property(x => x.Name).HasMaxLength(200);
         b.Property(x => x.Options).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.Schedule).HasMaxLength(20).HasDefaultValue("none");
+        b.Property(x => x.Recipients).HasColumnType("jsonb").HasDefaultValue("[]");
+        b.Property(x => x.RunAs).HasColumnType("jsonb").HasDefaultValue("{}");
         b.Property(x => x.CreatedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId });
     }
@@ -1451,5 +1454,238 @@ public sealed class ZhrExternalReturnFileConfiguration : IEntityTypeConfiguratio
         b.Property(x => x.Name).HasMaxLength(300);
         b.Property(x => x.UploadedBy).HasColumnType("text");
         b.HasIndex(x => new { x.TenantId, x.OrgId, x.PayGroupId });
+    }
+}
+
+public sealed class ZhrHiringRecordConfiguration : IEntityTypeConfiguration<ZhrHiringRecord>
+{
+    public void Configure(EntityTypeBuilder<ZhrHiringRecord> b)
+    {
+        b.ToZelosHrTable("zhr_hiring_records");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Kind).HasMaxLength(30);
+        b.Property(x => x.Name).HasMaxLength(200);
+        b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.Details).HasColumnType("jsonb").HasDefaultValue("{}");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Kind });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId }).IsUnique().HasFilter("kind = 'availability'");
+    }
+}
+
+public sealed class ZhrCandidateLinkConfiguration : IEntityTypeConfiguration<ZhrCandidateLink>
+{
+    public void Configure(EntityTypeBuilder<ZhrCandidateLink> b)
+    {
+        b.ToZelosHrTable("zhr_candidate_links");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Kind).HasMaxLength(20);
+        b.Property(x => x.Token).HasMaxLength(64);
+        b.Property(x => x.Status).HasMaxLength(20);
+        b.Property(x => x.Details).HasColumnType("jsonb").HasDefaultValue("{}");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.HasIndex(x => x.Token).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Kind, x.CandidateId });
+        // One interviewer, one interview at a time: a slot cannot be booked twice.
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId, x.StartsAt }).IsUnique().HasFilter("kind = 'booking' AND status = 'booked'");
+    }
+}
+
+public sealed class ZhrPreHirePortalConfiguration : IEntityTypeConfiguration<ZhrPreHirePortal>
+{
+    public void Configure(EntityTypeBuilder<ZhrPreHirePortal> b)
+    {
+        b.ToZelosHrTable("zhr_prehire_portals");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Token).HasMaxLength(64);
+        b.Property(x => x.Status).HasMaxLength(24).HasDefaultValue("invited");
+        b.Property(x => x.Data).HasColumnType("jsonb").HasDefaultValue("{}");
+        b.Property(x => x.Review).HasColumnType("jsonb").HasDefaultValue("{}");
+        b.Property(x => x.History).HasColumnType("jsonb").HasDefaultValue("[]");
+        b.Property(x => x.ReviewedBy).HasColumnType("text");
+        b.HasIndex(x => x.Token).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId }).IsUnique();
+    }
+}
+
+public sealed class ZhrAnnouncementConfiguration : IEntityTypeConfiguration<ZhrAnnouncement>
+{
+    public void Configure(EntityTypeBuilder<ZhrAnnouncement> b)
+    {
+        b.ToZelosHrTable("zhr_announcements");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Title).HasMaxLength(200);
+        b.Property(x => x.Body).HasMaxLength(8000);
+        b.Property(x => x.AudienceKind).HasMaxLength(20).HasDefaultValue("all");
+        b.Property(x => x.AudienceValue).HasMaxLength(200);
+        b.Property(x => x.PostedBy).HasColumnType("text");
+        b.Property(x => x.PostedByName).HasMaxLength(200);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.PostedAt });
+    }
+}
+
+public sealed class ZhrAnnouncementReadConfiguration : IEntityTypeConfiguration<ZhrAnnouncementRead>
+{
+    public void Configure(EntityTypeBuilder<ZhrAnnouncementRead> b)
+    {
+        b.ToZelosHrTable("zhr_announcement_reads");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.HasIndex(x => new { x.AnnouncementId, x.EmployeeId }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.EmployeeId });
+    }
+}
+
+public sealed class ZhrAssetConfiguration : IEntityTypeConfiguration<ZhrAsset>
+{
+    public void Configure(EntityTypeBuilder<ZhrAsset> b)
+    {
+        b.ToZelosHrTable("zhr_assets");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Tag).HasMaxLength(60);
+        b.Property(x => x.Kind).HasMaxLength(20);
+        b.Property(x => x.Name).HasMaxLength(200);
+        b.Property(x => x.Serial).HasMaxLength(120);
+        b.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("in_stock");
+        b.Property(x => x.History).HasColumnType("jsonb").HasDefaultValue("[]");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.UpdatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Tag }).IsUnique();
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.AssignedTo });
+    }
+}
+
+public sealed class ZhrSurveyConfiguration : IEntityTypeConfiguration<ZhrSurvey>
+{
+    public void Configure(EntityTypeBuilder<ZhrSurvey> b)
+    {
+        b.ToZelosHrTable("zhr_surveys");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Title).HasMaxLength(200);
+        b.Property(x => x.Intro).HasMaxLength(2000);
+        b.Property(x => x.Questions).HasColumnType("jsonb").HasDefaultValue("[]");
+        b.Property(x => x.AudienceKind).HasMaxLength(20).HasDefaultValue("all");
+        b.Property(x => x.AudienceValue).HasMaxLength(200);
+        b.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("draft");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId });
+    }
+}
+
+public sealed class ZhrSurveyResponseConfiguration : IEntityTypeConfiguration<ZhrSurveyResponse>
+{
+    public void Configure(EntityTypeBuilder<ZhrSurveyResponse> b)
+    {
+        b.ToZelosHrTable("zhr_survey_responses");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Department).HasMaxLength(200);
+        b.Property(x => x.Answers).HasColumnType("jsonb").HasDefaultValue("{}");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.SurveyId });
+    }
+}
+
+public sealed class ZhrSurveyParticipationConfiguration : IEntityTypeConfiguration<ZhrSurveyParticipation>
+{
+    public void Configure(EntityTypeBuilder<ZhrSurveyParticipation> b)
+    {
+        b.ToZelosHrTable("zhr_survey_participations");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.HasIndex(x => new { x.SurveyId, x.EmployeeId }).IsUnique();
+    }
+}
+
+public sealed class ZhrGoalConfiguration : IEntityTypeConfiguration<ZhrGoal>
+{
+    public void Configure(EntityTypeBuilder<ZhrGoal> b)
+    {
+        b.ToZelosHrTable("zhr_goals");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Title).HasMaxLength(300);
+        b.Property(x => x.Description).HasMaxLength(4000);
+        b.Property(x => x.Level).HasMaxLength(20);
+        b.Property(x => x.Team).HasMaxLength(200);
+        b.Property(x => x.Cycle).HasMaxLength(60);
+        b.Property(x => x.Status).HasMaxLength(20);
+        b.Property(x => x.KeyResults).HasColumnType("jsonb").HasDefaultValue("[]");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.Property(x => x.ReturnNote).HasMaxLength(2000);
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.Level });
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.OwnerId });
+    }
+}
+
+public sealed class ZhrGoalCheckInConfiguration : IEntityTypeConfiguration<ZhrGoalCheckIn>
+{
+    public void Configure(EntityTypeBuilder<ZhrGoalCheckIn> b)
+    {
+        b.ToZelosHrTable("zhr_goal_check_ins");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.ByName).HasMaxLength(200);
+        b.Property(x => x.Confidence).HasMaxLength(20);
+        b.Property(x => x.Note).HasMaxLength(2000);
+        b.Property(x => x.Values).HasColumnType("jsonb").HasDefaultValue("{}");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.GoalId });
+    }
+}
+
+public sealed class ZhrEmailMessageConfiguration : IEntityTypeConfiguration<ZhrEmailMessage>
+{
+    public void Configure(EntityTypeBuilder<ZhrEmailMessage> b)
+    {
+        b.ToZelosHrTable("zhr_email_messages");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).HasDefaultValueSql("gen_random_uuid()");
+        b.Property(x => x.TenantId).HasMaxLength(128);
+        b.Property(x => x.OrgId).HasMaxLength(128);
+        b.Property(x => x.Kind).HasMaxLength(40);
+        b.Property(x => x.ToEmail).HasMaxLength(320);
+        b.Property(x => x.ToName).HasMaxLength(200);
+        b.Property(x => x.Subject).HasMaxLength(300);
+        b.Property(x => x.Body).HasColumnType("text");
+        b.Property(x => x.CtaLabel).HasMaxLength(100);
+        b.Property(x => x.CtaUrl).HasMaxLength(1000);
+        b.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("scheduled");
+        b.Property(x => x.Error).HasMaxLength(1000);
+        b.Property(x => x.RelatedId).HasMaxLength(100);
+        b.Property(x => x.FileToken).HasMaxLength(64);
+        b.Property(x => x.FileName).HasMaxLength(200);
+        b.Property(x => x.FileContent).HasColumnType("text");
+        b.Property(x => x.CreatedBy).HasColumnType("text");
+        b.HasIndex(x => new { x.TenantId, x.OrgId, x.CreatedAt });
+        b.HasIndex(x => new { x.Status, x.SendAt });
+        b.HasIndex(x => x.FileToken).IsUnique().HasFilter("file_token IS NOT NULL");
     }
 }
