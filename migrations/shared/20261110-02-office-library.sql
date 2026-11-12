@@ -200,18 +200,21 @@ CREATE TABLE IF NOT EXISTS office.of_settings (
 -- they differ from it, and left alone when they match, so this block is idempotent and a re-run
 -- costs nothing. A list that drops an extension stored rows still use fails the deploy (ADD
 -- CONSTRAINT validates). The column default ('docx', the format of a blank Docs file) must stay
--- in the docs list; each editor's "New" format (docx, xlsx, pptx) must stay in its own list.
+-- in the docs list; each editor's "New" format (docx, xlsx, pptx, pdf) must stay in its own list.
+-- R3 (20261113-01) added the fourth editor, PDF, and its list here: this block rebuilds the CHECKs
+-- on every deploy, so a list kept anywhere else would be undone by it.
 DO $$
 DECLARE
     docs_exts   constant text[] := ARRAY['docx', 'doc', 'odt', 'rtf', 'txt', 'md', 'html', 'dotx', 'ott'];  -- <<< PROVISIONAL LIST: docs
     sheets_exts constant text[] := ARRAY['xlsx', 'xlsm', 'csv', 'tsv', 'ods', 'xls'];                        -- <<< PROVISIONAL LIST: sheets
     slides_exts constant text[] := ARRAY['pptx', 'potx', 'ppsx', 'deckcraft'];                                -- <<< PROVISIONAL LIST: slides
-    exts        constant text[] := docs_exts || sheets_exts || slides_exts;
+    pdf_exts    constant text[] := ARRAY['pdf'];                                                              -- <<< PROVISIONAL LIST: pdf (R3 §7b, 20261113-01)
+    exts        constant text[] := docs_exts || sheets_exts || slides_exts || pdf_exts;
     dup  text;
     t    record;
 BEGIN
-    IF NOT ('docx' = ANY (docs_exts) AND 'xlsx' = ANY (sheets_exts) AND 'pptx' = ANY (slides_exts)) THEN
-        RAISE EXCEPTION 'office: each editor''s stored formats must include its "New" format (docx, xlsx, pptx)';
+    IF NOT ('docx' = ANY (docs_exts) AND 'xlsx' = ANY (sheets_exts) AND 'pptx' = ANY (slides_exts) AND 'pdf' = ANY (pdf_exts)) THEN
+        RAISE EXCEPTION 'office: each editor''s stored formats must include its "New" format (docx, xlsx, pptx, pdf)';
     END IF;
     SELECT e INTO dup FROM unnest(exts) AS e GROUP BY e HAVING count(*) > 1 LIMIT 1;
     IF dup IS NOT NULL THEN
