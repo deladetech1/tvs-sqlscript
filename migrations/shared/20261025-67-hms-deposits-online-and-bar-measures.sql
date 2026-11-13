@@ -12,10 +12,17 @@
 
 BEGIN;
 
-ALTER TABLE hms.hms_payment_attempts DROP CONSTRAINT IF EXISTS hms_payment_attempts_subject_check;
-ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
-    CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking', 'deposit',
-                            'ticket_sale', 'appointment', 'member'));
+-- Widened here, unless a later migration has widened it further (it owns it from then on:
+-- 20261113-03 added 'pass'); every file re-runs on each deploy, so this never narrows it back.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_payment_attempts_subject_check' AND conrelid = 'hms.hms_payment_attempts'::regclass
+                  AND position('member' IN pg_get_constraintdef(oid)) > 0) THEN
+    ALTER TABLE hms.hms_payment_attempts DROP CONSTRAINT IF EXISTS hms_payment_attempts_subject_check;
+    ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check
+        CHECK (subject_type IN ('lease', 'folio', 'reservation', 'order', 'voucher', 'invoice', 'activity_booking', 'deposit',
+                                'ticket_sale', 'appointment', 'member'));
+  END IF;
+END $$;
 
 ALTER TABLE hms.hms_stock_items ADD COLUMN IF NOT EXISTS content_size numeric(14,3);
 ALTER TABLE hms.hms_stock_items ADD COLUMN IF NOT EXISTS content_unit text;

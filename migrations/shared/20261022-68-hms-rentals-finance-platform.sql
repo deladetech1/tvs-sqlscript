@@ -103,8 +103,12 @@ DO $$ BEGIN
     ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_subject_check CHECK (subject_type IN ('lease', 'folio', 'reservation'));
   END IF;
 END $$;
-ALTER TABLE hms.hms_payment_attempts DROP CONSTRAINT IF EXISTS hms_payment_attempts_status_check;
-ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_status_check CHECK (status IN ('pending', 'paid', 'failed'));
+-- Created here; widened by a later migration (20261113-03), which owns it from then on.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'hms_payment_attempts_status_check' AND conrelid = 'hms.hms_payment_attempts'::regclass) THEN
+    ALTER TABLE hms.hms_payment_attempts ADD CONSTRAINT hms_payment_attempts_status_check CHECK (status IN ('pending', 'paid', 'failed'));
+  END IF;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS hms_payment_attempts_ref_uq ON hms.hms_payment_attempts (reference);
 
 -- ------------------------------------------------------------------- automations
