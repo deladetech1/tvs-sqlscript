@@ -541,6 +541,539 @@ ON CONFLICT (feature_key) DO UPDATE SET
     description   = EXCLUDED.description,
     is_active     = true;
 
--- @@VIEWS@@
+-- ======================================================================= link events
+-- office.tasks_requested on office-projects: one event per action item of minutes ("Create tasks
+-- in Projects"), in the platform/linkbox envelope; Projects' inbox (projects.prj_link_inbox)
+-- creates the task as requested_by, with that person's own Projects permissions. Office reads how
+-- it went from office.src_projects_requests. This file owns the catalogue row (a newer file that
+-- changes the schema adds a version).
+DO $$
+BEGIN
+    IF to_regclass('core_platform.cp_event_schemas') IS NULL THEN
+        RAISE NOTICE 'office-r5: no event catalogue here; skipping office.tasks_requested';
+        RETURN;
+    END IF;
+    WITH envelope AS (
+        SELECT jsonb_build_object(
+            '$schema', 'https://json-schema.org/draft/2020-12/schema',
+            'type', 'object',
+            'required', jsonb_build_array('v', 'link', 'idempotency_key', 'data'),
+            'properties', jsonb_build_object(
+                'v', jsonb_build_object('type', 'integer', 'minimum', 1),
+                'link', jsonb_build_object('type', 'string'),
+                'idempotency_key', jsonb_build_object('type', 'string', 'minLength', 1, 'maxLength', 200),
+                'sent_at', jsonb_build_object('type', 'string', 'format', 'date-time'),
+                'sent_by', jsonb_build_object('type', 'string'))) AS e
+    ), kinds (kind, version, link_key, source_app, target_app, phase, description, data) AS (
+        SELECT * FROM (VALUES
+        ('office.tasks_requested', 1, 'office-projects', 'app-office', 'app-projects', 1,
+         'An action item from meeting minutes in Office: Projects creates the task in the chosen project as the person who asked.',
+         '{"type":"object","required":["request_id","project_id","requested_by","title"],"properties":{
+            "request_id":{"type":"string"},"project_id":{"type":"string"},"requested_by":{"type":"string"},
+            "title":{"type":"string","minLength":1,"maxLength":500},"description":{"type":"string"},
+            "assignee_user_id":{"type":"string"},"owner_name":{"type":"string"},
+            "due_date":{"type":"string","format":"date"},"document_id":{"type":"string"},"link":{"type":"string"}}}'::jsonb)
+        ) v
+    )
+    INSERT INTO core_platform.cp_event_schemas (kind, version, link_key, source_app, target_app, phase, description, schema, updated_at)
+    SELECT k.kind, k.version, k.link_key, k.source_app, k.target_app, k.phase, k.description,
+           jsonb_set(e.e, '{properties,data}', k.data) || jsonb_build_object('title', k.kind || ' v' || k.version), now()
+      FROM kinds k CROSS JOIN envelope e
+    ON CONFLICT (kind, version) DO UPDATE SET
+        link_key = EXCLUDED.link_key, source_app = EXCLUDED.source_app, target_app = EXCLUDED.target_app,
+        phase = EXCLUDED.phase, description = EXCLUDED.description, schema = EXCLUDED.schema,
+        updated_at = CASE WHEN core_platform.cp_event_schemas.schema IS DISTINCT FROM EXCLUDED.schema
+                            OR core_platform.cp_event_schemas.description IS DISTINCT FROM EXCLUDED.description
+                          THEN now() ELSE core_platform.cp_event_schemas.updated_at END;
+END $$;
+
+-- ===================================================================== the src_ views
+-- Read-only views over the other apps' tables, each created only where that app's tables exist
+-- (a database without the app has no view, and Office answers SOURCE_NOT_CONNECTED for it).
+-- Every view has tenant_id and bus_id; ZelosHR is per organisation, so its views carry org_id
+-- AND one row per business of that organisation (bus_id from core_platform.cp_businesses).
+-- Money is (amount, currency): currency is the ISO code. No grants: like helpdesk.src_zeloshr_*
+-- (20261109-73), the views are made by the migration role in the app group's schema, and the
+-- group's default privileges cover them.
+--
+-- office.src_crm_deals                 (crm.crm_deals; live deals only)
+--   tenant_id, bus_id, deal_id, title, pipeline_id, pipeline_name, stage_id, stage_name,
+--   stage_position, stage_kind, status (open|won|lost), amount, currency, probability,
+--   expected_close_date, closed_at, owner_user_id, owner_name, company_id, company_name,
+--   contact_id, contact_name, created_at, updated_at
+-- office.src_invoicing_invoices        (invoicing.inv_invoices; kind 'invoice', not drafts)
+--   tenant_id, bus_id, invoice_id, number, status (open|paid|void), customer_id, customer_name,
+--   title, reference, issue_date, due_date, currency, subtotal, tax_total, total, amount_paid,
+--   balance, days_overdue (0 unless open with a balance and past due), paid_at, voided_at,
+--   created_at
+-- office.src_invoicing_payments        (invoicing.inv_payments; received, not voided)
+--   tenant_id, bus_id, payment_id, invoice_id, customer_id, kind (payment|refund), amount,
+--   currency, paid_on, method, reference
+-- office.src_invoicing_customers       (core_platform.cp_parties; the business's customers)
+--   tenant_id, bus_id, customer_id, name, email, phone, currency, archived
+-- office.src_expenses_claims           (expenses.exp_claims; not drafts)
+--   tenant_id, bus_id, claim_id, number, title, claimant_id, claimant_name, status
+--   (submitted|approved|returned|rejected|paid|cancelled), currency, total, paid_total,
+--   submitted_at, approved_at, paid_at, created_at
+-- office.src_expenses_lines            (expenses.exp_expenses with category and claim)
+--   tenant_id, bus_id, expense_id, claim_id, claim_number, claim_status (NULL: not on a claim),
+--   user_id, category_id, category_name, kind (receipt|mileage|per_diem), spent_on, merchant,
+--   amount, currency, amount_base, base_currency, billable
+-- office.src_helpdesk_tickets          (helpdesk.hd_tickets; never confidential HR cases,
+--                                       deleted or merged tickets)
+--   tenant_id, bus_id, ticket_id, number, subject, ticket_type, priority, status_category,
+--   is_open, department_id, department_name, team_id, team_name, assignee_user_id,
+--   assignee_name, source, created_at, due_at, first_responded_at, resolved_at, closed_at,
+--   age_days, is_restricted
+-- office.src_helpdesk_sla              (helpdesk.hd_sla_clocks of those tickets)
+--   tenant_id, bus_id, ticket_id, metric (first_response|next_response|resolution), state
+--   (running|paused|met|breached|cancelled), target_minutes, started_at, due_at, breached_at,
+--   stopped_at, priority, team_id, team_name, is_restricted
+-- office.src_projects_projects         (projects.prj_projects; live, not templates)
+--   tenant_id, bus_id, project_id, key, name, status (active|archived), lead_user_id, lead_name,
+--   project_open, workspace_open, member_ids, workspace_member_ids, task_count, done_count,
+--   open_count, overdue_count, percent_done, due_date, currency, budget_amount, budget_hours
+--   Who may see a project (Projects' visibleSQL, as data, as helpdesk.src_projects_projects):
+--   (project_open OR user = ANY(member_ids)) AND (workspace_open OR user = ANY(workspace_member_ids))
+-- office.src_projects_worklogs         (projects.prj_worklogs)
+--   tenant_id, bus_id, worklog_id, project_id, project_name, task_id, task_title, user_id,
+--   user_name, work_date, minutes, hours, billable. Join src_projects_projects for visibility.
+-- office.src_projects_requests         (projects.prj_link_inbox; office.tasks_requested)
+--   tenant_id, bus_id, request_id, status, last_error, attempts, task_id, task_key, received_at,
+--   handled_at
+-- office.src_zeloshr_people            (zeloshr.zhr_employees; NO pay, bank, tax, SSNIT, ID or
+--                                       contact data, ever)
+--   tenant_id, bus_id, org_id, employee_id, user_id, full_name, job_title, department_id,
+--   department_name, branch_id, branch_name, employment_type, employment_status, start_date,
+--   left_on, is_current
+-- office.src_zeloshr_leave_balances    (zeloshr.zhr_leave_balances)
+--   tenant_id, bus_id, org_id, employee_id, full_name, department_name, leave_type,
+--   entitled_days, used_days, remaining_days, is_current
+-- office.src_scm_stock                 (scm.scm_stock_balances summed per item and warehouse)
+--   tenant_id, bus_id, product_id, sku, item_name, category, unit, warehouse_id, warehouse_code,
+--   warehouse_name, on_hand, reserved, available, reorder_point, reorder_qty, safety_stock,
+--   below_reorder
+
+-- ---------------------------------------------------------------------------- CRM
+DO $$
+BEGIN
+    IF to_regclass('crm.crm_deals') IS NULL OR to_regclass('crm.crm_pipeline_stages') IS NULL THEN
+        RAISE NOTICE 'office-r5: no CRM here; no office.src_crm_* views';
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_crm_deals AS
+    SELECT d.tenant_id, d.bus_id, d.id AS deal_id, d.title, d.pipeline_id, p.name AS pipeline_name,
+           d.stage_id, s.name AS stage_name, s.position AS stage_position, s.kind AS stage_kind,
+           d.status, coalesce(d.amount, 0) AS amount, coalesce(cur.code, d.currency_id) AS currency,
+           coalesce(d.probability, s.probability) AS probability, d.expected_close_date, d.closed_at,
+           d.owner_user_id, ou.fullname AS owner_name, d.company_id, co.name AS company_name,
+           d.contact_id, coalesce(nullif(btrim(ct.full_name), ''), btrim(concat_ws(' ', ct.first_name, ct.last_name))) AS contact_name,
+           d.cdatetime AS created_at, d.updated_at
+      FROM crm.crm_deals d
+      LEFT JOIN crm.crm_pipelines p ON p.id = d.pipeline_id AND p.tenant_id = d.tenant_id
+      LEFT JOIN crm.crm_pipeline_stages s ON s.id = d.stage_id AND s.tenant_id = d.tenant_id
+      LEFT JOIN core_platform.cp_currencies cur ON cur.id = d.currency_id
+      LEFT JOIN core_platform.cp_users ou ON ou.id = d.owner_user_id AND ou.tenant_id = d.tenant_id
+      LEFT JOIN crm.crm_companies co ON co.id = d.company_id AND co.tenant_id = d.tenant_id
+      LEFT JOIN crm.crm_contacts ct ON ct.id = d.contact_id AND ct.tenant_id = d.tenant_id
+     WHERE coalesce(d.delete_status, 'NOT_DELETED') = 'NOT_DELETED' AND coalesce(d.is_active, true)
+    $v$;
+END $$;
+
+-- ---------------------------------------------------------------------- Invoicing
+DO $$
+BEGIN
+    IF to_regclass('invoicing.inv_invoices') IS NULL OR to_regclass('invoicing.inv_payments') IS NULL THEN
+        RAISE NOTICE 'office-r5: no Invoicing here; no office.src_invoicing_* views';
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_invoicing_invoices AS
+    SELECT i.tenant_id, i.bus_id, i.id AS invoice_id, i.number, i.status, i.customer_id,
+           coalesce(nullif(btrim(pt.name), ''), i.customer_snapshot ->> 'name') AS customer_name,
+           i.title, i.reference, i.issue_date, i.due_date, btrim(i.currency) AS currency,
+           coalesce(i.subtotal, 0) AS subtotal, coalesce(i.tax_total, 0) AS tax_total, coalesce(i.total, 0) AS total,
+           coalesce(i.amount_paid, 0) AS amount_paid, coalesce(i.balance, 0) AS balance,
+           CASE WHEN i.status = 'open' AND coalesce(i.balance, 0) > 0 AND i.due_date < current_date
+                THEN current_date - i.due_date ELSE 0 END AS days_overdue,
+           i.paid_at, i.voided_at, i.cdatetime AS created_at
+      FROM invoicing.inv_invoices i
+      LEFT JOIN core_platform.cp_parties pt ON pt.id = i.customer_id AND pt.tenant_id = i.tenant_id
+     WHERE i.kind = 'invoice' AND i.status <> 'draft'
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_invoicing_payments AS
+    SELECT p.tenant_id, p.bus_id, p.id AS payment_id, p.invoice_id, p.customer_id, p.kind,
+           p.amount, btrim(p.currency) AS currency, p.paid_on, p.method, p.reference
+      FROM invoicing.inv_payments p
+     WHERE p.status = 'received' AND p.voided_at IS NULL
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_invoicing_customers AS
+    SELECT pt.tenant_id, pt.bus_id, pt.id AS customer_id, pt.name, pt.email, pt.phone,
+           btrim(pt.currency) AS currency, pt.archived_at IS NOT NULL AS archived
+      FROM core_platform.cp_parties pt
+     WHERE pt.is_customer AND pt.deleted_at IS NULL
+    $v$;
+END $$;
+
+-- ----------------------------------------------------------------------- Expenses
+DO $$
+BEGIN
+    IF to_regclass('expenses.exp_claims') IS NULL OR to_regclass('expenses.exp_expenses') IS NULL THEN
+        RAISE NOTICE 'office-r5: no Expenses here; no office.src_expenses_* views';
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_expenses_claims AS
+    SELECT c.tenant_id, c.bus_id, c.id AS claim_id, c.number, c.title, c.claimant_id,
+           coalesce(nullif(btrim(c.claimant_name), ''), u.fullname) AS claimant_name, c.status,
+           btrim(c.currency) AS currency, coalesce(c.total, 0) AS total, coalesce(c.paid_total, 0) AS paid_total,
+           c.submitted_at, c.approved_at, c.paid_at, c.cdatetime AS created_at
+      FROM expenses.exp_claims c
+      LEFT JOIN core_platform.cp_users u ON u.id = c.claimant_id AND u.tenant_id = c.tenant_id
+     WHERE c.status <> 'draft'
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_expenses_lines AS
+    SELECT e.tenant_id, e.bus_id, e.id AS expense_id, e.claim_id, c.number AS claim_number, c.status AS claim_status,
+           e.user_id, e.category_id, cat.name AS category_name, e.kind, e.spent_on, e.merchant,
+           e.amount, btrim(e.currency) AS currency, coalesce(e.amount_base, e.amount) AS amount_base,
+           btrim(coalesce(st.base_currency, e.currency)) AS base_currency, coalesce(e.billable, false) AS billable
+      FROM expenses.exp_expenses e
+      LEFT JOIN expenses.exp_categories cat ON cat.id = e.category_id
+      LEFT JOIN expenses.exp_claims c ON c.id = e.claim_id
+      LEFT JOIN expenses.exp_settings st ON st.tenant_id = e.tenant_id AND st.bus_id = e.bus_id
+    $v$;
+END $$;
+
+-- ---------------------------------------------------------------------- Help Desk
+DO $$
+BEGIN
+    IF to_regclass('helpdesk.hd_tickets') IS NULL OR to_regclass('helpdesk.hd_sla_clocks') IS NULL
+       OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'helpdesk' AND table_name = 'hd_tickets'
+                       AND column_name = 'confidentiality') THEN
+        RAISE NOTICE 'office-r5: no Help Desk (with HR confidentiality) here; no office.src_helpdesk_* views';
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_helpdesk_tickets AS
+    SELECT t.tenant_id, t.bus_id, t.id AS ticket_id, t.number, t.subject, t.ticket_type, t.priority,
+           t.status_category, t.status_category NOT IN ('resolved', 'closed', 'cancelled') AS is_open,
+           t.department_id, d.name AS department_name, t.team_id, tm.name AS team_name,
+           t.assignee_user_id, au.fullname AS assignee_name, t.source, t.cdatetime AS created_at, t.due_at,
+           t.first_responded_at, t.resolved_at, t.closed_at,
+           (current_date - (t.cdatetime AT TIME ZONE 'UTC')::date) AS age_days, coalesce(t.is_restricted, false) AS is_restricted
+      FROM helpdesk.hd_tickets t
+      LEFT JOIN helpdesk.hd_departments d ON d.id = t.department_id AND d.tenant_id = t.tenant_id
+      LEFT JOIN helpdesk.hd_teams tm ON tm.id = t.team_id AND tm.tenant_id = t.tenant_id
+      LEFT JOIN core_platform.cp_users au ON au.id = t.assignee_user_id AND au.tenant_id = t.tenant_id
+     WHERE t.deleted_at IS NULL AND t.merged_into_id IS NULL AND t.confidentiality = 'none'
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_helpdesk_sla AS
+    SELECT c.tenant_id, c.bus_id, c.ticket_id, c.metric, c.state, c.target_minutes, c.started_at, c.due_at,
+           c.breached_at, c.stopped_at, t.priority, t.team_id, tm.name AS team_name, coalesce(t.is_restricted, false) AS is_restricted
+      FROM helpdesk.hd_sla_clocks c
+      JOIN helpdesk.hd_tickets t ON t.id = c.ticket_id AND t.tenant_id = c.tenant_id
+      LEFT JOIN helpdesk.hd_teams tm ON tm.id = t.team_id AND tm.tenant_id = t.tenant_id
+     WHERE t.deleted_at IS NULL AND t.merged_into_id IS NULL AND t.confidentiality = 'none'
+    $v$;
+END $$;
+
+-- ----------------------------------------------------------------------- Projects
+DO $$
+BEGIN
+    IF to_regclass('projects.prj_projects') IS NULL OR to_regclass('projects.prj_tasks') IS NULL
+       OR to_regclass('projects.prj_workspaces') IS NULL OR to_regclass('projects.prj_worklogs') IS NULL THEN
+        RAISE NOTICE 'office-r5: no Projects here; no office.src_projects_* views';
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_projects_projects AS
+    SELECT p.tenant_id, p.bus_id, p.id AS project_id, p.key, p.name, p.status, p.lead_user_id, lu.fullname AS lead_name,
+           p.visibility = 'business' AS project_open, w.visibility = 'business' AS workspace_open,
+           array_remove(array_append(coalesce((SELECT array_agg(m.user_id) FROM projects.prj_members m WHERE m.project_id = p.id), '{}'), p.lead_user_id), NULL) AS member_ids,
+           array_remove(array_append(coalesce((SELECT array_agg(wm.user_id) FROM projects.prj_workspace_members wm WHERE wm.workspace_id = w.id), '{}'), w.owner_user_id), NULL) AS workspace_member_ids,
+           coalesce(tc.task_count, 0) AS task_count, coalesce(tc.done_count, 0) AS done_count,
+           coalesce(tc.task_count, 0) - coalesce(tc.done_count, 0) AS open_count, coalesce(tc.overdue_count, 0) AS overdue_count,
+           CASE WHEN coalesce(tc.task_count, 0) = 0 THEN 0
+                ELSE round(100.0 * tc.done_count / tc.task_count, 1) END AS percent_done,
+           coalesce((SELECT max(ms.due_date) FROM projects.prj_milestones ms
+                      WHERE ms.project_id = p.id AND coalesce(ms.delete_status, 'NOT_DELETED') = 'NOT_DELETED'), tc.last_due) AS due_date,
+           p.currency, p.budget_amount, p.budget_hours
+      FROM projects.prj_projects p
+      JOIN projects.prj_workspaces w ON w.id = p.workspace_id AND w.delete_status = 'NOT_DELETED'
+      LEFT JOIN core_platform.cp_users lu ON lu.id = p.lead_user_id AND lu.tenant_id = p.tenant_id
+      LEFT JOIN LATERAL (
+            SELECT count(*)::int AS task_count,
+                   count(*) FILTER (WHERE st.category = 'done')::int AS done_count,
+                   count(*) FILTER (WHERE st.category <> 'done' AND t.due_date < current_date)::int AS overdue_count,
+                   max(t.due_date) AS last_due
+              FROM projects.prj_tasks t
+              JOIN projects.prj_statuses st ON st.id = t.status_id
+             WHERE t.project_id = p.id AND t.delete_status = 'NOT_DELETED') tc ON true
+     WHERE p.delete_status = 'NOT_DELETED' AND NOT coalesce(p.is_template, false)
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_projects_worklogs AS
+    SELECT p.tenant_id, p.bus_id, wl.id AS worklog_id, wl.project_id, p.name AS project_name, wl.task_id, t.title AS task_title,
+           wl.user_id, u.fullname AS user_name, wl.work_date, wl.minutes, round(wl.minutes / 60.0, 2) AS hours,
+           coalesce(wl.billable, false) AS billable
+      FROM projects.prj_worklogs wl
+      JOIN projects.prj_projects p ON p.id = wl.project_id AND p.tenant_id = wl.tenant_id AND p.delete_status = 'NOT_DELETED'
+      LEFT JOIN projects.prj_tasks t ON t.id = wl.task_id
+      LEFT JOIN core_platform.cp_users u ON u.id = wl.user_id AND u.tenant_id = wl.tenant_id
+    $v$;
+    IF to_regclass('projects.prj_link_inbox') IS NOT NULL THEN
+        -- How each "Create tasks in Projects" request went (idempotency key = Office's request id).
+        EXECUTE $v$
+        CREATE OR REPLACE VIEW office.src_projects_requests AS
+        SELECT i.tenant_id, i.bus_id, i.idempotency_key AS request_id, i.status, i.last_error, i.attempts,
+               i.result ->> 'task_id' AS task_id, i.result ->> 'task_key' AS task_key, i.received_at, i.handled_at
+          FROM projects.prj_link_inbox i
+         WHERE i.kind = 'office.tasks_requested' AND i.source_app = 'app-office'
+        $v$;
+    END IF;
+END $$;
+
+-- ------------------------------------------------------------------------ ZelosHR
+-- NEVER pay, bank, mobile money, tax, SSNIT, national ID, address, phone or date of birth: the
+-- columns below are the whole list (invariant 6 checks it).
+DO $$
+BEGIN
+    IF to_regclass('zeloshr.zhr_employees') IS NULL OR to_regclass('zeloshr.zhr_leave_balances') IS NULL
+       OR to_regclass('zeloshr.zhr_departments') IS NULL THEN
+        RAISE NOTICE 'office-r5: no ZelosHR here; no office.src_zeloshr_* views';
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_zeloshr_people AS
+    SELECT e.tenant_id, b.id AS bus_id, e.org_id, e.id::text AS employee_id, e.user_id::text AS user_id,
+           coalesce(nullif(btrim(e.full_name), ''), nullif(btrim(concat_ws(' ', e.first_name, e.last_name)), ''), cu.fullname) AS full_name,
+           e.job_title, e.department_id::text AS department_id, d.name AS department_name,
+           e.branch_id::text AS branch_id, br.name::text AS branch_name, e.employment_type, e.employment_status,
+           coalesce(e.employment_start_date, e.start_date) AS start_date,
+           (SELECT max(oc.last_working_day) FROM zeloshr.zhr_offboarding_cases oc
+             WHERE oc.employee_id = e.id AND oc.tenant_id = e.tenant_id AND coalesce(oc.state, '') NOT ILIKE 'cancel%') AS left_on,
+           (lower(coalesce(e.lifecycle_state, '')) NOT IN ('resigned', 'terminated', 'retired', 'inactive')
+            AND lower(coalesce(e.employment_status, '')) NOT IN ('resigned', 'terminated', 'retired', 'inactive')) AS is_current
+      FROM zeloshr.zhr_employees e
+      JOIN core_platform.cp_businesses b ON b.tenant_id = e.tenant_id AND b.org_id = e.org_id
+           AND coalesce(b.delete_status, 'NOT_DELETED') = 'NOT_DELETED'
+      LEFT JOIN core_platform.cp_users cu ON cu.id = e.user_id AND cu.tenant_id = e.tenant_id
+      LEFT JOIN zeloshr.zhr_departments d ON d.id = e.department_id AND d.tenant_id = e.tenant_id
+      LEFT JOIN zeloshr.zhr_branches br ON br.id = e.branch_id AND br.tenant_id = e.tenant_id
+     WHERE NOT coalesce(e.is_deleted, false) AND NOT coalesce(e.is_draft, false)
+    $v$;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_zeloshr_leave_balances AS
+    SELECT p.tenant_id, p.bus_id, p.org_id, p.employee_id, p.full_name, p.department_name,
+           coalesce(t.name, lb.leave_type)::text AS leave_type, lb.entitled_days, lb.used_days, lb.remaining_days, p.is_current
+      FROM zeloshr.zhr_leave_balances lb
+      JOIN office.src_zeloshr_people p ON p.employee_id = lb.employee_id::text AND p.tenant_id = lb.tenant_id
+      LEFT JOIN zeloshr.zhr_leave_types t ON t.id = lb.leave_type_id AND t.tenant_id = lb.tenant_id
+    $v$;
+END $$;
+
+-- ---------------------------------------------------------------------------- SCM
+DO $$
+BEGIN
+    IF to_regclass('scm.scm_stock_balances') IS NULL OR to_regclass('scm.scm_warehouses') IS NULL
+       OR to_regclass('scm.scm_item_settings') IS NULL OR to_regclass('core_platform.cp_products') IS NULL THEN
+        RAISE NOTICE 'office-r5: no Supply Chain here; no office.src_scm_* views';
+        RETURN;
+    END IF;
+    EXECUTE $v$
+    CREATE OR REPLACE VIEW office.src_scm_stock AS
+    SELECT sb.tenant_id, sb.bus_id, sb.product_id, pr.sku, pr.name AS item_name, pr.category, pr.unit,
+           sb.warehouse_id, w.code AS warehouse_code, w.name AS warehouse_name,
+           sb.on_hand, sb.reserved, sb.on_hand - sb.reserved AS available,
+           s.reorder_point, s.reorder_qty, s.safety_stock,
+           (s.reorder_point IS NOT NULL AND sb.on_hand <= s.reorder_point) AS below_reorder
+      FROM (SELECT b.tenant_id, b.bus_id, b.product_id, b.warehouse_id,
+                   sum(b.on_hand) AS on_hand, sum(coalesce(b.reserved, 0)) AS reserved
+              FROM scm.scm_stock_balances b
+             GROUP BY b.tenant_id, b.bus_id, b.product_id, b.warehouse_id) sb
+      JOIN core_platform.cp_products pr ON pr.id = sb.product_id AND pr.tenant_id = sb.tenant_id
+      JOIN scm.scm_warehouses w ON w.id = sb.warehouse_id AND w.tenant_id = sb.tenant_id
+      LEFT JOIN scm.scm_item_settings s ON s.product_id = sb.product_id AND s.tenant_id = sb.tenant_id AND s.bus_id = sb.bus_id
+    $v$;
+END $$;
+
+-- ============================================================ office.src_core_permissions
+-- (tenant_id, bus_id, user_id, permission): every permission key a person holds in a business,
+-- resolved as Core resolves them (tvs-package-go auth: Authorizer.roles, permissionKeys,
+-- HasAny / appAdminAllows). Office asks it for a source app's read permission:
+--     SELECT EXISTS (SELECT 1 FROM office.src_core_permissions
+--                     WHERE tenant_id = $1 AND bus_id = $2 AND user_id = $3 AND permission = $4)
+--
+--   * Roles: the person's own and their groups' tenant assignments (cp_assign_roles, not system,
+--     live), plus system assignments (tenant 'system-tenant-id', is_system) made to the person or
+--     to a system group they are in. Roles are tenant-wide, so a role holds in every live business
+--     of the tenant.
+--   * A role's permissions are its cp_role_permissions rows of the system tenant for a system role
+--     (of the person's tenant otherwise), and of the other tenant when it has none there. Each row
+--     answers its permission_id and its pair key app|resource|action|target|scope (scope '' = any).
+--   * role-owner holds every permission. role-admin holds every permission of every app and of
+--     Core Platform, role-cp-admin every Core Platform one (prefix '' or 'cp'), and
+--     role-subscribed-app-<app>-admin every one of <app>: as pair keys, and never a write on
+--     'logs' or 'audit' (a write = an action that cp_actions does not mark read-only).
+--   * A person who is inactive or deleted (cp_users) holds nothing.
+-- Plan and subscription are not here: Office checks entitlement (the business subscribes to the
+-- source app) on its own.
+CREATE OR REPLACE VIEW office.src_core_permissions AS
+WITH tgroups AS NOT MATERIALIZED (
+    SELECT ug.tenant_id, ug.user_id, ug.group_id
+      FROM core_platform.cp_user_groups ug
+     WHERE ug.delete_status = 'NOT_DELETED' AND ug.is_active AND (ug.is_system = false OR ug.is_system IS NULL)
+), held AS NOT MATERIALIZED (
+    SELECT ar.tenant_id, ar.user_id, ar.role_id
+      FROM core_platform.cp_assign_roles ar
+     WHERE ar.delete_status = 'NOT_DELETED' AND ar.is_active AND (ar.is_system = false OR ar.is_system IS NULL)
+       AND ar.user_id IS NOT NULL AND ar.role_id IS NOT NULL AND ar.role_id <> ''
+    UNION
+    SELECT g.tenant_id, g.user_id, ar.role_id
+      FROM tgroups g
+      JOIN core_platform.cp_assign_roles ar ON ar.tenant_id = g.tenant_id AND ar.group_id = g.group_id
+     WHERE ar.delete_status = 'NOT_DELETED' AND ar.is_active AND (ar.is_system = false OR ar.is_system IS NULL)
+       AND ar.role_id IS NOT NULL AND ar.role_id <> ''
+    UNION
+    SELECT u.tenant_id, u.id, sar.role_id
+      FROM core_platform.cp_assign_roles sar
+      JOIN core_platform.cp_users u ON u.id = sar.user_id
+     WHERE sar.tenant_id = 'system-tenant-id' AND sar.is_system AND sar.delete_status = 'NOT_DELETED' AND sar.is_active
+       AND sar.role_id IS NOT NULL AND sar.role_id <> ''
+    UNION
+    SELECT u.tenant_id, u.id, sar.role_id
+      FROM core_platform.cp_assign_roles sar
+      JOIN core_platform.cp_user_groups sug ON sug.group_id = sar.group_id AND sug.is_system
+           AND sug.is_active AND sug.delete_status = 'NOT_DELETED'
+      JOIN core_platform.cp_users u ON u.id = sug.user_id
+     WHERE sar.tenant_id = 'system-tenant-id' AND sar.is_system AND sar.delete_status = 'NOT_DELETED' AND sar.is_active
+       AND sar.role_id IS NOT NULL AND sar.role_id <> ''
+), live AS NOT MATERIALIZED (
+    SELECT h.tenant_id, h.user_id, h.role_id,
+           CASE WHEN r.id IS NOT NULL THEN 'system-tenant-id' ELSE h.tenant_id END AS primary_tenant,
+           CASE WHEN r.id IS NOT NULL THEN h.tenant_id ELSE 'system-tenant-id' END AS fallback_tenant
+      FROM held h
+      JOIN core_platform.cp_users u ON u.id = h.user_id AND u.tenant_id = h.tenant_id
+           AND coalesce(u.is_active, true) AND coalesce(u.delete_status, 'NOT_DELETED') = 'NOT_DELETED'
+      LEFT JOIN core_platform.cp_roles r ON r.id = h.role_id AND r.is_system AND r.delete_status = 'NOT_DELETED'
+), keys AS NOT MATERIALIZED (
+    -- the role's own rows
+    SELECT l.tenant_id, l.user_id, k.permission
+      FROM live l
+      JOIN core_platform.cp_role_permissions rp ON rp.role_id = l.role_id AND rp.delete_status = 'NOT_DELETED'
+           AND (rp.tenant_id = l.primary_tenant
+                OR (rp.tenant_id = l.fallback_tenant
+                    AND NOT EXISTS (SELECT 1 FROM core_platform.cp_role_permissions rp2
+                                     WHERE rp2.role_id = l.role_id AND rp2.tenant_id = l.primary_tenant
+                                       AND rp2.delete_status = 'NOT_DELETED')))
+      CROSS JOIN LATERAL (VALUES
+            (nullif(rp.permission_id, '')),
+            (CASE WHEN coalesce(rp.resource_key, '') <> ''
+                  THEN concat_ws('|', coalesce(rp.app_prefix, ''), rp.resource_key, coalesce(rp.action, ''),
+                                 coalesce(rp.target, ''), coalesce(nullif(rp.scope, ''), 'any')) END)) AS k(permission)
+     WHERE k.permission IS NOT NULL
+    UNION
+    -- Owner, Admin, Core Platform Admin and the app admins, by being the role
+    SELECT l.tenant_id, l.user_id,
+           concat_ws('|', coalesce(p.app_prefix, ''), p.resource_key, coalesce(p.action, ''),
+                     coalesce(p.target, ''), coalesce(nullif(p.scope, ''), 'any'))
+      FROM live l
+      JOIN core_platform.cp_permissions p ON p.delete_status = 'NOT_DELETED' AND coalesce(p.is_active, true)
+           AND coalesce(p.resource_key, '') <> ''
+     WHERE l.role_id = 'role-owner'
+        OR ((l.role_id = 'role-admin'
+             OR (l.role_id = 'role-cp-admin' AND coalesce(p.app_prefix, '') IN ('', 'cp'))
+             OR (l.role_id ~ '^role-subscribed-app-[a-z0-9-]+-admin$'
+                 AND coalesce(p.app_prefix, '') NOT IN ('', 'cp')
+                 AND l.role_id = 'role-subscribed-app-' || p.app_prefix || '-admin'))
+            AND NOT (p.resource_key IN ('logs', 'audit')
+                     AND NOT EXISTS (SELECT 1 FROM core_platform.cp_actions a WHERE a.action = p.action AND a.is_read_only)))
+)
+SELECT k.tenant_id, b.id AS bus_id, k.user_id, k.permission
+  FROM keys k
+  JOIN core_platform.cp_businesses b ON b.tenant_id = k.tenant_id
+       AND coalesce(b.delete_status, 'NOT_DELETED') = 'NOT_DELETED' AND coalesce(b.is_active, true);
+
+-- ===================================================================== invariants
+DO $$
+DECLARE
+    tbl text;
+    v   record;
+BEGIN
+    -- 1. Both new permissions have their pair and reach Office Editor.
+    IF (SELECT count(*) FROM core_platform.cp_permissions p
+         WHERE p.id IN ('permission-office-data-connect', 'permission-office-reviews-manage')
+           AND p.app_prefix = 'office' AND (p.resource_key, p.action) IN (('data', 'connect'), ('reviews', 'manage'))
+           AND coalesce(p.target, '') = '' AND p.scope = 'any') <> 2 THEN
+        RAISE EXCEPTION 'office: office|data|connect||any or office|reviews|manage||any is missing or has no pair';
+    END IF;
+    IF (SELECT count(*) FROM core_platform.cp_role_permissions rp
+          JOIN core_platform.cp_permissions p ON p.id = rp.permission_id
+         WHERE rp.role_id = 'role-office-editor' AND p.app_prefix = 'office'
+           AND (p.resource_key, p.action) IN (('data', 'connect'), ('reviews', 'manage'))) <> 2 THEN
+        RAISE EXCEPTION 'office: Office Editor must hold office|data|connect and office|reviews|manage';
+    END IF;
+    -- 2. Office Admin still holds no rows of its own app.
+    IF EXISTS (SELECT 1 FROM core_platform.cp_role_permissions
+                WHERE role_id = 'role-subscribed-app-office-admin' AND permission_id LIKE 'permission-office-%') THEN
+        RAISE EXCEPTION 'role-subscribed-app-office-admin holds Office permission rows';
+    END IF;
+    -- 3. The Viewer holds neither.
+    IF EXISTS (SELECT 1 FROM core_platform.cp_role_permissions rp
+                 JOIN core_platform.cp_permissions p ON p.id = rp.permission_id
+                WHERE rp.role_id = 'role-office-viewer' AND p.app_prefix = 'office' AND p.resource_key IN ('data', 'reviews')) THEN
+        RAISE EXCEPTION 'role-office-viewer holds office|data or office|reviews';
+    END IF;
+    -- 4. The tiers.
+    IF (SELECT count(*) FROM core_platform.cp_app_feature_catalog
+         WHERE app_id = 'app-office' AND is_active
+           AND ((feature_key IN ('office.data', 'office.schedules', 'office.esign') AND min_tier_rank = 2)
+             OR (feature_key IN ('office.approvals', 'office.offline', 'office.local_templates') AND min_tier_rank = 1))) <> 6 THEN
+        RAISE EXCEPTION 'office: R5 features must be office.data, office.schedules, office.esign ADVANCE (2) and office.approvals, office.offline, office.local_templates BASIC (1)';
+    END IF;
+    -- 5. Every R5 table exists with tenant_id and bus_id.
+    FOREACH tbl IN ARRAY ARRAY['data_links', 'schedules', 'schedule_runs', 'reviews', 'review_steps', 'sign_envelopes',
+                               'sign_signers', 'sign_fields', 'sign_events', 'document_text', 'link_sends'] LOOP
+        IF (SELECT count(*) FROM information_schema.columns
+             WHERE table_schema = 'office' AND table_name = 'of_' || tbl AND column_name IN ('tenant_id', 'bus_id')
+               AND is_nullable = 'NO') <> 2 THEN
+            RAISE EXCEPTION 'office: office.of_% is missing or has no NOT NULL tenant_id and bus_id', tbl;
+        END IF;
+    END LOOP;
+    -- 6. Office never sees pay, bank, tax or identity data from ZelosHR.
+    FOR v IN SELECT c.table_name, c.column_name FROM information_schema.columns c
+              WHERE c.table_schema = 'office' AND c.table_name LIKE 'src\_zeloshr\_%'
+                AND c.column_name ~ '(salary|pay|bank|account|mobile_money|momo|ssnit|tin|tax|ghana_card|id_number|national|phone|address|birth|gps|kin|cost|wage|allowance)' LOOP
+        RAISE EXCEPTION 'office: office.% exposes %; Office never reads pay, bank or identity data', v.table_name, v.column_name;
+    END LOOP;
+    -- 7. Every src_ view carries tenant_id and bus_id.
+    FOR v IN SELECT t.table_name FROM information_schema.views t
+              WHERE t.table_schema = 'office' AND t.table_name LIKE 'src\_%'
+                AND (SELECT count(*) FROM information_schema.columns c
+                      WHERE c.table_schema = 'office' AND c.table_name = t.table_name AND c.column_name IN ('tenant_id', 'bus_id')) <> 2 LOOP
+        RAISE EXCEPTION 'office: office.% has no tenant_id and bus_id', v.table_name;
+    END LOOP;
+    -- 8. The permissions view answers (tenant_id, bus_id, user_id, permission).
+    IF (SELECT array_agg(column_name::text ORDER BY ordinal_position) FROM information_schema.columns
+         WHERE table_schema = 'office' AND table_name = 'src_core_permissions')
+       IS DISTINCT FROM ARRAY['tenant_id', 'bus_id', 'user_id', 'permission'] THEN
+        RAISE EXCEPTION 'office: office.src_core_permissions must be (tenant_id, bus_id, user_id, permission)';
+    END IF;
+    -- 9. Versions record approval and signing; a sealed PDF may be saved as a version.
+    IF (SELECT count(*) FROM information_schema.columns
+         WHERE table_schema = 'office' AND table_name = 'of_document_versions'
+           AND column_name IN ('approved_review_id', 'signed', 'signed_envelope_id')) <> 3 THEN
+        RAISE EXCEPTION 'office: of_document_versions lacks approved_review_id, signed or signed_envelope_id';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conrelid = 'office.of_document_versions'::regclass
+                    AND c.conname = 'of_document_versions_reason_check' AND pg_get_constraintdef(c.oid) LIKE '%''sign''%') THEN
+        RAISE EXCEPTION 'office: of_document_versions.reason does not admit sign';
+    END IF;
+END $$;
 
 COMMIT;
