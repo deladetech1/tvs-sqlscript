@@ -58,7 +58,7 @@ permissions:
 jobs:
   resolve:
     name: which database
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     outputs:
       client_id: ${{ steps.az.outputs.client_id }}
       subscription: ${{ steps.az.outputs.subscription_id }}
