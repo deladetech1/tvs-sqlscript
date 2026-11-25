@@ -20,7 +20,8 @@
 -- exactly like 20261019-49. Rows go in only where the uksouth-prod cell exists; a silo or
 -- enterprise database without it skips quietly. The labels are reserved (20261005-08,
 -- 20261020-01), so no tenant can take them. A shop's own subdomain (<slug>.qpickstore.com)
--- is deliberately NOT covered: no wildcard is added here.
+-- is deliberately NOT covered: no wildcard is added here. (Superseded: 20261125-02 flags
+-- qpickstore.com as the shop namespace's wildcard, so it is exempt from that part below.)
 --
 -- ON CONFLICT DO NOTHING and no tenant_id restated: a row that already exists is left
 -- exactly as it is. Idempotent; safe to re-run.
@@ -42,7 +43,8 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM control_plane.ctl_tenant_routes
                 WHERE host IN ('zeloshr.trovesuite.com', 'qpickstore.com', 'www.qpickstore.com')
-                  AND (tenant_id IS NOT NULL OR silo_key IS NOT NULL OR is_wildcard)) THEN
+                  AND (tenant_id IS NOT NULL OR silo_key IS NOT NULL
+                       OR (is_wildcard AND host <> 'qpickstore.com'))) THEN
         RAISE EXCEPTION 'a production product address has been given to a tenant, a silo or a wildcard';
     END IF;
 END $$;

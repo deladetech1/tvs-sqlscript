@@ -83,18 +83,21 @@ BEGIN
         RAISE EXCEPTION 'product-domain hosts still unrouted: %', missing;
     END IF;
 
-    -- Every wildcard must be a portal namespace. An apex that is not one would
-    -- serve the shared database to any unprovisioned subdomain.
+    -- Every wildcard must be a subdomain-per-tenant namespace: the employee portal
+    -- (<company>.zeloshr.com) or the shop domain (<shop>.qpickstore.com, 20261125-02).
+    -- An apex that is not one would serve the shared database to any unprovisioned
+    -- subdomain.
     SELECT coalesce(string_agg(host, ', ' ORDER BY host), '(none)') INTO wildcards
       FROM control_plane.ctl_tenant_routes WHERE is_wildcard;
 
     IF EXISTS (
         SELECT 1 FROM control_plane.ctl_tenant_routes
          WHERE is_wildcard AND host NOT LIKE '%zeloshr.com'
+           AND host <> 'qpickstore.com' AND host NOT LIKE '%.qpickstore.com'
     ) THEN
         RAISE EXCEPTION
-            'a non-zeloshr host is flagged as a wildcard (%). Only the employee '
-            'portal has a subdomain-per-tenant namespace.', wildcards;
+            'a host outside the portal and shop namespaces is flagged as a wildcard (%). '
+            'Only zeloshr.com and qpickstore.com have a subdomain-per-tenant namespace.', wildcards;
     END IF;
 
     RAISE NOTICE 'product domains routed in dev, staging and prod; wildcards: %', wildcards;
