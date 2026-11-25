@@ -58,7 +58,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
     ADD CONSTRAINT ck_msg_ecommerce_home_sections_enums CHECK (
         section_key = ANY (ARRAY['HERO','BIDDING','PRE_USED','MARKET','CUSTOM',
                                  'HOW_IT_WORKS','PROMO','CATEGORY_TILES',
-                                 'RICH_TEXT','DAILY_OFFER','INSTALLMENT'])
+                                 'RICH_TEXT','DAILY_OFFER','INSTALLMENT',
+                                 -- Added by 20261123-01; re-runs must keep it.
+                                 'METADATA_SHELF'])
         AND layout = ANY (ARRAY['GRID','CAROUSEL','HERO','LIST'])
         AND item_limit > 0
     );

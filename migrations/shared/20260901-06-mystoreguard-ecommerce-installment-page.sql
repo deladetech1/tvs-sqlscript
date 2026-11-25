@@ -44,7 +44,9 @@ ALTER TABLE mystoreguard.msg_ecommerce_home_sections
         section_key IN (
             'HERO', 'BIDDING', 'PRE_USED', 'MARKET', 'CUSTOM',
             'HOW_IT_WORKS', 'PROMO', 'CATEGORY_TILES', 'RICH_TEXT',
-            'DAILY_OFFER', 'INSTALLMENT'
+            'DAILY_OFFER', 'INSTALLMENT',
+            -- Added by 20261123-01; every re-run of this file must keep it.
+            'METADATA_SHELF'
         )
     );
 
